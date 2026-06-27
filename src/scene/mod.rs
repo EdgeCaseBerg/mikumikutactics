@@ -1,9 +1,6 @@
 use crate::game::GameContext;
 
 pub mod button;
-pub mod game_over;
-pub mod level;
-pub mod shutting_down;
 pub mod title_screen;
 
 pub trait Scene {

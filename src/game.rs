@@ -4,9 +4,6 @@ use crate::clock::Clock;
 use crate::renderer::Color;
 use crate::renderer::Renderer;
 use crate::scene::Scene;
-use crate::scene::game_over::GameOverScene;
-use crate::scene::level::LevelScene;
-use crate::scene::shutting_down::ShuttingDownScene;
 
 pub struct Game {
     // counters to track game updates on a fixed interval with catch up
@@ -79,17 +76,13 @@ impl Default for GameContext {
 }
 
 impl GameContext {
-    pub fn queue_level(&mut self) {
-        self.next_scene = Some(Box::new(LevelScene::default()));
-    }
+    pub fn queue_level(&mut self) {}
 
     pub fn shutdown(&mut self) {
-        self.next_scene = Some(Box::new(ShuttingDownScene::default()));
+        self.shutdown_flag = true;
     }
 
-    pub fn queue_game_over(&mut self) {
-        self.next_scene = Some(Box::new(GameOverScene::default()));
-    }
+    pub fn queue_game_over(&mut self) {}
 }
 
 impl Game {

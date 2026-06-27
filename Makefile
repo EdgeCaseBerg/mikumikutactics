@@ -9,7 +9,7 @@ fmt:
 
 wasm:
 	cargo build --target wasm32-unknown-unknown
-	wasm-bindgen target/wasm32-unknown-unknown/debug/mikumikutower.wasm --out-dir web/pkg --target web
+	wasm-bindgen target/wasm32-unknown-unknown/debug/mikumikutactics.wasm --out-dir web/pkg --target web
 	cp -r assets web/assets
 	cp index.html web/index.html
 
@@ -18,7 +18,7 @@ native:
 
 wasm-release:
 	cargo build --target wasm32-unknown-unknown --release
-	wasm-bindgen target/wasm32-unknown-unknown/release/mikumikutower.wasm --out-dir web/pkg --target web
+	wasm-bindgen target/wasm32-unknown-unknown/release/mikumikutactics.wasm --out-dir web/pkg --target web
 	cp -r assets web/assets
 	cp index.html web/index.html
 

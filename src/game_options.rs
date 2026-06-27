@@ -12,7 +12,7 @@ pub struct GameOptions {
 impl Default for GameOptions {
     fn default() -> Self {
         Self {
-            name: "Miku Miku Tower".to_owned(),
+            name: "Miku Miku Tactics".to_owned(),
             window_width: 1280,
             window_height: 720,
             assets_path: PathBuf::new().join("assets"), // relative path so backends can join against it with current_dir implementations

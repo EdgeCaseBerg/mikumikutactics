@@ -1,6 +1,6 @@
 [package]
-name = "mikumikutower"
-version = "0.1.0"
+name = "mikumikutactics"
+version = "0.0.0"
 edition = "2024"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]

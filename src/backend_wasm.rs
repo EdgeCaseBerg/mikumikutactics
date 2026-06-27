@@ -517,7 +517,7 @@ impl BackendEventLoop for EventLoopWasm {
         let resize_time = Rc::new(RefCell::new(false));
         {
             let resize_time = resize_time.clone();
-            let closure = Closure::<dyn FnMut(_)>::new(move |event: web_sys::Event| {
+            let closure = Closure::<dyn FnMut(_)>::new(move |_event: web_sys::Event| {
                 *resize_time.clone().borrow_mut() = true.into();
             });
             window().set_onresize(Some(closure.as_ref().unchecked_ref()));
