@@ -1,6 +1,6 @@
 
 
-all: fmt wasm native
+all: fmt wasm native test
 
 release: fmt wasm-release native-release
 
@@ -16,6 +16,9 @@ wasm:
 native:
 	cargo build
 
+test: fmt
+	cargo test
+
 wasm-release:
 	cargo build --target wasm32-unknown-unknown --release
 	wasm-bindgen target/wasm32-unknown-unknown/release/mikumikutactics.wasm --out-dir web/pkg --target web
@@ -30,4 +33,5 @@ clean:
 
 doc:
 	cargo doc
-	cargo doc --target wasm32-unknown-unknown	
+	cargo doc --target wasm32-unknown-unknown
+
