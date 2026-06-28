@@ -34,6 +34,12 @@ pub enum ReadyState {
     Cooldown { wait_for: u32, ticks_waited: u32 },
 }
 
+impl ReadyState {
+    fn advance(self, ticks: u32) -> ReadyState {
+        advance_ready_state(self, ticks)
+    }
+}
+
 fn advance_ready_state(ready_state: ReadyState, ticks: u32) -> ReadyState {
     match ready_state {
         ReadyState::Ready => ready_state,
