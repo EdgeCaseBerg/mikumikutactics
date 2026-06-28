@@ -2,6 +2,7 @@ use crate::game::GameContext;
 
 pub mod button;
 pub mod title_screen;
+pub mod transitions;
 
 pub trait Scene {
     fn init(&mut self, game_context: &mut GameContext);
