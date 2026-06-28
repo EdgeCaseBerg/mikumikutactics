@@ -2,8 +2,7 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET,
-    TEXTURE_ID_TITLE_BG, sprite_info_title,
+    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
