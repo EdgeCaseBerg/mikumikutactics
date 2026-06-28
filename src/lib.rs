@@ -60,6 +60,12 @@ fn advance_ready_state(ready_state: ReadyState, ticks: u32) -> ReadyState {
     }
 }
 
+// z0 - z0 * alpha + z1 * alpha
+fn interpolate(z0: f32, z1: f32, alpha: f32) -> f32 {
+    let i = z0 - z0 * alpha + z1 * alpha;
+    i
+}
+
 #[derive(Debug, Clone)]
 pub struct SpriteInfo {
     start_x: u32,
