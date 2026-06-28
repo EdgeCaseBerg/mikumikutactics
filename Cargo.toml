@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2024"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]
-sdl3 = { version = "0", features = ["image", "mixer", "build-from-source"] }
+sdl3 = { version = "0", features = ["image", "mixer", "build-from-source", "ttf"] }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 wasm-bindgen = "0.2"

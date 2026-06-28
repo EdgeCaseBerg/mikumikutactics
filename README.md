@@ -3,7 +3,7 @@
 
 On linux:
 ```
-sudo apt install libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev
+sudo apt install libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libharfbuzz-dev
 ```
 and if you'll be targeting wasm:
 ```
