@@ -9,6 +9,8 @@ use crate::game::Game;
 use crate::game::GameContext;
 use crate::game_options::GameOptions;
 use crate::renderer::{Color, RenderCommand, Renderer};
+use crate::scene::Scene;
+use crate::scene::transitions::{Transition, TransitionScene};
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -542,14 +544,37 @@ impl BackendEventLoop for EventLoopSDL3 {
                 }
             }
             game.update(&mut game_context);
+            if let Some(mut pending_change) = game_context.pending_change.take() {
+                match pending_change.transition {
+                    Transition::Instant => {
+                        pending_change.next_scene.init(&mut game_context);
+                        game.scene = Some(pending_change.next_scene);
+                        game.reset_for_next_scene();
+                        let audio = game_context.audio.as_mut();
+                        if let Some(audio) = audio {
+                            audio.prepare();
+                        }
+                    }
+                    spec => {
+                        let outgoing = game.scene.take().expect("must have current scene");
+                        let mut transition =
+                            TransitionScene::new(outgoing, pending_change.next_scene, spec);
+                        transition.init(&mut game_context);
+                        game.scene = Some(Box::new(transition));
+                    }
+                }
+            }
             if let Some(mut next_scene) = game_context.next_scene.take() {
                 next_scene.init(&mut game_context);
                 game.scene = Some(next_scene);
                 game.reset_for_next_scene();
-                let audio = game_context.audio.as_mut();
-                if let Some(audio) = audio {
-                    audio.prepare();
-                }
+                // This audio.prepare, in combination with fade to black init inside of it,
+                // results in teh audio internals getting droppped and preventing any sound
+                // from being played by the incoming scene until the fade out finishes.
+                // let audio = game_context.audio.as_mut();
+                // if let Some(audio) = audio {
+                //     audio.prepare();
+                // }
             }
             game.draw(&mut game_context);
             if game_context.shutdown_flag {

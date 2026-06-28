@@ -8,6 +8,7 @@ use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::scene::button::Button;
+use crate::scene::transitions::{SceneChange, Transition};
 use crate::{ReadyState, advance_ready_state};
 
 pub struct TitleScene {
@@ -82,11 +83,24 @@ impl Scene for TitleScene {
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
 
-        if self.quit_btn.clicked && game_context.next_scene.is_none() {
+        if self.quit_btn.clicked
+            && game_context.pending_change.is_none()
+            && game_context.next_scene.is_none()
+        {
             game_context.audio.as_mut().map(|audio| {
                 let _ = audio.play_sfx(SFX_ID_BLIP);
             });
-            game_context.shutdown();
+            // TODO move helper to game_context for f2b queueing
+            game_context.pending_change = Some({
+                SceneChange {
+                    next_scene: Box::new(TitleScene::default()), // I don't have a different scene to use yet.
+                    transition: crate::scene::transitions::Transition::FadeToBlack {
+                        fade_out_ticks: 30,
+                        fade_in_ticks: 30,
+                    },
+                }
+            });
+            // gamse_context.shutdown(); tmp not quit since we're testing fade
             self.quit_btn.clicked = false;
         }
     }

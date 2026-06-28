@@ -1,8 +1,10 @@
 use crate::ReadyState;
+use crate::Rect;
 use crate::game::GameContext;
 use crate::interpolate;
+use crate::renderer::{Color, RenderCommand};
 use crate::scene::Scene;
-use std::cmp::min;
+use std::cmp::{max, min};
 
 /*
  * Transitions are just little state machines that go from one step to the other,
@@ -53,7 +55,7 @@ pub struct SceneChange {
 
 pub struct TransitionScene {
     outgoing: Box<dyn Scene>,
-    incoming: Box<dyn Scene>,
+    incoming: Option<Box<dyn Scene>>,
     transition: Transition,
     step_timers: Vec<ReadyState>,
     step: usize,
@@ -61,10 +63,10 @@ pub struct TransitionScene {
 }
 
 impl TransitionScene {
-    fn new(outgoing: Box<dyn Scene>, incoming: Box<dyn Scene>, transition: Transition) -> Self {
+    pub fn new(outgoing: Box<dyn Scene>, incoming: Box<dyn Scene>, transition: Transition) -> Self {
         TransitionScene {
             outgoing,
-            incoming,
+            incoming: Some(incoming),
             transition,
             step_timers: vec![],
             step: 0,
@@ -75,9 +77,28 @@ impl TransitionScene {
 
 impl TransitionScene {
     fn fade_to_black_update(&mut self, ticks: u32, game_context: &mut GameContext) {
+        // When the fade out step is on its last tick, then init the incoming scene
+        if self.prev_step != self.step && self.step == 1 {
+            // TODO: I think we need to call the audio prepare method here or else sounds won't play.
+            self.incoming.as_mut().map(|o| {
+                o.init(game_context);
+                // let audio = game_context.audio.as_mut();
+                //         if let Some(audio) = audio {
+                //             audio.prepare();
+                //         }
+            });
+
+        }
         match self.prev_step {
             0 => {
-                self.outgoing.update(ticks, game_context);
+                // Don't call update on the outgoing because then you end up still handling
+                // events in that scene which can cause multiple Transitions to get set up
+                // all at once back to back in a terible linked list sort of way that can cause
+                // flashing and flickering and horror. We should make a flag to block the incoming
+                // input so that we _can_ keep updating the previous scene but oh man oh man was
+                // that a weird bug to track down. Once we fix that input control flag up then we
+                // can uncomment this and get the tests passing again
+                // self.outgoing.update(ticks, game_context);
             }
             1 => {
                 // To avoid feeling like the game isn't responsive, start running the update
@@ -100,14 +121,12 @@ impl TransitionScene {
                     }
                 };
                 if early_update {
-                    self.incoming.update(ticks, game_context);
+                    self.incoming
+                        .as_mut()
+                        .map(|o| o.update(ticks, game_context));
                 }
             }
             _ => {}
-        }
-        // When the fade out step is on its last tick, then init the incoming scene
-        if self.prev_step != self.step && self.step == 1 {
-            self.incoming.init(game_context);
         }
     }
 }
@@ -136,8 +155,9 @@ impl Scene for TransitionScene {
             // onto the incoming scene still. So instead, we rely on the event loop run implementation
             // that must handle an Instant transition appropriately and drop this transition after
             // taking the incoming scene from it.
-            self.transition = Transition::Instant;
-            self.init(game_context);
+            if self.incoming.is_some() {
+                game_context.next_scene = self.incoming.take();
+            }
             return;
         }
 
@@ -153,11 +173,62 @@ impl Scene for TransitionScene {
         // Do any step specific logic.
         match self.transition {
             Transition::FadeToBlack { .. } => self.fade_to_black_update(ticks, game_context),
+            Transition::Instant => {
+                if self.incoming.is_some() {
+                    game_context.next_scene = self.incoming.take();
+                }
+            }
             _ => {}
         }
     }
-    fn draw(&mut self, _game_context: &mut GameContext) {
-        todo!();
+    fn draw(&mut self, game_context: &mut GameContext) {
+        if self.step >= self.step_timers.len() {
+            return;
+        }
+
+        let (screen_width, screen_height) = game_context.screen_size;
+        let rectangle = Rect::new(0, 0, screen_width as isize, screen_height as isize);
+
+        match self.transition {
+            Transition::FadeToBlack {
+                fade_out_ticks,
+                fade_in_ticks,
+            } => {
+                let progress = match self.step_timers[self.step] {
+                    ReadyState::Cooldown {
+                        wait_for,
+                        ticks_waited,
+                    } => {
+                        let x = 1.0_f32.min(ticks_waited as f32 / wait_for as f32);
+                        println!("{:?}", (x, ticks_waited, wait_for));
+                        x
+                    }
+                    _ => 1.0,
+                };
+                let alpha = match self.step {
+                    0 => {
+                        // fade out step
+                        self.outgoing.draw(game_context);
+                        interpolate(0.0, 1.0, progress)
+                    }
+                    _ => {
+                        // fade in step
+                        self.incoming.as_mut().map(|o| o.draw(game_context));
+                        interpolate(1.0, 0.0, progress)
+                    }
+                };
+                let mut color = Color::black();
+                color.a = alpha;
+                let Some(ref mut renderer) = game_context.renderer else {
+                    return;
+                };
+                renderer.send_command(RenderCommand::FillRect {
+                    color,
+                    destination: rectangle,
+                });
+            }
+            _ => {}
+        }
     }
 }
 
