@@ -684,6 +684,25 @@ impl RendererWasm {
                         }
                     }
                 }
+                RenderCommand::FillRect { color, destination } => {
+                    let ctx = &mut *self.wasm_context.borrow_mut();
+                    let context2d = ctx.context.clone();
+                    context2d.save();
+                    context2d.set_fill_style_str(&format!(
+                        "rgba({},{},{},{})",
+                        color.r * 255.0,
+                        color.g * 255.0,
+                        color.b * 255.0,
+                        color.a
+                    ));
+                    context2d.fill_rect(
+                        destination.x as f64,
+                        destination.y as f64,
+                        destination.width as f64,
+                        destination.height as f64,
+                    );
+                    context2d.restore();
+                }
             }
         }
     }
