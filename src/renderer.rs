@@ -42,10 +42,15 @@ pub trait Renderer {
     fn present(&mut self);
 }
 
+#[derive(Debug)]
 pub enum RenderCommand {
     DrawRect {
         texture_id: TextureId,
         source: Rect,
+        destination: Rect,
+    },
+    FillRect {
+        color: Color,
         destination: Rect,
     },
 }

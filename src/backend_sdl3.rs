@@ -35,6 +35,7 @@ use sdl3::keyboard::Keycode;
 use sdl3::mixer::Audio as MixerAudio;
 use sdl3::mixer::Mixer;
 use sdl3::mouse::MouseButton;
+use sdl3::render::BlendMode;
 use sdl3::render::Texture;
 use sdl3::render::TextureCreator;
 use sdl3::render::WindowCanvas;
@@ -603,6 +604,17 @@ impl RendererSDL3 {
                                 let _ = &format!("failed to draw texture {}", texture_id.0);
                             });
                     }
+                }
+                RenderCommand::FillRect { color, destination } => {
+                    let ctx = &mut *self.context.borrow_mut();
+                    let previous_color = ctx.window_canvas.draw_color();
+                    let previous_mode = ctx.window_canvas.blend_mode();
+                    let dst: sdl3::rect::Rect = destination.into();
+                    ctx.window_canvas.set_draw_color(color.to_sdl3());
+                    ctx.window_canvas.set_blend_mode(BlendMode::Blend);
+                    ctx.window_canvas.fill_rect(dst);
+                    ctx.window_canvas.set_draw_color(previous_color);
+                    ctx.window_canvas.set_blend_mode(previous_mode);
                 }
             }
         }
