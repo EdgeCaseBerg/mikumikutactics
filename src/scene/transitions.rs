@@ -5,13 +5,6 @@ use crate::interpolate;
 use crate::renderer::{Color, RenderCommand};
 use crate::scene::Scene;
 
-/*
- * Transitions are just little state machines that go from one step to the other,
- * and when they're all done and have no more steps left to do, the transition is
- * complete and they queue up the next incoming scene to replace them. You can chain
- * them together as you please if you want to do multiple things. Weeee!
- */
-
 pub enum Transition {
     FadeOut { within_ticks: u32 },
     FadeIn { within_ticks: u32 },
