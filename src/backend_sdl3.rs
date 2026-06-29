@@ -602,7 +602,9 @@ impl RendererSDL3 {
                         ctx.window_canvas
                             .copy(texture, src, dst)
                             .unwrap_or_else(|_| {
-                                let _ = &format!("failed to draw texture {}", texture_id.0);
+                                // TODO: when we have a real GameError, return an error!
+                                let s = &format!("failed to draw texture {}", texture_id.0);
+                                eprintln!("{}", s);
                             });
                     }
                 }
@@ -613,7 +615,12 @@ impl RendererSDL3 {
                     let dst: sdl3::rect::Rect = destination.into();
                     ctx.window_canvas.set_draw_color(color.to_sdl3());
                     ctx.window_canvas.set_blend_mode(BlendMode::Blend);
-                    ctx.window_canvas.fill_rect(dst);
+                    ctx.window_canvas.fill_rect(dst).unwrap_or_else(|_| {
+                        // TODO: when we have a real GameError, return an error!
+                        let s =
+                            &format!("failed to fill rect {:?}", (destination.x, destination.y));
+                        eprintln!("{}", s);
+                    });
                     ctx.window_canvas.set_draw_color(previous_color);
                     ctx.window_canvas.set_blend_mode(previous_mode);
                 }
