@@ -4,7 +4,6 @@ use crate::clock::Clock;
 use crate::renderer::Color;
 use crate::renderer::Renderer;
 use crate::scene::Scene;
-use crate::scene::transitions::SceneChange;
 
 pub struct Game {
     // counters to track game updates on a fixed interval with catch up
@@ -54,8 +53,7 @@ pub struct GameContext {
     pub renderer: Option<Box<dyn Renderer>>,
     pub mouse_context: MouseContext,
     pub screen_size: (u32, u32),
-    pub next_scene: Option<Box<dyn Scene>>, 
-    pub pending_change: Option<SceneChange>,
+    pub next_scene: Option<Box<dyn Scene>>,
     pub asset_loader: Option<Box<dyn AssetLoader>>,
     pub audio: Option<Box<dyn Audio>>,
     pub shutdown_flag: bool,
@@ -69,7 +67,6 @@ impl Default for GameContext {
             mouse_context: MouseContext::default(),
             screen_size: (1280, 720),
             next_scene: None,
-            pending_change: None,
             asset_loader: None,
             audio: None,
             shutdown_flag: false,

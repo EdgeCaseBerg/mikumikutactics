@@ -8,13 +8,14 @@ use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::scene::button::Button;
-use crate::scene::transitions::{SceneChange, Transition};
+use crate::scene::transitions::{Transition, TransitionScene};
 use crate::{ReadyState, advance_ready_state};
 
 pub struct TitleScene {
     bg: SpriteInfo,
     quit_btn: Button,
     played_intro: ReadyState,
+    fade: Option<TransitionScene>,
 }
 
 impl TitleScene {
@@ -44,12 +45,15 @@ impl Default for TitleScene {
                 },
             ),
             played_intro: ReadyState::Ready,
+            fade: None,
         }
     }
 }
 
 impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
+        self.fade = TransitionScene::FadeIn().into();
+
         let Some(ref mut asset_loader) = game_context.asset_loader else {
             return;
         };
@@ -65,6 +69,22 @@ impl Scene for TitleScene {
         let _ = audio.load_sfx(SFX_ID_BLIP);
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
+        let remove_fade = self.fade.as_mut().map_or(false, |fade| {
+            fade.update(ticks, game_context);
+            match (fade.is_done(), &fade.transition) {
+                (true, Transition::FadeOut { .. }) => {
+                    // TitleScene for now because I don't have anything else to use
+                    game_context.next_scene = Some(Box::new(TitleScene::default()));
+                    true
+                }
+                (true, _) => true,
+                _ => false,
+            }
+        });
+        if remove_fade {
+            self.fade = None;
+        }
+
         let layout = TitleScene::layout(&game_context);
         self.quit_btn.update(ticks, game_context, &layout);
 
@@ -83,25 +103,15 @@ impl Scene for TitleScene {
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
 
-        if self.quit_btn.clicked
-            && game_context.pending_change.is_none()
-            && game_context.next_scene.is_none()
-        {
+        if self.quit_btn.clicked && game_context.next_scene.is_none() {
             game_context.audio.as_mut().map(|audio| {
                 let _ = audio.play_sfx(SFX_ID_BLIP);
             });
-            // TODO move helper to game_context for f2b queueing
-            game_context.pending_change = Some({
-                SceneChange {
-                    next_scene: Box::new(TitleScene::default()), // I don't have a different scene to use yet.
-                    transition: crate::scene::transitions::Transition::FadeToBlack {
-                        fade_out_ticks: 30,
-                        fade_in_ticks: 30,
-                    },
-                }
-            });
-            // gamse_context.shutdown(); tmp not quit since we're testing fade
+            // TODO restore shut down once we have another scene to swap to
+            // game_context.shutdown();
             self.quit_btn.clicked = false;
+            game_context.mouse_context.consume_left_click();
+            self.fade = Some(TransitionScene::FadeOut());
         }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
@@ -118,5 +128,6 @@ impl Scene for TitleScene {
         });
 
         self.quit_btn.draw(game_context, &layout);
+        self.fade.as_mut().map(|f| f.draw(game_context));
     }
 }
