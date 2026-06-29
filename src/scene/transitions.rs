@@ -133,7 +133,7 @@ mod transition_scene_tests {
         }));
 
         scene.init(&mut game_context);
-        for _ in 0..16 {
+        for _ in 0..scene.transition.length() + 1 {
             scene.update(1, &mut game_context);
             scene.draw(&mut game_context);
         }
@@ -149,6 +149,37 @@ mod transition_scene_tests {
         let last_command = actions.last();
         if let RenderCommand::FillRect { color, .. } = last_command.unwrap() {
             assert_eq!(0.0, color.a);
+        } else {
+            assert!(false, "last command was not a fill rect");
+        }
+    }
+
+    #[test]
+    fn fade_out_fades_to_opaque_once_done() {
+        let mut scene = TransitionScene::FadeOut();
+        let actions = Rc::new(RefCell::new(vec![]));
+        let mut game_context = GameContext::default();
+        game_context.renderer = Some(Box::new(FakeRenderer {
+            actions: actions.clone(),
+        }));
+
+        scene.init(&mut game_context);
+        for _ in 0..scene.transition.length() + 1 {
+            scene.update(1, &mut game_context);
+            scene.draw(&mut game_context);
+        }
+
+        let actions = actions.borrow();
+        let first_command = actions.first();
+        if let RenderCommand::FillRect { color, .. } = first_command.unwrap() {
+            assert_eq!(0.0, color.a);
+        } else {
+            assert!(false, "first command was not a fill rect with 1.0 alpha");
+        }
+
+        let last_command = actions.last();
+        if let RenderCommand::FillRect { color, .. } = last_command.unwrap() {
+            assert_eq!(1.0, color.a);
         } else {
             assert!(false, "last command was not a fill rect");
         }
