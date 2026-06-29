@@ -8,6 +8,7 @@ use crate::scene::Scene;
 pub enum Transition {
     FadeOut { within_ticks: u32 },
     FadeIn { within_ticks: u32 },
+    // Dimmed { within_ticks: u32 } We could add this to be used as a pause overlay type thing
 }
 
 impl Transition {
