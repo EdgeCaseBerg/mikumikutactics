@@ -9,7 +9,6 @@ use crate::game::Game;
 use crate::game::GameContext;
 use crate::game_options::GameOptions;
 use crate::renderer::{Color, RenderCommand, Renderer};
-use crate::scene::transitions::TransitionScene;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};

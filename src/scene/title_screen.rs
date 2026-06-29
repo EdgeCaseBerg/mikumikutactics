@@ -52,7 +52,7 @@ impl Default for TitleScene {
 
 impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
-        self.fade = TransitionScene::FadeIn().into();
+        self.fade = TransitionScene::new_fade_in().into();
 
         let Some(ref mut asset_loader) = game_context.asset_loader else {
             return;
@@ -111,7 +111,7 @@ impl Scene for TitleScene {
             // game_context.shutdown();
             self.quit_btn.clicked = false;
             game_context.mouse_context.consume_left_click();
-            self.fade = Some(TransitionScene::FadeOut());
+            self.fade = Some(TransitionScene::new_fade_out());
         }
     }
     fn draw(&mut self, game_context: &mut GameContext) {

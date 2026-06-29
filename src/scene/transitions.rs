@@ -42,14 +42,14 @@ impl TransitionScene {
         }
     }
 
-    pub fn FadeOut() -> Self {
+    pub fn new_fade_out() -> Self {
         let transition = Transition::FadeOut { within_ticks: 15 };
         Self {
             timer: (&transition).into(),
             transition,
         }
     }
-    pub fn FadeIn() -> Self {
+    pub fn new_fade_in() -> Self {
         let transition = Transition::FadeIn { within_ticks: 15 };
         Self {
             timer: (&transition).into(),
@@ -119,7 +119,7 @@ mod transition_scene_tests {
 
     #[test]
     fn fade_in_fades_to_0_alpha_once_done() {
-        let mut scene = TransitionScene::FadeIn();
+        let mut scene = TransitionScene::new_fade_in();
         let actions = Rc::new(RefCell::new(vec![]));
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(FakeRenderer {
@@ -150,7 +150,7 @@ mod transition_scene_tests {
 
     #[test]
     fn fade_out_fades_to_opaque_once_done() {
-        let mut scene = TransitionScene::FadeOut();
+        let mut scene = TransitionScene::new_fade_out();
         let actions = Rc::new(RefCell::new(vec![]));
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(FakeRenderer {
