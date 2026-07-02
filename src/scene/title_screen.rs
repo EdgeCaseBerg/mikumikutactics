@@ -54,19 +54,19 @@ impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
-        let Some(ref mut asset_loader) = game_context.asset_loader else {
+        if let Some(ref mut asset_loader) = game_context.asset_loader {
+            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
+            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
+        } else {
             return;
         };
 
-        asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
-        asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-
-        let Some(ref mut audio) = game_context.audio else {
+        if let Some(ref mut audio) = game_context.audio {
+            let _ = audio.load_sfx(SFX_ID_MEME);
+            let _ = audio.load_sfx(SFX_ID_BLIP);
+        } else {
             return;
         };
-
-        let _ = audio.load_sfx(SFX_ID_MEME);
-        let _ = audio.load_sfx(SFX_ID_BLIP);
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         let remove_fade = self.fade.as_mut().map_or(false, |fade| {
