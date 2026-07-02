@@ -147,9 +147,9 @@ mod transition_scene_tests {
         game_context.renderer = Some(Box::new(renderer));
 
         let layout = TitleScene::layout(&game_context);
-        click_button_with_left_mouse(&scene.quit_btn, &mut game_context, &layout);
 
         scene.init(&mut game_context);
+        click_button_with_left_mouse(&scene.quit_btn, &mut game_context, &layout);
         let game_ticks = 60;
         for _ in 0..game_ticks {
             scene.update(1, &mut game_context);
