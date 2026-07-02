@@ -75,7 +75,10 @@ impl Scene for TitleScene {
                 (true, Transition::FadeOut { .. }) => {
                     // TitleScene for now because I don't have anything else to use
                     game_context.next_scene = Some(Box::new(TitleScene::default()));
-                    true
+                    // dont remove the fade on fadeout because we're going to swap scenes
+                    // anyway and we need to be at the ReadyState::Ready to trigger fully
+                    // opaque draws.
+                    false
                 }
                 (true, _) => true,
                 _ => false,
@@ -155,10 +158,19 @@ mod transition_scene_tests {
             scene.update(1, &mut game_context);
             // The first update should consume the click
             assert_eq!(false, game_context.mouse_context.left_clicked);
+            scene.draw(&mut game_context);
         }
 
         // Then after the fade finishes up, the next_scene will be set
         // and wouldn't be unset because that's the job of the event loop
         assert!(game_context.next_scene.is_some());
+
+        // And confirm there was a fade at some point here.
+        let binding = actions.borrow();
+        let action = binding.iter().find(|action| match action {
+            RenderCommand::FillRect { color, .. } => color.a == 1.0,
+            _ => false,
+        });
+        assert!(action.is_some())
     }
 }
