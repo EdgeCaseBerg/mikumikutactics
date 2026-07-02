@@ -80,7 +80,7 @@ impl Scene for TitleScene {
                     // opaque draws.
                     false
                 }
-                (true, _) => true,
+                (true, Transition::FadeIn { .. }) => true,
                 _ => false,
             }
         });
