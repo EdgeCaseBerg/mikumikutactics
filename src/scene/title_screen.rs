@@ -136,7 +136,7 @@ impl Scene for TitleScene {
 mod transition_scene_tests {
     use super::*;
     use crate::backend_dummy::FakeRenderer;
-    use crate::backend_dummy::left_click_button;
+    use crate::backend_dummy::click_button_with_left_mouse;
 
     #[test]
     fn clicking_quit_triggers_fade_out_then_next_scene_set() {
@@ -147,7 +147,7 @@ mod transition_scene_tests {
         game_context.renderer = Some(Box::new(renderer));
 
         let layout = TitleScene::layout(&game_context);
-        left_click_button(&scene.quit_btn, &mut game_context, &layout);
+        click_button_with_left_mouse(&scene.quit_btn, &mut game_context, &layout);
 
         scene.init(&mut game_context);
         let game_ticks = 60;

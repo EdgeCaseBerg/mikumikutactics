@@ -44,7 +44,11 @@ pub fn center_of_rect_screen_coordinates(
     (x, y).into()
 }
 
-pub fn left_click_button(btn: &Button, game_context: &mut GameContext, layout: &GridLayout) {
+pub fn click_button_with_left_mouse(
+    btn: &Button,
+    game_context: &mut GameContext,
+    layout: &GridLayout,
+) {
     let position = center_of_rect_screen_coordinates(&btn.rect, &game_context, &layout);
     let left_mouse_btn = true;
     let right_mouse_btn = false;
