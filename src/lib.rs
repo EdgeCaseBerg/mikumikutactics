@@ -9,6 +9,9 @@ pub mod backend_sdl3;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 pub mod backend_wasm;
 
+#[cfg(test)]
+pub mod backend_dummy;
+
 pub mod constants;
 pub mod font;
 pub mod game;
