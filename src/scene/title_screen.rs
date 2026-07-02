@@ -131,3 +131,34 @@ impl Scene for TitleScene {
         self.fade.as_mut().map(|f| f.draw(game_context));
     }
 }
+
+#[cfg(test)]
+mod transition_scene_tests {
+    use super::*;
+    use crate::backend_dummy::FakeRenderer;
+    use crate::backend_dummy::left_click_button;
+
+    #[test]
+    fn clicking_quit_triggers_fade_out_then_next_scene_set() {
+        let (renderer, actions) = FakeRenderer::new();
+        let mut scene = TitleScene::default();
+
+        let mut game_context = GameContext::default();
+        game_context.renderer = Some(Box::new(renderer));
+
+        let layout = TitleScene::layout(&game_context);
+        left_click_button(&scene.quit_btn, &mut game_context, &layout);
+
+        scene.init(&mut game_context);
+        let game_ticks = 60;
+        for _ in 0..game_ticks {
+            scene.update(1, &mut game_context);
+            // The first update should consume the click
+            assert_eq!(false, game_context.mouse_context.left_clicked);
+        }
+
+        // Then after the fade finishes up, the next_scene will be set
+        // and wouldn't be unset because that's the job of the event loop
+        assert!(game_context.next_scene.is_some());
+    }
+}
