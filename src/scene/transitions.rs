@@ -98,33 +98,14 @@ impl Scene for TransitionScene {
 #[cfg(test)]
 mod transition_scene_tests {
     use super::*;
-    use crate::renderer::Renderer;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct FakeRenderer {
-        actions: Rc<RefCell<Vec<RenderCommand>>>,
-    }
-    impl Renderer for FakeRenderer {
-        fn name(&self) -> String {
-            "Fake!".to_string()
-        }
-        fn send_command(&mut self, cmd: RenderCommand) {
-            eprintln!("COMMAND ADDED {:?}", cmd);
-            self.actions.as_ref().borrow_mut().push(cmd);
-        }
-        fn clear(&mut self, _color: Color) {}
-        fn present(&mut self) {}
-    }
+    use crate::backend_dummy::FakeRenderer;
 
     #[test]
     fn fade_in_fades_to_0_alpha_once_done() {
+        let (renderer, actions) = FakeRenderer::new();
         let mut scene = TransitionScene::new_fade_in();
-        let actions = Rc::new(RefCell::new(vec![]));
         let mut game_context = GameContext::default();
-        game_context.renderer = Some(Box::new(FakeRenderer {
-            actions: actions.clone(),
-        }));
+        game_context.renderer = Some(Box::new(renderer));
 
         scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
@@ -151,11 +132,9 @@ mod transition_scene_tests {
     #[test]
     fn fade_out_fades_to_opaque_once_done() {
         let mut scene = TransitionScene::new_fade_out();
-        let actions = Rc::new(RefCell::new(vec![]));
+        let (renderer, actions) = FakeRenderer::new();
         let mut game_context = GameContext::default();
-        game_context.renderer = Some(Box::new(FakeRenderer {
-            actions: actions.clone(),
-        }));
+        game_context.renderer = Some(Box::new(renderer));
 
         scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
