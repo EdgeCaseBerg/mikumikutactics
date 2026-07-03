@@ -121,10 +121,32 @@ struct Page {
     current_line: usize,
 }
 
+impl Page {
+    fn update(&mut self, ticks: u32) {
+        if self.current_line >= self.lines.len() {
+            return;
+        }
+
+        self.lines[self.current_line].update(ticks);
+    }
+}
+
 #[derive(Debug, Clone)]
 struct Text {
     pages: Vec<Page>,
     current_page: usize,
+}
+
+impl Text {
+    // fn new(text: String, max_width: usize, renderer)
+
+    fn update(&mut self, ticks: u32) {
+        if self.current_page >= self.pages.len() {
+            return;
+        }
+
+        self.pages[self.current_page].update(ticks);
+    }
 }
 
 #[cfg(test)]
