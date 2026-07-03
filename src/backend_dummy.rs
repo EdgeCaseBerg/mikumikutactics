@@ -33,11 +33,7 @@ impl Renderer for FakeRenderer {
     fn present(&mut self) {}
 }
 
-pub fn center_of_rect_screen_coordinates(
-    rect: &Rect,
-    game_context: &GameContext,
-    layout: &GridLayout,
-) -> Option<(f32, f32)> {
+pub fn center_of_rect_screen_coordinates(rect: &Rect, layout: &GridLayout) -> Option<(f32, f32)> {
     let screen_cell = layout.cell_rect(rect.y as usize, rect.x as usize);
     let x = screen_cell.x as f32 + screen_cell.width as f32 / 2.0;
     let y = screen_cell.y as f32 + screen_cell.height as f32 / 2.0;
@@ -49,7 +45,7 @@ pub fn click_button_with_left_mouse(
     game_context: &mut GameContext,
     layout: &GridLayout,
 ) {
-    let position = center_of_rect_screen_coordinates(&btn.rect, &game_context, &layout);
+    let position = center_of_rect_screen_coordinates(&btn.rect, &layout);
     let left_mouse_btn = true;
     let right_mouse_btn = false;
     game_context
