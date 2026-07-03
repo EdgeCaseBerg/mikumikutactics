@@ -44,15 +44,11 @@ impl Scene for StoryScene {
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-        } else {
-            return;
-        };
+        }
 
         if let Some(ref mut audio) = game_context.audio {
             let _ = audio.load_sfx(SFX_ID_BLIP);
-        } else {
-            return;
-        };
+        }
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
