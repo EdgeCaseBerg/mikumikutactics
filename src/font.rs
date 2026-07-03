@@ -1,7 +1,29 @@
 use crate::Rect;
 use crate::grid_layout::GridLayout;
 
-const FONTSHEET_LAYOUT: GridLayout = {
+pub trait FontMetrics {
+    fn line_height(&self) -> i32;
+    fn measure_width(&self, s: &str) -> i32;
+}
+
+pub struct BitmapFontMetrics {
+    pub layout: GridLayout,
+}
+
+impl FontMetrics for BitmapFontMetrics {
+    fn line_height(&self) -> i32 {
+        let (_, h) = self.layout.cell_size();
+        h as i32
+    }
+
+    fn measure_width(&self, s: &str) -> i32 {
+        get_rects_for_str(s)
+            .iter()
+            .fold(0, |acc, cell| acc + cell.width as i32)
+    }
+}
+
+pub const FONTSHEET_LAYOUT: GridLayout = {
     GridLayout {
         area: Rect {
             x: 0,
