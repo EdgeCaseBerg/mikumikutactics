@@ -8,6 +8,7 @@ use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::scene::button::Button;
+use crate::scene::story_screen::StoryScene;
 use crate::scene::transitions::{Transition, TransitionScene};
 use crate::{ReadyState, advance_ready_state};
 
@@ -74,8 +75,7 @@ impl Scene for TitleScene {
             let fade = match (fade.is_done(), &fade.transition) {
                 (true, Transition::FadeIn { .. }) => None,
                 (true, Transition::FadeOut { .. }) => {
-                    // TitleScene for now because I don't have anything else to use
-                    game_context.next_scene = Some(Box::new(TitleScene::default()));
+                    game_context.next_scene = Some(Box::new(StoryScene::default()));
                     // don't remove the fade on fadeout because we're going to swap scenes
                     // anyway and we need to be at the ReadyState::Ready to trigger fully
                     // opaque draws.

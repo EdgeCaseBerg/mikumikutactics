@@ -1,6 +1,7 @@
 use crate::game::GameContext;
 
 pub mod button;
+pub mod story_screen;
 pub mod title_screen;
 pub mod transitions;
 
