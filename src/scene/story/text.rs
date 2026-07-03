@@ -10,11 +10,11 @@ use crate::Rect;
  * PAGE 1
  * -----------------------------------|
  * LINE I don't know what the other   |
- * words are in that book but its  [v]|
+ * LINE words are in that book but [v]|
  * ------------------------------------
  * PAGE 2
  * -----------------------------------|
- * a decent example.                  |
+ * LINE its a decent example.         |
  *                                 [>]|
  * ------------------------------------
 */
