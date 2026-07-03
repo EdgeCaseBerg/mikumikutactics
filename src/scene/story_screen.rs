@@ -2,18 +2,27 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
+    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG,
+    sprite_info_title,
 };
+use crate::font::BitmapFontMetrics;
+use crate::font::FONTSHEET_LAYOUT;
+use crate::font::FontMetrics;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::scene::button::Button;
+use crate::scene::story::text::LineSpeed;
+use crate::scene::story::text::TextBox;
 use crate::scene::transitions::{Transition, TransitionScene};
 use crate::{ReadyState, advance_ready_state};
 
 pub struct StoryScene {
     bg: SpriteInfo,
     fade: Option<TransitionScene>,
+    // font: Box<dyn FontMetrics>,
+    text_box_loaded: bool,
+    text_box: TextBox,
 }
 
 impl StoryScene {
@@ -33,6 +42,23 @@ impl Default for StoryScene {
         StoryScene {
             bg: sprite_info_title(),
             fade: None,
+            // font: Box::new(BitmapFontMetrics {
+            //     layout: FONTSHEET_LAYOUT,
+            // }),
+            text_box_loaded: false,
+            text_box: TextBox::new(
+                Rect {
+                    x: 100,
+                    y: 100,
+                    width: 100,
+                    height: 100,
+                },
+                "Hello there this is a very long string of text I'm hoping will be long enough to be interesting or something I guess though who knows lalalalalal yay this is so fun.".to_string(),
+                &BitmapFontMetrics {
+                    layout: FONTSHEET_LAYOUT,
+                },
+                LineSpeed::Normal,
+            ),
         }
     }
 }
@@ -44,6 +70,7 @@ impl Scene for StoryScene {
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
+            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_FONTSHEET);
         }
 
         if let Some(ref mut audio) = game_context.audio {
@@ -61,6 +88,7 @@ impl Scene for StoryScene {
         }
 
         let layout = StoryScene::layout(&game_context);
+        self.text_box.text.update(ticks);
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(&game_context);
@@ -74,6 +102,8 @@ impl Scene for StoryScene {
             source: src,
             destination: Rect::new(0, 0, layout.area.width, layout.area.height),
         });
+
+        eprintln!("{:?}", self.text_box.text.lines());
 
         self.fade.as_mut().map(|f| f.draw(game_context));
     }
