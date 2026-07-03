@@ -1,5 +1,6 @@
 use crate::ReadyState;
 use crate::Rect;
+use crate::font::FontMetrics;
 
 /*
  * PAGE 0
@@ -19,24 +20,107 @@ use crate::Rect;
  * ------------------------------------
 */
 #[derive(Debug, Clone)]
-struct TextBox {
+pub struct TextBox {
     /// top left anchor for box, world coordinates or grid coordinates...?
-    bounds: Rect,
+    pub bounds: Rect,
     /// leading is the vertical space between lines.
-    leading: isize,
+    pub leading: i32,
     /// The actual text, separated in pages that fit in the box's bounds
-    text: Text,
+    pub text: Text,
+}
+
+impl TextBox {
+    pub fn new(
+        bounds: Rect,
+        text: String,
+        font_metrics: &impl FontMetrics,
+        speed: LineSpeed,
+    ) -> TextBox {
+        let leading = font_metrics.line_height() / 4;
+
+        let total_width = font_metrics.measure_width(&text);
+        let max_width = bounds.width as i32;
+        if total_width < max_width {
+            // There's one line!
+            return TextBox {
+                bounds,
+                leading,
+                text: Text {
+                    pages: vec![Page {
+                        lines: vec![Line::text_at_speed(text, speed)],
+                        current_line: 0,
+                    }],
+                    current_page: 0,
+                },
+            };
+        }
+
+        // We have to split the text up into multiple lines
+        // How many lines can we fit into the bounds?
+        let line_height = font_metrics.line_height() + leading * 2;
+        let lines_per_page = (bounds.height as usize / line_height as usize).min(1);
+
+        let mut size = 0;
+        let mut words = text.split_ascii_whitespace();
+        let mut lines = vec![];
+        let mut line = String::new();
+        for word in words {
+            if word.len() == 0 {
+                continue;
+            }
+
+            let size_of_line = size + font_metrics.measure_width(&word);
+            if size_of_line >= max_width {
+                // this pushes us too far, start a new line.
+                lines.push(Line::text_at_speed(line, speed));
+                line = word.to_string();
+            } else {
+                line.push_str(word);
+            }
+        }
+        if !line.is_empty() {
+            lines.push(Line::text_at_speed(line, speed));
+        }
+
+        let mut pages = vec![];
+        let mut page = Page {
+            lines: vec![],
+            current_line: 0,
+        };
+        for line in lines.drain(..) {
+            page.lines.push(line);
+            if page.lines.len() == lines_per_page {
+                pages.push(page);
+                page = Page {
+                    lines: vec![],
+                    current_line: 0,
+                };
+            }
+        }
+        if page.lines.len() > 0 {
+            pages.push(page);
+        }
+
+        TextBox {
+            bounds,
+            leading,
+            text: Text {
+                pages,
+                current_page: 0,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
-enum LineState {
+pub enum LineState {
     Hidden,
     TypeWriter { revealed_count: usize }, // one character drawn at a time
     Visible,
 }
 
 #[derive(Debug, Clone, Copy)]
-enum LineSpeed {
+pub enum LineSpeed {
     Slow,
     Normal,
     Fast,
@@ -69,7 +153,7 @@ struct Line {
 }
 
 impl Line {
-    fn text_at_speed(text: String, speed: LineSpeed) -> Self {
+    pub fn text_at_speed(text: String, speed: LineSpeed) -> Self {
         Self {
             text,
             line_state: LineState::Hidden,
@@ -78,7 +162,7 @@ impl Line {
         }
     }
 
-    fn active_text(&self) -> &str {
+    pub fn active_text(&self) -> &str {
         match self.line_state {
             LineState::Hidden => &self.text[0..0],
             LineState::TypeWriter { revealed_count } => &self.text[0..revealed_count],
@@ -86,7 +170,7 @@ impl Line {
         }
     }
 
-    fn advance_typewriter(&mut self) {
+    pub fn advance_typewriter(&mut self) {
         self.line_state = match self.line_state {
             LineState::Hidden => LineState::TypeWriter { revealed_count: 1 },
             LineState::Visible => LineState::Visible,
@@ -102,7 +186,7 @@ impl Line {
         }
     }
 
-    fn update(&mut self, ticks: u32) {
+    pub fn update(&mut self, ticks: u32) {
         self.timer = self.timer.advance(ticks);
         if let LineSpeed::Instant = self.line_speed {
             self.line_state = LineState::Visible;
@@ -116,13 +200,14 @@ impl Line {
 }
 
 #[derive(Debug, Clone)]
-struct Page {
+pub struct Page {
+    // Should we include speaker in here to identify the speaker per page?
     lines: Vec<Line>,
     current_line: usize,
 }
 
 impl Page {
-    fn update(&mut self, ticks: u32) {
+    pub fn update(&mut self, ticks: u32) {
         if self.current_line >= self.lines.len() {
             return;
         }
@@ -132,20 +217,32 @@ impl Page {
 }
 
 #[derive(Debug, Clone)]
-struct Text {
+pub struct Text {
     pages: Vec<Page>,
     current_page: usize,
 }
 
 impl Text {
-    // fn new(text: String, max_width: usize, renderer)
-
-    fn update(&mut self, ticks: u32) {
+    pub fn update(&mut self, ticks: u32) {
         if self.current_page >= self.pages.len() {
             return;
         }
 
         self.pages[self.current_page].update(ticks);
+    }
+
+    pub fn lines(&self) -> Vec<&str> {
+        let mut v = vec![];
+        for page in &self.pages {
+            for line in &page.lines {
+                v.push(line.active_text());
+            }
+        }
+        v
+        // self.pages
+        //     .into_iter()
+        //     .flat_map(|page| page.lines.into_iter().map(|line| line.active_text()))
+        //     .collect()
     }
 }
 
