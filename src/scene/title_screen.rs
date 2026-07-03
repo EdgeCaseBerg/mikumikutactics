@@ -69,23 +69,21 @@ impl Scene for TitleScene {
         };
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
-        let remove_fade = self.fade.as_mut().map_or(false, |fade| {
+        if let Some(mut fade) = self.fade.take() {
             fade.update(ticks, game_context);
-            match (fade.is_done(), &fade.transition) {
+            let fade = match (fade.is_done(), &fade.transition) {
+                (true, Transition::FadeIn { .. }) => None,
                 (true, Transition::FadeOut { .. }) => {
                     // TitleScene for now because I don't have anything else to use
                     game_context.next_scene = Some(Box::new(TitleScene::default()));
-                    // dont remove the fade on fadeout because we're going to swap scenes
+                    // don't remove the fade on fadeout because we're going to swap scenes
                     // anyway and we need to be at the ReadyState::Ready to trigger fully
                     // opaque draws.
-                    false
+                    Some(fade)
                 }
-                (true, Transition::FadeIn { .. }) => true,
-                _ => false,
-            }
-        });
-        if remove_fade {
-            self.fade = None;
+                _ => Some(fade),
+            };
+            self.fade = fade;
         }
 
         let layout = TitleScene::layout(&game_context);
@@ -167,10 +165,13 @@ mod transition_scene_tests {
 
         // And confirm there was a fade at some point here.
         let binding = actions.borrow();
-        let action = binding.iter().find(|action| match action {
-            RenderCommand::FillRect { color, .. } => color.a == 1.0,
-            _ => false,
-        });
-        assert!(action.is_some())
+        let times_faded = binding
+            .iter()
+            .filter(|action| match action {
+                RenderCommand::FillRect { color, .. } => color.a == 1.0,
+                _ => false,
+            })
+            .count();
+        assert!(times_faded >= 1);
     }
 }
