@@ -25,6 +25,8 @@ pub struct TextBox {
     pub bounds: Rect,
     /// leading is the vertical space between lines.
     pub leading: i32,
+    /// The height of each line (leading above and below not included)
+    pub line_height: i32,
     /// The actual text, separated in pages that fit in the box's bounds
     pub text: Text,
 }
@@ -45,6 +47,7 @@ impl TextBox {
             return TextBox {
                 bounds,
                 leading,
+                line_height: font_metrics.line_height(),
                 text: Text {
                     pages: vec![Page {
                         lines: vec![Line::text_at_speed(text, speed)],
@@ -107,6 +110,7 @@ impl TextBox {
         TextBox {
             bounds,
             leading,
+            line_height: font_metrics.line_height(),
             text: Text {
                 pages,
                 current_page: 0,
