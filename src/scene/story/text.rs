@@ -138,10 +138,10 @@ pub enum LineSpeed {
 impl From<LineSpeed> for ReadyState {
     fn from(line_speed: LineSpeed) -> ReadyState {
         let ticks_between_characters = match line_speed {
-            LineSpeed::Slow => 45,
-            LineSpeed::Normal => 35,
-            LineSpeed::Fast => 25,
-            LineSpeed::Faster => 15,
+            LineSpeed::Slow => 10,
+            LineSpeed::Normal => 5,
+            LineSpeed::Fast => 3,
+            LineSpeed::Faster => 2,
             LineSpeed::Instant => 0,
         };
         ReadyState::Cooldown {
