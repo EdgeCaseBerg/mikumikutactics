@@ -156,6 +156,14 @@ struct Line {
 }
 
 impl Line {
+    pub fn is_visible(&self) -> bool {
+        if let LineState::Visible = self.line_state {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn text_at_speed(text: String, speed: LineSpeed) -> Self {
         Self {
             text,
@@ -210,12 +218,19 @@ pub struct Page {
 }
 
 impl Page {
+    pub fn is_visible(&self) -> bool {
+        self.current_line >= self.lines.len()
+    }
+
     pub fn update(&mut self, ticks: u32) {
-        if self.current_line >= self.lines.len() {
+        if self.is_visible() {
             return;
         }
 
         self.lines[self.current_line].update(ticks);
+        if self.lines[self.current_line].is_visible() {
+            self.current_line = self.current_line + 1;
+        }
     }
 }
 
@@ -232,6 +247,11 @@ impl Text {
         }
 
         self.pages[self.current_page].update(ticks);
+        if self.pages[self.current_page].is_visible() {
+            // TODO this is just for testing, this should trigger
+            // on user input to advance, not automatically
+            self.current_page += 1;
+        }
     }
 
     pub fn lines(&self) -> Vec<&str> {
