@@ -74,10 +74,12 @@ impl TextBox {
                 // this pushes us too far, start a new line.
                 lines.push(Line::text_at_speed(line, speed));
                 line = word.to_string();
+                size = font_metrics.measure_width(&word);
             } else {
+                size = size_of_line;
                 line.push_str(word);
-                line.push(' ');
             }
+            line.push(' ');
         }
         if !line.is_empty() {
             lines.push(Line::text_at_speed(line, speed));
