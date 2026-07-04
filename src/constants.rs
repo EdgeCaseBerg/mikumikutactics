@@ -11,6 +11,7 @@ pub const TEXTURE_ID_FONTSHEET: TextureId = TextureId(3);
 pub const TEXTURE_ID_GAMEOVER: TextureId = TextureId(4);
 pub const TEXTURE_ID_MIKU_WAVE: TextureId = TextureId(5);
 pub const TEXTURE_ID_TITLE_BG: TextureId = TextureId(6);
+pub const TEXTURE_ID_STORY_BG: TextureId = TextureId(7);
 
 pub fn id_to_relative_path(id: TextureId) -> PathBuf {
     match id {
@@ -25,6 +26,9 @@ pub fn id_to_relative_path(id: TextureId) -> PathBuf {
             .join("BoldPixels-edit.png"),
         TEXTURE_ID_MIKU_WAVE => PathBuf::new().join("made-by-me").join("miku-wave.png"),
         TEXTURE_ID_TITLE_BG => PathBuf::new().join("made-by-me").join("titlescreen.png"),
+        TEXTURE_ID_STORY_BG => PathBuf::new()
+            .join("made-by-me")
+            .join("planning-layout.png"),
         _ => PathBuf::new(), // could maybe panic here, though stuff like unreachable! isnt a const function
     }
 }
@@ -277,6 +281,19 @@ pub const fn sprite_info_title() -> SpriteInfo {
         start_y: 0,
         width: 480,
         height: 270,
+        frames: 1,
+        current_frame: 0,
+        framerate_per_second: 60,
+        delta: 0,
+    }
+}
+
+pub const fn sprite_info_planning_layout_bg() -> SpriteInfo {
+    SpriteInfo {
+        start_x: 0,
+        start_y: 0,
+        width: 1280,
+        height: 720,
         frames: 1,
         current_frame: 0,
         framerate_per_second: 60,
