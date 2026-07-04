@@ -185,6 +185,10 @@ impl Line {
         }
     }
 
+    pub fn raw_text(&self) -> &str {
+        &self.text[..]
+    }
+
     pub fn advance_typewriter(&mut self) {
         self.line_state = match self.line_state {
             LineState::Hidden => LineState::TypeWriter { revealed_count: 1 },
@@ -236,6 +240,14 @@ impl Page {
             self.current_line = self.current_line + 1;
         }
     }
+
+    pub fn raw_text(&self) -> String {
+        let mut v = String::new();
+        for line in &self.lines {
+            v.push_str(line.raw_text());
+        }
+        v
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -260,16 +272,21 @@ impl Text {
 
     pub fn lines(&self) -> Vec<&str> {
         let mut v = vec![];
-        for page in &self.pages {
-            for line in &page.lines {
+        let page = &self.pages[self.current_page.min(self.pages.len() - 1)];
+        for line in &page.lines {
+            if !line.active_text().is_empty() {
                 v.push(line.active_text());
             }
         }
         v
-        // self.pages
-        //     .into_iter()
-        //     .flat_map(|page| page.lines.into_iter().map(|line| line.active_text()))
-        //     .collect()
+    }
+
+    pub fn raw_text(&self) -> String {
+        let mut v = String::new();
+        for page in &self.pages {
+            v.push_str(&page.raw_text());
+        }
+        v
     }
 }
 
