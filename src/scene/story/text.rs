@@ -76,6 +76,7 @@ impl TextBox {
                 line = word.to_string();
             } else {
                 line.push_str(word);
+                line.push(' ');
             }
         }
         if !line.is_empty() {
