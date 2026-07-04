@@ -61,7 +61,7 @@ impl TextBox {
         // We have to split the text up into multiple lines
         // How many lines can we fit into the bounds?
         let line_height = font_metrics.line_height() + leading * 2;
-        let lines_per_page = (bounds.height as usize / line_height as usize).min(1);
+        let lines_per_page = (bounds.height as usize / line_height as usize).max(1);
 
         let mut size = 0;
         let mut words = text.split_ascii_whitespace();
