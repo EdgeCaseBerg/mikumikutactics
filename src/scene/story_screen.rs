@@ -2,8 +2,8 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG,
-    sprite_info_planning_layout_bg,
+    FontId, SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET,
+    TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
 };
 use crate::font::BitmapFontMetrics;
 use crate::font::FONTSHEET_LAYOUT;
@@ -84,6 +84,13 @@ impl Scene for StoryScene {
 
         if let Some(ref mut audio) = game_context.audio {
             let _ = audio.load_sfx(SFX_ID_BLIP);
+        }
+
+        if let (Some(font_library), Some(asset_loader)) = (
+            game_context.font_library.as_mut(),
+            game_context.asset_loader.as_mut(),
+        ) {
+            font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
         }
 
         // Now that we have the game context and know how large the screen is, resize the
