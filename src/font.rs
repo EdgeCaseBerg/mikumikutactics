@@ -139,7 +139,7 @@ pub fn get_rects_for_str(str: &str) -> Vec<Rect> {
     str.chars()
         .map(|c| {
             let ascii = c as u32;
-            if ascii > 127 {
+            if ascii > 127 || ascii < 32{
                 cells[0].clone()
             } else {
                 cells[ascii as usize - 32].clone()
