@@ -140,8 +140,8 @@ impl From<LineSpeed> for ReadyState {
         let ticks_between_characters = match line_speed {
             LineSpeed::Slow => 10,
             LineSpeed::Normal => 5,
-            LineSpeed::Fast => 3,
-            LineSpeed::Faster => 2,
+            LineSpeed::Fast => 2,
+            LineSpeed::Faster => 1,
             LineSpeed::Instant => 0,
         };
         ReadyState::Cooldown {
