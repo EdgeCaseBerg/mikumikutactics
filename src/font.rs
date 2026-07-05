@@ -17,9 +17,11 @@ impl FontMetrics for BitmapFontMetrics {
     }
 
     fn measure_width(&self, s: &str) -> i32 {
-        get_rects_for_str(s)
-            .iter()
-            .fold(0, |acc, cell| acc + cell.width as i32)
+        let (w, _) = self.layout.cell_size();
+        (w * s.len() as isize) as i32
+        // get_rects_for_str(s)
+        //     .iter()
+        //     .fold(0, |acc, cell| acc + cell.width as i32)
     }
 }
 
