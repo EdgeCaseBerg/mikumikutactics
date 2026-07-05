@@ -181,9 +181,9 @@ impl Scene for StoryScene {
 
 #[cfg(test)]
 mod dialogue_scene_tests {
-    use super::*;
-    use crate::backend_dummy::FakeRenderer;
-    use crate::backend_dummy::click_button_with_left_mouse;
+    // use super::*;
+    // use crate::backend_dummy::FakeRenderer;
+    // use crate::backend_dummy::click_button_with_left_mouse;
 
     #[test]
     fn we_should_test_interactions() {
