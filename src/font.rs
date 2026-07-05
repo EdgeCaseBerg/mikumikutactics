@@ -1,18 +1,10 @@
 use crate::Rect;
 use crate::asset_loader::AssetLoader;
-use crate::constants::{TEXTURE_ID_FONTSHEET, TextureId};
+use crate::constants::{FontId, TEXTURE_ID_FONTSHEET, TextureId};
 use crate::grid_layout::GridLayout;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
-
-#[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
-pub enum FontId {
-    BoldPixels, // 16px monospace.
-    BoldPixelScaled { pixel_size: u32 },
-    // it'd be nice to do this, but PathBuf does not implement Copy
-    // Dynamic { path: PathBuf, pixel_size: u32 },
-}
 
 pub trait FontMetrics {
     fn line_height(&self) -> i32;

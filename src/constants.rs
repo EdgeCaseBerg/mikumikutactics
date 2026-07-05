@@ -80,6 +80,14 @@ pub fn music_id_to_relative_path(id: MusicId) -> PathBuf {
     }
 }
 
+#[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
+pub enum FontId {
+    BoldPixels, // 16px monospace.
+    BoldPixelScaled { pixel_size: u32 },
+    // it'd be nice to do this, but PathBuf does not implement Copy
+    // Dynamic { path: PathBuf, pixel_size: u32 },
+}
+
 pub const fn sprite_info_leek() -> SpriteInfo {
     SpriteInfo {
         start_x: 0,
