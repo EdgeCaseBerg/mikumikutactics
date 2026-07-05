@@ -55,7 +55,15 @@ impl Default for StoryScene {
                     width: 10000, // huge values to avoid math that we'll redo during .init
                     height: 10000,
                 },
-                "Hello there this is a very long string of text I'm hoping will be long enough to be interesting or something I guess though who knows lalalalalal yay this is so fun.".to_string(),
+                concat!(
+                    "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
+                    "or something I guess though who knows lalalalalal yay this is so fun. ",
+                    "There are no line breaks in the text at all, so you could load this from a file or similar and then ",
+                    "it would happily display on the screen with no issues at all. Isn't that just lovely. Thought this ",
+                    "also means that if you want a newline that's explicit, I suppose you'd need to start a new page or something",
+                    "... how bothersome I suppose."
+                ).to_string(),
+                 
                 &BitmapFontMetrics {
                     layout: FONTSHEET_LAYOUT,
                 },
