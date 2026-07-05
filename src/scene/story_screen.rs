@@ -63,7 +63,6 @@ impl Default for StoryScene {
                     "also means that if you want a newline that's explicit, I suppose you'd need to start a new page or something",
                     "... how bothersome I suppose."
                 ).to_string(),
-                 
                 &BitmapFontMetrics {
                     layout: FONTSHEET_LAYOUT,
                 },
