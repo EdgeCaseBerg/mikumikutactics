@@ -8,6 +8,7 @@ use crate::constants::{
 use crate::font::BitmapFontMetrics;
 use crate::font::FONTSHEET_LAYOUT;
 use crate::font::FontMetrics;
+use crate::font::LoadedFont;
 use crate::font::get_rects_for_str;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -79,7 +80,6 @@ impl Scene for StoryScene {
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_STORY_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_FONTSHEET);
         }
 
         if let Some(ref mut audio) = game_context.audio {
@@ -90,7 +90,7 @@ impl Scene for StoryScene {
             game_context.font_library.as_mut(),
             game_context.asset_loader.as_mut(),
         ) {
-            font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
+            let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
         }
 
         // Now that we have the game context and know how large the screen is, resize the
@@ -142,29 +142,37 @@ impl Scene for StoryScene {
             destination: Rect::new(0, 0, layout.area.width, layout.area.height),
         });
 
+        let maybe_font: Option<&LoadedFont> = game_context
+            .font_library
+            .as_mut()
+            .map(|font_library| font_library.get(FontId::BoldPixels))
+            .flatten();
+
         // TODO: make a text renderer we can shuffle this off to
         let anchor = self.text_box.bounds;
-        for (line_idx, line) in self.text_box.text.lines().iter().enumerate() {
-            let glyphs = get_rects_for_str(&line);
-            for (c, src) in glyphs.iter().enumerate() {
-                let glyph_display_width = src.width;
-                let glyph_display_height = self.text_box.line_height;
-                let leading = self.text_box.leading;
-                let offset_y = leading as usize
-                    + line_idx * (leading + self.text_box.line_height) as usize
-                    + leading as usize * line_idx;
-                let start_offset = anchor.x;
-                let cell = Rect {
-                    x: start_offset + c as isize * glyph_display_width as isize,
-                    y: anchor.y as isize + offset_y as isize,
-                    width: glyph_display_width,
-                    height: glyph_display_height as isize,
-                };
-                renderer.send_command(RenderCommand::DrawRect {
-                    texture_id: TEXTURE_ID_FONTSHEET,
-                    source: *src,
-                    destination: cell,
-                });
+        if let Some(font) = maybe_font {
+            for (line_idx, line) in self.text_box.text.lines().iter().enumerate() {
+                let glyphs = font.glyphs_for(&line);
+                for (c, src) in glyphs.iter().enumerate() {
+                    let glyph_display_width = src.width;
+                    let glyph_display_height = self.text_box.line_height;
+                    let leading = self.text_box.leading;
+                    let offset_y = leading as usize
+                        + line_idx * (leading + self.text_box.line_height) as usize
+                        + leading as usize * line_idx;
+                    let start_offset = anchor.x;
+                    let cell = Rect {
+                        x: start_offset + c as isize * glyph_display_width as isize,
+                        y: anchor.y as isize + offset_y as isize,
+                        width: glyph_display_width,
+                        height: glyph_display_height as isize,
+                    };
+                    renderer.send_command(RenderCommand::DrawRect {
+                        texture_id: font.texture_id,
+                        source: *src,
+                        destination: cell,
+                    });
+                }
             }
         }
         self.fade.as_mut().map(|f| f.draw(game_context));
