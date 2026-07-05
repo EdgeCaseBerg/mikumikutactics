@@ -2,6 +2,7 @@ use crate::Rect;
 use crate::asset_loader::AssetLoader;
 use crate::constants::{TEXTURE_ID_FONTSHEET, TextureId};
 use crate::grid_layout::GridLayout;
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 
@@ -63,6 +64,45 @@ impl FontMetrics for LoadedFont {
         self.glyphs_for(s)
             .into_iter()
             .fold(0, |acc, rect| acc + rect.width as i32)
+    }
+}
+
+struct BitmapFontLibrary {
+    fonts: HashMap<FontId, LoadedFont>,
+}
+
+impl BitmapFontLibrary {
+    pub fn new() -> Self {
+        Self {
+            fonts: HashMap::new(),
+        }
+    }
+}
+
+impl FontLibrary for BitmapFontLibrary {
+    fn ensure(&mut self, id: FontId, asset_loader: &mut dyn AssetLoader) -> FontResult<()> {
+        let texture_id = match id {
+            FontId::BoldPixels | FontId::BoldPixelScaled { .. } => TEXTURE_ID_FONTSHEET,
+        };
+        asset_loader.ensure_texture_spritesheet_loaded(texture_id);
+        // NOT unsafe, we literally make the bytes here.
+        let ascii = unsafe {
+            let bytes: Vec<u8> = (0u8..=127).collect();
+            String::from_utf8_unchecked(bytes)
+        };
+        // In a backend specific font library, we'd render the font to a surface, load it into a texture
+        // and then create the appropriate rects to fetch each letter out as needed.
+        let ascii_glyphs = get_rects_for_str(&ascii);
+        let font = LoadedFont {
+            id,
+            texture_id,
+            ascii_glyphs,
+        };
+        self.fonts.insert(id, font);
+        Ok(())
+    }
+    fn get(&self, id: FontId) -> Option<&LoadedFont> {
+        self.fonts.get(&id)
     }
 }
 
