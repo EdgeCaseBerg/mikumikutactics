@@ -20,15 +20,15 @@ pub trait FontLibrary {
 
 #[derive(Debug, Clone)]
 pub struct LoadedFont {
-    id: FontId,
+    pub id: FontId,
     /// Fonts are loaded into a texture atlas that should have a corresponding texture.
-    texture_id: TextureId,
+    pub texture_id: TextureId,
     /// Glyph locations within the atlus in ascii order 0..127 (Fonts without characters should pad out 0..32 with spaces or similar markers)
-    ascii_glyphs: Vec<Rect>,
+    pub ascii_glyphs: Vec<Rect>,
 }
 
 impl LoadedFont {
-    fn glyphs_for(&self, s: &str) -> Vec<Rect> {
+    pub fn glyphs_for(&self, s: &str) -> Vec<Rect> {
         s.chars()
             .map(|c| {
                 let ascii = c as u32;
