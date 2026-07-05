@@ -89,6 +89,15 @@ impl Button {
             });
         }
 
+        // how do we write our renderer such that we can support things like this
+        // where we're being a bit dynamic in the size like this? Or is that a fools
+        // errand and we shouldn't be trying to make the font fit the button, but the
+        // other way around?
+        // renderer.send_command(RenderCommand::DrawText {
+        //     font_id: FONT_ID,
+        //     destination: anchor
+        // })
+
         let glyphs = get_rects_for_str(&self.text);
         let (_, cy) = anchor.center();
         for (c, src) in glyphs.iter().enumerate() {
