@@ -25,9 +25,10 @@ trait FontLibrary {
 
 #[derive(Debug, Clone)]
 pub struct LoadedFont {
+    id: FontId,
     /// Fonts are loaded into a texture atlas that should have a corresponding texture.
     texture_id: TextureId,
-    /// Glyph locations within the atlus in ascii order 0..127
+    /// Glyph locations within the atlus in ascii order 0..127 (Fonts without characters should pad out 0..32 with spaces or similar markers)
     ascii_glyphs: Vec<Rect>,
 }
 
@@ -39,7 +40,7 @@ impl LoadedFont {
                 if ascii > 127 {
                     self.ascii_glyphs[0].clone()
                 } else {
-                    self.ascii_glyphs[ascii as usize - 32].clone()
+                    self.ascii_glyphs[ascii as usize].clone()
                 }
             })
             .collect()
@@ -52,7 +53,7 @@ impl FontMetrics for LoadedFont {
         if self.ascii_glyphs.len() <= 0 {
             return 0; // This should never happen. But still.
         }
-        // As our own little convention, we'll use L as the height
+        // As our own little convention, we'll use L as the height because its nice and tall and its arbitrary
         self.ascii_glyphs['L' as usize].height as i32
     }
 
