@@ -1,11 +1,63 @@
 use crate::Rect;
+use crate::constants::TextureId;
 use crate::grid_layout::GridLayout;
+use std::path::PathBuf;
+
+#[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
+pub enum FontId {
+    BoldPixels, // 16px monospace.
+    BoldPixelScaled { pixel_size: u32 },
+    // it'd be nice to do this, but PathBuf does not implement Copy
+    // Dynamic { path: PathBuf, pixel_size: u32 },
+}
 
 pub trait FontMetrics {
     fn line_height(&self) -> i32;
     fn measure_width(&self, s: &str) -> i32;
 }
 
+pub struct LoadedFont {
+    /// Fonts are loaded into a texture atlas that should have a corresponding texture.
+    texture_id: TextureId,
+    /// Glyph locations within the atlus in ascii order 0..127
+    ascii_glyphs: Vec<Rect>,
+}
+
+impl LoadedFont {
+    fn glyphs_for(&self, s: &str) -> Vec<Rect> {
+        s.chars()
+            .map(|c| {
+                let ascii = c as u32;
+                if ascii > 127 {
+                    self.ascii_glyphs[0].clone()
+                } else {
+                    self.ascii_glyphs[ascii as usize - 32].clone()
+                }
+            })
+            .collect()
+    }
+}
+
+impl FontMetrics for LoadedFont {
+    fn line_height(&self) -> i32 {
+        // ascii_glyphs.iter().max_by_key(|r| r.height)
+        if self.ascii_glyphs.len() <= 0 {
+            return 0; // This should never happen. But still.
+        }
+        // As our own little convention, we'll use L as the height
+        self.ascii_glyphs['L' as usize].height as i32
+    }
+
+    fn measure_width(&self, s: &str) -> i32 {
+        self.glyphs_for(s)
+            .into_iter()
+            .fold(0, |acc, rect| acc + rect.width as i32)
+    }
+}
+
+/* BitmapFontMetrics is from experimentation with bitmaps before we added the font library in
+ * and is preserved while we're working on migrating to the loaded font interface.
+ */
 pub struct BitmapFontMetrics {
     pub layout: GridLayout,
 }
@@ -19,9 +71,6 @@ impl FontMetrics for BitmapFontMetrics {
     fn measure_width(&self, s: &str) -> i32 {
         let (w, _) = self.layout.cell_size();
         (w * s.len() as isize) as i32
-        // get_rects_for_str(s)
-        //     .iter()
-        //     .fold(0, |acc, cell| acc + cell.width as i32)
     }
 }
 
