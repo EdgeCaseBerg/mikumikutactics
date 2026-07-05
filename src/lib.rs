@@ -23,6 +23,7 @@ pub mod scene;
 use std::ops::{Add, Div, Sub};
 
 use crate::backend::init_backend;
+use crate::font::BitmapFontLibrary;
 use crate::game::Game;
 use crate::game_options::GameOptions;
 use crate::scene::Scene;
@@ -150,6 +151,7 @@ pub fn run(game_options: &GameOptions, mut game: Game) {
     let asset_loader = event_loop.create_asset_loader(game_options);
     let audio = event_loop.create_audio(game_options);
     let clock = backend.create_clock();
+    game_context.font_library = Some(Box::new(BitmapFontLibrary::new()));
     game_context.screen_size = (game_options.window_width, game_options.window_height);
     game_context.renderer = Some(renderer);
     game_context.asset_loader = Some(asset_loader);

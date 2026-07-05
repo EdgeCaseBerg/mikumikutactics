@@ -1,6 +1,7 @@
 use crate::asset_loader::AssetLoader;
 use crate::audio::Audio;
 use crate::clock::Clock;
+use crate::font::FontLibrary;
 use crate::renderer::Color;
 use crate::renderer::Renderer;
 use crate::scene::Scene;
@@ -56,6 +57,7 @@ pub struct GameContext {
     pub next_scene: Option<Box<dyn Scene>>,
     pub asset_loader: Option<Box<dyn AssetLoader>>,
     pub audio: Option<Box<dyn Audio>>,
+    pub font_library: Option<Box<dyn FontLibrary>>,
     pub shutdown_flag: bool,
     pub clock: Option<Box<dyn Clock>>,
 }
@@ -69,6 +71,7 @@ impl Default for GameContext {
             next_scene: None,
             asset_loader: None,
             audio: None,
+            font_library: None,
             shutdown_flag: false,
             clock: None,
         }
