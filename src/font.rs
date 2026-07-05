@@ -1,5 +1,5 @@
 use crate::Rect;
-use crate::constants::TextureId;
+use crate::asset_loader::AssetLoader;
 use crate::grid_layout::GridLayout;
 use std::path::PathBuf;
 
@@ -16,6 +16,14 @@ pub trait FontMetrics {
     fn measure_width(&self, s: &str) -> i32;
 }
 
+pub type FontResult<T> = Result<T, Box<dyn Error>>;
+
+trait FontLibrary {
+    fn ensure(&mut self, id: FontId, asset_loader: &mut dyn AssetLoader) -> FontResult<()>;
+    fn get(&self, id: FontId) -> Option<&LoadedFont>;
+}
+
+#[derive(Debug, Clone)]
 pub struct LoadedFont {
     /// Fonts are loaded into a texture atlas that should have a corresponding texture.
     texture_id: TextureId,
