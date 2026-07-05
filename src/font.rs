@@ -13,7 +13,7 @@ pub trait FontMetrics {
 
 pub type FontResult<T> = Result<T, Box<dyn Error>>;
 
-trait FontLibrary {
+pub trait FontLibrary {
     fn ensure(&mut self, id: FontId, asset_loader: &mut dyn AssetLoader) -> FontResult<()>;
     fn get(&self, id: FontId) -> Option<&LoadedFont>;
 }
@@ -59,8 +59,8 @@ impl FontMetrics for LoadedFont {
     }
 }
 
-struct BitmapFontLibrary {
-    fonts: HashMap<FontId, LoadedFont>,
+pub struct BitmapFontLibrary {
+    pub fonts: HashMap<FontId, LoadedFont>,
 }
 
 impl BitmapFontLibrary {
