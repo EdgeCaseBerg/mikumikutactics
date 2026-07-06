@@ -2,23 +2,19 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    FontId, SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET,
-    TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
+    FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
 };
 use crate::font::BitmapFontMetrics;
 use crate::font::FONTSHEET_LAYOUT;
 use crate::font::FontMetrics;
 use crate::font::LoadedFont;
-use crate::font::get_rects_for_str;
+use crate::font::draw_text_anchored;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
-use crate::renderer::Color;
 use crate::renderer::RenderCommand;
-use crate::scene::button::Button;
 use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::transitions::{Transition, TransitionScene};
-use crate::{ReadyState, advance_ready_state}; // if this goes well, onsider font renderer methods to avoid importing this
 
 pub struct StoryScene {
     bg: SpriteInfo,
@@ -148,31 +144,20 @@ impl Scene for StoryScene {
             .map(|font_library| font_library.get(FontId::BoldPixels))
             .flatten();
 
-        // TODO: make a text renderer we can shuffle this off to
         let anchor = self.text_box.bounds;
         if let Some(font) = maybe_font {
             for (line_idx, line) in self.text_box.text.lines().iter().enumerate() {
-                let glyphs = font.glyphs_for(&line);
-                for (c, src) in glyphs.iter().enumerate() {
-                    let glyph_display_width = src.width;
-                    let glyph_display_height = self.text_box.line_height;
-                    let leading = self.text_box.leading;
-                    let offset_y = leading as usize
-                        + line_idx * (leading + self.text_box.line_height) as usize
-                        + leading as usize * line_idx;
-                    let start_offset = anchor.x;
-                    let cell = Rect {
-                        x: start_offset + c as isize * glyph_display_width as isize,
-                        y: anchor.y as isize + offset_y as isize,
-                        width: glyph_display_width,
-                        height: glyph_display_height as isize,
-                    };
-                    renderer.send_command(RenderCommand::DrawRect {
-                        texture_id: font.texture_id,
-                        source: *src,
-                        destination: cell,
-                    });
-                }
+                let leading = self.text_box.leading;
+                let offset_y = leading as usize
+                    + line_idx * (leading + self.text_box.line_height) as usize
+                    + leading as usize * line_idx;
+                let anchor = Rect {
+                    x: anchor.x,
+                    y: anchor.y as isize + offset_y as isize,
+                    width: anchor.width,
+                    height: self.text_box.line_height as isize,
+                };
+                draw_text_anchored(&line, &anchor, &font, renderer.as_mut());
             }
         }
         self.fade.as_mut().map(|f| f.draw(game_context));
