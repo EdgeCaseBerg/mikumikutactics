@@ -2,9 +2,10 @@ use crate::Rect;
 use crate::asset_loader::AssetLoader;
 use crate::constants::{FontId, TEXTURE_ID_FONTSHEET, TextureId};
 use crate::grid_layout::GridLayout;
+use crate::renderer::RenderCommand;
+use crate::renderer::Renderer;
 use std::collections::HashMap;
 use std::error::Error;
-use std::path::PathBuf;
 
 pub trait FontMetrics {
     fn line_height(&self) -> i32;
@@ -95,6 +96,32 @@ impl FontLibrary for BitmapFontLibrary {
     }
     fn get(&self, id: FontId) -> Option<&LoadedFont> {
         self.fonts.get(&id)
+    }
+}
+
+pub fn draw_text_anchored(
+    text: &str,
+    anchor: &Rect,
+    font: &LoadedFont,
+    renderer: &mut dyn Renderer,
+) {
+    let glyphs = font.glyphs_for(&text);
+    let glyph_display_height = font.line_height() as isize;
+
+    for (c, src) in glyphs.iter().enumerate() {
+        let glyph_display_width = src.width;
+        let x_offset = c as isize * glyph_display_width as isize;
+        let cell = Rect {
+            x: anchor.x + x_offset,
+            y: anchor.y,
+            width: glyph_display_width,
+            height: glyph_display_height,
+        };
+        renderer.send_command(RenderCommand::DrawRect {
+            texture_id: font.texture_id,
+            source: *src,
+            destination: cell,
+        });
     }
 }
 
