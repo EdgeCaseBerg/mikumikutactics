@@ -2,7 +2,7 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
+    FontId, SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -58,16 +58,19 @@ impl Scene for TitleScene {
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-        } else {
-            return;
         };
 
         if let Some(ref mut audio) = game_context.audio {
             let _ = audio.load_sfx(SFX_ID_MEME);
             let _ = audio.load_sfx(SFX_ID_BLIP);
-        } else {
-            return;
         };
+
+        if let (Some(font_library), Some(asset_loader)) = (
+            game_context.font_library.as_mut(),
+            game_context.asset_loader.as_mut(),
+        ) {
+            let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
+        }
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
