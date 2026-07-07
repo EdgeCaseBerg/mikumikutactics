@@ -4,7 +4,6 @@ use crate::SpriteInfo;
 use crate::constants::{
     FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
 };
-use crate::font::BitmapFontMetrics;
 use crate::font::FONTSHEET_LAYOUT;
 use crate::font::LoadedFont;
 use crate::font::draw_text_anchored;

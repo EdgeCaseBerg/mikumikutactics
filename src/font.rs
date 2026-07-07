@@ -125,25 +125,6 @@ pub fn draw_text_anchored(
     }
 }
 
-/* BitmapFontMetrics is from experimentation with bitmaps before we added the font library in
- * and is preserved while we're working on migrating to the loaded font interface.
- */
-pub struct BitmapFontMetrics {
-    pub layout: GridLayout,
-}
-
-impl FontMetrics for BitmapFontMetrics {
-    fn line_height(&self) -> i32 {
-        let (_, h) = self.layout.cell_size();
-        h as i32
-    }
-
-    fn measure_width(&self, s: &str) -> i32 {
-        let (w, _) = self.layout.cell_size();
-        (w * s.len() as isize) as i32
-    }
-}
-
 pub const FONTSHEET_LAYOUT: GridLayout = {
     GridLayout {
         area: Rect {
