@@ -64,7 +64,7 @@ impl TextBox {
         let lines_per_page = (bounds.height as usize / line_height as usize).max(1);
 
         let mut size = 0;
-        let mut words = text.split_ascii_whitespace();
+        let words = text.split_ascii_whitespace();
         let mut lines = vec![];
         let mut line = String::new();
         for word in words {
@@ -72,12 +72,13 @@ impl TextBox {
                 continue;
             }
 
-            let size_of_line = size + font_metrics.measure_width(&word);
+            let size_of_word = font_metrics.measure_width(&word) + 1; //add 1 for space
+            let size_of_line = size + size_of_word;
             if size_of_line >= max_width {
                 // this pushes us too far, start a new line.
                 lines.push(Line::text_at_speed(line, speed));
                 line = word.to_string();
-                size = font_metrics.measure_width(&word);
+                size = size_of_word;
             } else {
                 size = size_of_line;
                 line.push_str(word);
