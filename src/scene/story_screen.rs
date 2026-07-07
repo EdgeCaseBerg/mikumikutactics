@@ -6,7 +6,6 @@ use crate::constants::{
 };
 use crate::font::BitmapFontMetrics;
 use crate::font::FONTSHEET_LAYOUT;
-use crate::font::FontMetrics;
 use crate::font::LoadedFont;
 use crate::font::draw_text_anchored;
 use crate::game::GameContext;
@@ -19,9 +18,12 @@ use crate::scene::transitions::{Transition, TransitionScene};
 pub struct StoryScene {
     bg: SpriteInfo,
     fade: Option<TransitionScene>,
-    // font: Box<dyn FontMetrics>,
-    text_box_loaded: bool,
-    text_box: TextBox,
+    text_box: Option<TextBox>,
+    // Placement locations (Grid unit space, used for converting to screen coordinates )
+    placement_text: Rect,
+    // placement_left_portrait: Rect,
+    // placement_right_portrait: Rect,
+    // placement_center_portrait: Rect,
 }
 
 impl StoryScene {
@@ -41,31 +43,25 @@ impl Default for StoryScene {
         StoryScene {
             bg: sprite_info_planning_layout_bg(),
             fade: None,
-            // font: Box::new(BitmapFontMetrics {
-            //     layout: FONTSHEET_LAYOUT,
-            // }),
-            text_box_loaded: false,
-            text_box: TextBox::new(
-                Rect {
-                    x: 100,
-                    y: 100,
-                    width: 10000, // huge values to avoid math that we'll redo during .init
-                    height: 10000,
-                },
-                concat!(
-                    "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
-                    "or something I guess though who knows lalalalalal yay this is so fun. ",
-                    "There are no line breaks in the text at all, so you could load this from a file or similar and then ",
-                    "it would happily display on the screen with no issues at all. Isn't that just lovely. Thought this ",
-                    "also means that if you want a newline that's explicit, I suppose you'd need to start a new page or something",
-                    "... how bothersome I suppose."
-                ).to_string(),
-                &BitmapFontMetrics {
-                    layout: FONTSHEET_LAYOUT,
-                },
-                LineSpeed::Normal,
-            ),
+            text_box: None,
+            placement_text: Rect {
+                x: 2,
+                y: 6,
+                width: 10,
+                height: 3,
+            },
         }
+    }
+}
+
+fn text_box_bounds_on_grid(layout: &GridLayout, grid_bounds: &Rect) -> Rect {
+    let top_left = layout.cell_rect(grid_bounds.y as usize, grid_bounds.x as usize);
+    let (cw, ch) = layout.cell_size();
+    Rect {
+        x: top_left.x,
+        y: top_left.y,
+        width: cw * grid_bounds.width,
+        height: ch * grid_bounds.height,
     }
 }
 
@@ -88,29 +84,6 @@ impl Scene for StoryScene {
         ) {
             let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
         }
-
-        // Now that we have the game context and know how large the screen is, resize the
-        // text layout so that it aligns with the scenes grid and doesnt have to use abs position
-        let layout = StoryScene::layout(&game_context);
-        if !self.text_box_loaded {
-            self.text_box_loaded = true;
-            let top_left = layout.cell_rect(6, 2);
-            let (cw, ch) = layout.cell_size();
-            self.text_box = TextBox::new(
-                Rect {
-                    x: top_left.x,
-                    y: top_left.y,
-                    width: cw * 10,
-                    height: ch * 3,
-                },
-                self.text_box.text.raw_text(),
-                &BitmapFontMetrics {
-                    layout: FONTSHEET_LAYOUT,
-                },
-                LineSpeed::Normal,
-            );
-            eprintln!("{:?}", self.text_box);
-        }
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
@@ -123,7 +96,31 @@ impl Scene for StoryScene {
         }
 
         let layout = StoryScene::layout(&game_context);
-        self.text_box.text.update(ticks);
+        // Update is where we'd deal with our VN Machine and get the next set of pages or
+        // similar, for now, hard coded it for testing.
+        if let (None, Some(font_library)) = (&self.text_box, game_context.font_library.as_mut()) {
+            let text_box_bounds = text_box_bounds_on_grid(&layout, &self.placement_text);
+            let maybe_font: Option<&LoadedFont> = font_library.get(FontId::BoldPixels);
+
+            self.text_box = maybe_font.map(|loaded_font| {
+                TextBox::new(
+                    text_box_bounds,
+                    concat!(
+                        "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
+                        "or something I guess though who knows lalalalalal yay this is so fun. ",
+                        "There are no line breaks in the text at all, so you could load this from a file or similar and then ",
+                        "it would happily display on the screen with no issues at all. Isn't that just lovely. Thought this ",
+                        "also means that if you want a newline that's explicit, I suppose you'd need to start a new page or something",
+                        "... how bothersome I suppose."
+                    ).to_string(),
+                    loaded_font,
+                    LineSpeed::Faster,
+                )
+            });
+        }
+        self.text_box
+            .as_mut()
+            .map(|text_box| text_box.text.update(ticks));
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(&game_context);
@@ -144,20 +141,25 @@ impl Scene for StoryScene {
             .map(|font_library| font_library.get(FontId::BoldPixels))
             .flatten();
 
-        let anchor = self.text_box.bounds;
-        if let Some(font) = maybe_font {
-            for (line_idx, line) in self.text_box.text.lines().iter().enumerate() {
-                let leading = self.text_box.leading;
+        if let (Some(font), Some(text_box)) = (maybe_font, &self.text_box) {
+            let anchor = text_box.bounds;
+            for (line_idx, line) in text_box.text.lines().iter().enumerate() {
+                let leading = text_box.leading;
                 let offset_y = leading as usize
-                    + line_idx * (leading + self.text_box.line_height) as usize
+                    + line_idx * (leading + text_box.line_height) as usize
                     + leading as usize * line_idx;
                 let anchor = Rect {
                     x: anchor.x,
                     y: anchor.y as isize + offset_y as isize,
                     width: anchor.width,
-                    height: self.text_box.line_height as isize,
+                    height: text_box.line_height as isize,
                 };
-                draw_text_anchored(&line, &anchor, &font, renderer.as_mut());
+                draw_text_anchored(
+                    &line,
+                    &anchor,
+                    &font,
+                    renderer.as_mut(),
+                );
             }
         }
         self.fade.as_mut().map(|f| f.draw(game_context));
