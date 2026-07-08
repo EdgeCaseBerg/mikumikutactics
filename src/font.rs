@@ -123,7 +123,7 @@ pub fn draw_text_anchored(
     align: FontAlign,
 ) {
     let glyphs = font.glyphs_for(&text);
-    let glyph_display_height = font.line_height() as isize;
+    let glyph_display_height = (font.line_height() as f32 * font.scale) as isize;
     let align_offset = match align {
         FontAlign::Left => 0,
         FontAlign::Center => {
@@ -139,8 +139,8 @@ pub fn draw_text_anchored(
     };
 
     for (c, src) in glyphs.iter().enumerate() {
-        let glyph_display_width = src.width;
-        let x_offset = align_offset +  c as isize * glyph_display_width as isize;
+        let glyph_display_width = (src.width as f32 * font.scale) as isize;
+        let x_offset = align_offset + c as isize * glyph_display_width as isize;
         let cell = Rect {
             x: anchor.x + x_offset,
             y: anchor.y,
