@@ -7,6 +7,7 @@ use crate::constants::{
 use crate::font::FONTSHEET_LAYOUT;
 use crate::font::LoadedFont;
 use crate::font::draw_text_anchored;
+use crate::font::FontAlign;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
@@ -158,6 +159,7 @@ impl Scene for StoryScene {
                     &anchor,
                     &font,
                     renderer.as_mut(),
+                    FontAlign::Left,
                 );
             }
         }

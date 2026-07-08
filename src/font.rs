@@ -109,18 +109,38 @@ impl FontLibrary for BitmapFontLibrary {
     }
 }
 
+pub enum FontAlign {
+    Left,
+    Center,
+    Right,
+}
+
 pub fn draw_text_anchored(
     text: &str,
     anchor: &Rect,
     font: &LoadedFont,
     renderer: &mut dyn Renderer,
+    align: FontAlign,
 ) {
     let glyphs = font.glyphs_for(&text);
     let glyph_display_height = font.line_height() as isize;
+    let align_offset = match align {
+        FontAlign::Left => 0,
+        FontAlign::Center => {
+            let fw = font.measure_width(&text) as isize;
+            let center = anchor.width / 2;
+            center - fw / 2
+        }
+        FontAlign::Right => {
+            // [ offset | --- text width --- ] right side of anchor
+            let fw = font.measure_width(&text) as isize;
+            anchor.width - fw as isize
+        }
+    };
 
     for (c, src) in glyphs.iter().enumerate() {
         let glyph_display_width = src.width;
-        let x_offset = c as isize * glyph_display_width as isize;
+        let x_offset = align_offset +  c as isize * glyph_display_width as isize;
         let cell = Rect {
             x: anchor.x + x_offset,
             y: anchor.y,
