@@ -123,7 +123,7 @@ pub fn draw_text_anchored(
     align: FontAlign,
 ) {
     let glyphs = font.glyphs_for(&text);
-    let glyph_display_height = (font.line_height() as f32 * font.scale) as isize;
+    let glyph_display_height = font.line_height() as isize;
     let align_offset = match align {
         FontAlign::Left => 0,
         FontAlign::Center => {
