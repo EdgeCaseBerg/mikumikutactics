@@ -1,14 +1,15 @@
 use crate::Rect;
 use crate::SpriteInfo;
 use crate::constants::{
-    TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, sprite_info_highlight, sprite_info_topbar_bg, FontId,
+    FontId, TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
+    sprite_info_topbar_bg,
 };
-use crate::font::get_rects_for_str;
 use crate::font::FONTSHEET_LAYOUT;
 use crate::font::FontAlign;
-use crate::font::LoadedFont;
 use crate::font::FontMetrics;
+use crate::font::LoadedFont;
 use crate::font::draw_text_anchored;
+use crate::font::get_rects_for_str;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
