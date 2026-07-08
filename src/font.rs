@@ -26,6 +26,8 @@ pub struct LoadedFont {
     pub texture_id: TextureId,
     /// Glyph locations within the atlus in ascii order 0..127 (Fonts without characters should pad out 0..32 with spaces or similar markers)
     pub ascii_glyphs: Vec<Rect>,
+    /// Scale for font, 1.0 is 1:1 to the font original size
+    pub scale: f32,
 }
 
 impl LoadedFont {
@@ -50,13 +52,17 @@ impl FontMetrics for LoadedFont {
             return 0; // This should never happen. But still.
         }
         // As our own little convention, we'll use L as the height because its nice and tall and its arbitrary
-        self.ascii_glyphs['L' as usize].height as i32
+        let glyph_height = self.ascii_glyphs['L' as usize].height as i32;
+        (self.scale * glyph_height as f32) as i32
     }
 
     fn measure_width(&self, s: &str) -> i32 {
-        self.glyphs_for(s)
-            .into_iter()
-            .fold(0, |acc, rect| acc + rect.width as i32)
+        let scaled = self.scale
+            * self
+                .glyphs_for(s)
+                .into_iter()
+                .fold(0.0, |acc, rect| acc + rect.width as f32);
+        scaled as i32
     }
 }
 
@@ -74,8 +80,11 @@ impl BitmapFontLibrary {
 
 impl FontLibrary for BitmapFontLibrary {
     fn ensure(&mut self, id: FontId, asset_loader: &mut dyn AssetLoader) -> FontResult<()> {
-        let texture_id = match id {
-            FontId::BoldPixels | FontId::BoldPixelScaled { .. } => TEXTURE_ID_FONTSHEET,
+        let (texture_id, scale) = match id {
+            FontId::BoldPixels => (TEXTURE_ID_FONTSHEET, 1.0),
+            FontId::BoldPixelScaled { pixel_size } => {
+                (TEXTURE_ID_FONTSHEET, pixel_size as f32 / 16.0)
+            }
         };
         asset_loader.ensure_texture_spritesheet_loaded(texture_id);
         // NOT unsafe, we literally make the bytes here.
@@ -90,6 +99,7 @@ impl FontLibrary for BitmapFontLibrary {
             id,
             texture_id,
             ascii_glyphs,
+            scale,
         };
         self.fonts.insert(id, font);
         Ok(())
