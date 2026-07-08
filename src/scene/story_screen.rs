@@ -46,7 +46,7 @@ impl Default for StoryScene {
             placement_text: Rect {
                 x: 2,
                 y: 6,
-                width: 10,
+                width: 12,
                 height: 3,
             },
         }
