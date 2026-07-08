@@ -1,9 +1,14 @@
 use crate::Rect;
 use crate::SpriteInfo;
 use crate::constants::{
-    TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, sprite_info_highlight, sprite_info_topbar_bg,
+    TEXTURE_ID_FONTSHEET, TEXTURE_ID_LEEKSHEET, sprite_info_highlight, sprite_info_topbar_bg, FontId,
 };
 use crate::font::get_rects_for_str;
+use crate::font::FONTSHEET_LAYOUT;
+use crate::font::FontAlign;
+use crate::font::LoadedFont;
+use crate::font::FontMetrics;
+use crate::font::draw_text_anchored;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
@@ -15,6 +20,7 @@ pub struct Button {
     pub(crate) clicked: bool,
     pub(crate) bg: SpriteInfo,
     pub(crate) highlight: SpriteInfo,
+    pub(crate) font_id: FontId,
 }
 
 impl Button {
@@ -26,6 +32,7 @@ impl Button {
             clicked: false,
             bg: sprite_info_topbar_bg(),
             highlight: sprite_info_highlight(),
+            font_id: FontId::BoldPixelScaled { pixel_size: 32 },
         }
     }
 
@@ -89,34 +96,45 @@ impl Button {
             });
         }
 
-        // how do we write our renderer such that we can support things like this
-        // where we're being a bit dynamic in the size like this? Or is that a fools
-        // errand and we shouldn't be trying to make the font fit the button, but the
-        // other way around?
-        // renderer.send_command(RenderCommand::DrawText {
-        //     font_id: FONT_ID,
-        //     destination: anchor
-        // })
-
-        let glyphs = get_rects_for_str(&self.text);
-        let (_, cy) = anchor.center();
-        for (c, src) in glyphs.iter().enumerate() {
-            // leave room for a glpyh on either side
-            let glyph_display_width = anchor.width / (glyphs.len() as isize + 2);
-            // mono font is same height as width (16x16 native)
-            let glyph_display_height = glyph_display_width;
-            let start_offset = anchor.x + glyph_display_width;
-            let cell = Rect {
-                x: start_offset + c as isize * glyph_display_width as isize,
-                y: cy - glyph_display_height as isize / 2,
-                width: glyph_display_width,
-                height: glyph_display_height,
-            };
-            renderer.send_command(RenderCommand::DrawRect {
-                texture_id: TEXTURE_ID_FONTSHEET,
-                source: *src,
-                destination: cell,
-            });
+        if let Some(font_library) = game_context.font_library.as_mut() {
+            let maybe_font: Option<&LoadedFont> = font_library.get(self.font_id);
+            if let Some(font) = maybe_font {
+                let (_, cy) = anchor.center();
+                let anchor = Rect {
+                    x: anchor.x,
+                    y: cy - font.line_height() as isize ,
+                    width: anchor.width,
+                    height: anchor.height
+                };
+                draw_text_anchored(
+                    &self.text,
+                    &anchor,
+                    &font,
+                    renderer.as_mut(),
+                    FontAlign::Center,
+                );
+            }
         }
+
+        // let glyphs = get_rects_for_str(&self.text);
+        // let (_, cy) = anchor.center();
+        // for (c, src) in glyphs.iter().enumerate() {
+        //     // leave room for a glpyh on either side
+        //     let glyph_display_width = anchor.width / (glyphs.len() as isize + 2);
+        //     // mono font is same height as width (16x16 native)
+        //     let glyph_display_height = glyph_display_width;
+        //     let start_offset = anchor.x + glyph_display_width;
+        //     let cell = Rect {
+        //         x: start_offset + c as isize * glyph_display_width as isize,
+        //         y: cy - glyph_display_height as isize / 2,
+        //         width: glyph_display_width,
+        //         height: glyph_display_height,
+        //     };
+        //     renderer.send_command(RenderCommand::DrawRect {
+        //         texture_id: TEXTURE_ID_FONTSHEET,
+        //         source: *src,
+        //         destination: cell,
+        //     });
+        // }
     }
 }

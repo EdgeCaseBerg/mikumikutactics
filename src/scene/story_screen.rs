@@ -5,9 +5,9 @@ use crate::constants::{
     FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
 };
 use crate::font::FONTSHEET_LAYOUT;
+use crate::font::FontAlign;
 use crate::font::LoadedFont;
 use crate::font::draw_text_anchored;
-use crate::font::FontAlign;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
@@ -154,13 +154,7 @@ impl Scene for StoryScene {
                     width: anchor.width,
                     height: text_box.line_height as isize,
                 };
-                draw_text_anchored(
-                    &line,
-                    &anchor,
-                    &font,
-                    renderer.as_mut(),
-                    FontAlign::Left,
-                );
+                draw_text_anchored(&line, &anchor, &font, renderer.as_mut(), FontAlign::Left);
             }
         }
         self.fade.as_mut().map(|f| f.draw(game_context));
