@@ -72,7 +72,7 @@ impl TextBox {
                 continue;
             }
 
-            let size_of_word = font_metrics.measure_width(&word) + 1; //add 1 for space
+            let size_of_word = font_metrics.measure_width(&format!("{} ", word));
             let size_of_line = size + size_of_word;
             if size_of_line >= max_width {
                 // this pushes us too far, start a new line.
