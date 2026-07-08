@@ -103,9 +103,9 @@ impl Button {
                 let (_, cy) = anchor.center();
                 let anchor = Rect {
                     x: anchor.x,
-                    y: cy - font.line_height() as isize ,
+                    y: cy - (font.line_height() / 2) as isize,
                     width: anchor.width,
-                    height: anchor.height
+                    height: anchor.height,
                 };
                 draw_text_anchored(
                     &self.text,
