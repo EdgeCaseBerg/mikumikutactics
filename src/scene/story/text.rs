@@ -32,6 +32,10 @@ pub struct TextBox {
 }
 
 impl TextBox {
+    pub fn next_page(&mut self) {
+        self.text.current_page += 1;
+    }
+
     pub fn new(
         bounds: Rect,
         text: String,
@@ -264,9 +268,13 @@ impl Text {
         }
 
         self.pages[self.current_page].update(ticks);
+        // TODO this is just for testing, this should trigger
+        // on user input to advance, not automatically
+        // self.next_page();
+    }
+
+    pub fn next_page(&mut self) {
         if self.pages[self.current_page].is_visible() {
-            // TODO this is just for testing, this should trigger
-            // on user input to advance, not automatically
             self.current_page += 1;
         }
     }
