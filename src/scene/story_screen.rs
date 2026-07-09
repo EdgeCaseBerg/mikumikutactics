@@ -10,6 +10,7 @@ use crate::font::draw_text_anchored;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
+use crate::scene::button::Button;
 use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::transitions::{Transition, TransitionScene};
@@ -18,6 +19,7 @@ pub struct StoryScene {
     bg: SpriteInfo,
     fade: Option<TransitionScene>,
     text_box: Option<TextBox>,
+    next_btn: Option<Button>,
     // Placement locations (Grid unit space, used for converting to screen coordinates )
     placement_text: Rect,
     // placement_left_portrait: Rect,
@@ -49,6 +51,7 @@ impl Default for StoryScene {
                 width: 12,
                 height: 3,
             },
+            next_btn: None,
         }
     }
 }
