@@ -15,6 +15,9 @@ use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::transitions::{Transition, TransitionScene};
 
+const STORY_FONT: FontId = FontId::BoldPixelScaled { pixel_size: 24 };
+const BUTTON_FONT: FontId = FontId::BoldPixels;
+
 pub struct StoryScene {
     bg: SpriteInfo,
     fade: Option<TransitionScene>,
@@ -84,7 +87,8 @@ impl Scene for StoryScene {
             game_context.font_library.as_mut(),
             game_context.asset_loader.as_mut(),
         ) {
-            let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
+            let _ = font_library.ensure(STORY_FONT, asset_loader.as_mut());
+            let _ = font_library.ensure(BUTTON_FONT, asset_loader.as_mut());
         }
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
@@ -102,10 +106,25 @@ impl Scene for StoryScene {
         // similar, for now, hard coded it for testing.
         if let (None, Some(font_library)) = (&self.text_box, game_context.font_library.as_mut()) {
             let text_box_bounds = text_box_bounds_on_grid(&layout, &self.placement_text);
-            let maybe_font: Option<&LoadedFont> = font_library.get(FontId::BoldPixels);
+            let maybe_font: Option<&LoadedFont> = font_library.get(STORY_FONT);
 
             self.text_box = maybe_font.map(|loaded_font| {
-                TextBox::new(
+                // Temp for now, but lets wire in the next button as well for testing purposes?
+                self.next_btn = Some(
+                    {
+                        let mut b = Button::new("Next".to_owned(), Rect {
+                            x: 14,
+                            y: 7,
+                            width: 1,
+                            height: 1,
+                            }
+                        );
+                        b.font_id = BUTTON_FONT;
+                        b
+                    }
+                );
+
+                let t = TextBox::new(
                     text_box_bounds,
                     concat!(
                         "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
@@ -117,12 +136,25 @@ impl Scene for StoryScene {
                     ).to_string(),
                     loaded_font,
                     LineSpeed::Faster,
-                )
+                );
+                eprintln!("{:?}", t);
+                t
             });
         }
         self.text_box
             .as_mut()
             .map(|text_box| text_box.text.update(ticks));
+
+        if let Some(btn) = self.next_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                // there's more logic to this than this like not  visible -> all visible, all visible -> next page
+                // but this is just testing code
+                self.text_box.as_mut().map(|b| b.next_page());
+                btn.clicked = false;
+                game_context.mouse_context.consume_left_click();
+            }
+        };
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(&game_context);
@@ -140,7 +172,7 @@ impl Scene for StoryScene {
         let maybe_font: Option<&LoadedFont> = game_context
             .font_library
             .as_mut()
-            .map(|font_library| font_library.get(FontId::BoldPixels))
+            .map(|font_library| font_library.get(STORY_FONT))
             .flatten();
 
         if let (Some(font), Some(text_box)) = (maybe_font, &self.text_box) {
@@ -159,6 +191,11 @@ impl Scene for StoryScene {
                 draw_text_anchored(&line, &anchor, &font, renderer.as_mut(), FontAlign::Left);
             }
         }
+
+        if let Some(btn) = self.next_btn.as_mut() {
+            btn.draw(game_context, &layout)
+        };
+
         self.fade.as_mut().map(|f| f.draw(game_context));
     }
 }
