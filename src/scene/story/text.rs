@@ -32,19 +32,6 @@ pub struct TextBox {
 }
 
 impl TextBox {
-    pub fn next_page(&mut self) {
-        self.text.current_page += 1;
-    }
-
-    pub fn set_speed(&mut self, new_speed: LineSpeed) {
-        for page in &mut self.text.pages {
-            for line in &mut page.lines {
-                line.line_speed = new_speed;
-                line.timer = new_speed.into();
-            }
-        }
-    }
-
     pub fn new(
         bounds: Rect,
         text: String,
@@ -129,6 +116,17 @@ impl TextBox {
                 pages,
                 current_page: 0,
             },
+        }
+    }
+    pub fn next_page(&mut self) {
+        self.text.current_page += 1;
+    }
+    pub fn set_speed(&mut self, new_speed: LineSpeed) {
+        for page in &mut self.text.pages {
+            for line in &mut page.lines {
+                line.line_speed = new_speed;
+                line.timer = new_speed.into();
+            }
         }
     }
 }
