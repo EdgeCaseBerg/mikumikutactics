@@ -283,6 +283,12 @@ pub struct Text {
 }
 
 impl Text {
+    pub fn is_visible(&self) -> bool {
+        if self.current_page >= self.pages.len() {
+            return true;
+        }
+        self.pages[self.current_page].is_visible()
+    }
     pub fn update(&mut self, ticks: u32) {
         if self.current_page >= self.pages.len() {
             return;
