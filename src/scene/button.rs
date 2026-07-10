@@ -116,26 +116,5 @@ impl Button {
                 );
             }
         }
-
-        // let glyphs = get_rects_for_str(&self.text);
-        // let (_, cy) = anchor.center();
-        // for (c, src) in glyphs.iter().enumerate() {
-        //     // leave room for a glpyh on either side
-        //     let glyph_display_width = anchor.width / (glyphs.len() as isize + 2);
-        //     // mono font is same height as width (16x16 native)
-        //     let glyph_display_height = glyph_display_width;
-        //     let start_offset = anchor.x + glyph_display_width;
-        //     let cell = Rect {
-        //         x: start_offset + c as isize * glyph_display_width as isize,
-        //         y: cy - glyph_display_height as isize / 2,
-        //         width: glyph_display_width,
-        //         height: glyph_display_height,
-        //     };
-        //     renderer.send_command(RenderCommand::DrawRect {
-        //         texture_id: TEXTURE_ID_FONTSHEET,
-        //         source: *src,
-        //         destination: cell,
-        //     });
-        // }
     }
 }
