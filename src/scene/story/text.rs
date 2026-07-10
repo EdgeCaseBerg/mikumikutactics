@@ -37,8 +37,8 @@ impl TextBox {
     }
 
     pub fn set_speed(&mut self, new_speed: LineSpeed) {
-        for mut page in &mut self.text.pages {
-            for mut line in &mut page.lines {
+        for page in &mut self.text.pages {
+            for line in &mut page.lines {
                 line.line_speed = new_speed;
                 line.timer = new_speed.into();
             }

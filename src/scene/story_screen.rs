@@ -156,8 +156,6 @@ impl Scene for StoryScene {
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
-                // there's more logic to this than this like not  visible -> all visible, all visible -> next page
-                // but this is just testing code
                 self.text_box.as_mut().map(|b| {
                     if b.text.is_visible() {
                         b.next_page();
@@ -174,8 +172,8 @@ impl Scene for StoryScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
                 self.text_speed = self.text_speed.cycle_speeds();
-                btn.text = self.text_speed.to_string();
                 self.text_box.as_mut().map(|b| b.set_speed(self.text_speed));
+                btn.text = self.text_speed.to_string();
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
             }
