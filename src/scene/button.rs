@@ -25,7 +25,7 @@ impl Button {
     /// Define buttons in terms of their parent layout's grid unit space.
     /// When update and draw are called the parent layout will convert the
     /// button unit space into screen coordinates for interaction purposes
-    pub(crate) fn new(text: String, rect: Rect) -> Self {
+    pub(crate) fn new(text: String, rect: Rect, font_id: FontId) -> Self {
         Self {
             text,
             rect,
@@ -33,7 +33,7 @@ impl Button {
             clicked: false,
             bg: sprite_info_topbar_bg(),
             highlight: sprite_info_highlight(),
-            font_id: FontId::BoldPixelScaled { pixel_size: 32 },
+            font_id,
         }
     }
 

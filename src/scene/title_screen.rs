@@ -37,13 +37,14 @@ impl Default for TitleScene {
             bg: sprite_info_title(),
             //320, 150
             quit_btn: Button::new(
-                "Quit".to_string(),
+                "Test".to_string(),
                 Rect {
                     x: 32,
                     y: 18,
                     width: 10,
                     height: 2,
                 },
+                FontId::BoldPixelScaled { pixel_size: 24 },
             ),
             played_intro: ReadyState::Ready,
             fade: None,

@@ -112,15 +112,12 @@ impl Scene for StoryScene {
                 // Temp for now, but lets wire in the next button as well for testing purposes?
                 self.next_btn = Some(
                     {
-                        let mut b = Button::new("Next".to_owned(), Rect {
+                        Button::new("Next".to_owned(), Rect {
                             x: 14,
                             y: 7,
                             width: 1,
                             height: 1,
-                            }
-                        );
-                        b.font_id = BUTTON_FONT;
-                        b
+                        }, BUTTON_FONT)
                     }
                 );
 
