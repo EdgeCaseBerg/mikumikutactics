@@ -159,6 +159,15 @@ impl LineSpeed {
             _ => LineSpeed::Slow,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            LineSpeed::Slow => ">".to_owned(),
+            LineSpeed::Normal => ">>".to_owned(),
+            LineSpeed::Fast => ">>>".to_owned(),
+            _ => ">>>>".to_owned(),
+        }
+    }
 }
 
 impl From<LineSpeed> for ReadyState {

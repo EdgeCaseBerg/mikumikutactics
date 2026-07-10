@@ -176,12 +176,7 @@ impl Scene for StoryScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
                 self.text_speed = self.text_speed.cycle_speeds();
-                btn.text = match self.text_speed {
-                    LineSpeed::Slow => ">".to_owned(),
-                    LineSpeed::Normal => ">>".to_owned(),
-                    LineSpeed::Fast => ">>>".to_owned(),
-                    _ => ">>>>".to_owned(),
-                };
+                btn.text = self.text_speed.to_string();
                 self.text_box.as_mut().map(|b| b.set_speed(self.text_speed));
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
