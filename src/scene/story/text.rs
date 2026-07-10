@@ -149,6 +149,18 @@ pub enum LineSpeed {
     Instant,
 }
 
+impl LineSpeed {
+    // Not inclusive of instant.
+    pub fn cycle_speeds(&self) -> LineSpeed {
+        match self {
+            LineSpeed::Slow => LineSpeed::Normal,
+            LineSpeed::Normal => LineSpeed::Fast,
+            LineSpeed::Fast => LineSpeed::Faster,
+            _ => LineSpeed::Slow,
+        }
+    }
+}
+
 impl From<LineSpeed> for ReadyState {
     fn from(line_speed: LineSpeed) -> ReadyState {
         let ticks_between_characters = match line_speed {
