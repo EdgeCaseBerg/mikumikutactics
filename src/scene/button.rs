@@ -82,6 +82,8 @@ impl Button {
         let layout = self.relative_layout(parent_layout);
         let src = self.bg.get_rect();
         let anchor = layout.cell_rect(0, 0);
+        // TODO: we probably want to move the background and highlight stuff to some sort of
+        // composable "chrome" to apply to the button without having to hardcode it like this.
         renderer.send_command(RenderCommand::DrawRect {
             texture_id: TEXTURE_ID_LEEKSHEET,
             source: src,
