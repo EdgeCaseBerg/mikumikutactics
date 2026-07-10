@@ -23,8 +23,10 @@ pub struct StoryScene {
     fade: Option<TransitionScene>,
     text_box: Option<TextBox>,
     next_btn: Option<Button>,
+    speed_btn: Option<Button>,
     // Placement locations (Grid unit space, used for converting to screen coordinates )
     placement_text: Rect,
+    text_speed: LineSpeed,
     // placement_left_portrait: Rect,
     // placement_right_portrait: Rect,
     // placement_center_portrait: Rect,
@@ -55,6 +57,17 @@ impl Default for StoryScene {
                 height: 3,
             },
             next_btn: None,
+            speed_btn: Some(Button::new(
+                ">>".to_owned(),
+                Rect {
+                    x: 14,
+                    y: 6,
+                    width: 1,
+                    height: 1,
+                },
+                BUTTON_FONT,
+            )),
+            text_speed: LineSpeed::Normal,
         }
     }
 }
@@ -132,7 +145,7 @@ impl Scene for StoryScene {
                         "... how bothersome I suppose."
                     ).to_string(),
                     loaded_font,
-                    LineSpeed::Faster,
+                    self.text_speed,
                 );
                 eprintln!("{:?}", t);
                 t
@@ -147,7 +160,29 @@ impl Scene for StoryScene {
             if btn.clicked {
                 // there's more logic to this than this like not  visible -> all visible, all visible -> next page
                 // but this is just testing code
-                self.text_box.as_mut().map(|b| b.next_page());
+                self.text_box.as_mut().map(|b| {
+                    if b.text.is_visible() {
+                        b.next_page();
+                        b.set_speed(self.text_speed);
+                    } else {
+                        b.set_speed(LineSpeed::Instant);
+                    }
+                });
+                btn.clicked = false;
+                game_context.mouse_context.consume_left_click();
+            }
+        };
+        if let Some(btn) = self.speed_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                self.text_speed = self.text_speed.cycle_speeds();
+                btn.text = match self.text_speed {
+                    LineSpeed::Slow => ">".to_owned(),
+                    LineSpeed::Normal => ">>".to_owned(),
+                    LineSpeed::Fast => ">>>".to_owned(),
+                    _ => ">>>>".to_owned(),
+                };
+                self.text_box.as_mut().map(|b| b.set_speed(self.text_speed));
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
             }
@@ -190,9 +225,11 @@ impl Scene for StoryScene {
         }
 
         if let Some(btn) = self.next_btn.as_mut() {
-            btn.draw(game_context, &layout)
+            btn.draw(game_context, &layout);
         };
-
+        if let Some(btn) = self.speed_btn.as_mut() {
+            btn.draw(game_context, &layout);
+        };
         self.fade.as_mut().map(|f| f.draw(game_context));
     }
 }
