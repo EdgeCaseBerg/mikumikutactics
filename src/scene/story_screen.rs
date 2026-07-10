@@ -134,7 +134,7 @@ impl Scene for StoryScene {
                     }
                 );
 
-                let t = TextBox::new(
+                TextBox::new(
                     text_box_bounds,
                     concat!(
                         "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
@@ -146,9 +146,7 @@ impl Scene for StoryScene {
                     ).to_string(),
                     loaded_font,
                     self.text_speed,
-                );
-                eprintln!("{:?}", t);
-                t
+                )
             });
         }
         self.text_box
