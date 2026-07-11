@@ -253,7 +253,6 @@ impl Line {
 
 #[derive(Debug, Clone)]
 pub struct Page {
-    // Should we include speaker in here to identify the speaker per page?
     lines: Vec<Line>,
     current_line: usize,
 }
