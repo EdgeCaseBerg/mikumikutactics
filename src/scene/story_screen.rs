@@ -13,6 +13,7 @@ use crate::renderer::RenderCommand;
 use crate::scene::button::Button;
 use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
+use crate::scene::story::text::text_box_bounds_on_grid;
 use crate::scene::transitions::{Transition, TransitionScene};
 
 const STORY_FONT: FontId = FontId::BoldPixelScaled { pixel_size: 24 };
@@ -69,17 +70,6 @@ impl Default for StoryScene {
             )),
             text_speed: LineSpeed::Normal,
         }
-    }
-}
-
-fn text_box_bounds_on_grid(layout: &GridLayout, grid_bounds: &Rect) -> Rect {
-    let top_left = layout.cell_rect(grid_bounds.y as usize, grid_bounds.x as usize);
-    let (cw, ch) = layout.cell_size();
-    Rect {
-        x: top_left.x,
-        y: top_left.y,
-        width: cw * grid_bounds.width,
-        height: ch * grid_bounds.height,
     }
 }
 
