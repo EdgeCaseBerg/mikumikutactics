@@ -4,9 +4,7 @@ use crate::SpriteInfo;
 use crate::constants::{
     FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
 };
-use crate::font::FontAlign;
 use crate::font::LoadedFont;
-use crate::font::draw_text_anchored;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
@@ -47,6 +45,7 @@ impl StoryScene {
 
 impl Default for StoryScene {
     fn default() -> StoryScene {
+        let default_speed = LineSpeed::Normal;
         StoryScene {
             bg: sprite_info_planning_layout_bg(),
             fade: None,
@@ -59,7 +58,7 @@ impl Default for StoryScene {
             },
             next_btn: None,
             speed_btn: Some(Button::new(
-                ">>".to_owned(),
+                default_speed.to_string(),
                 Rect {
                     x: 14,
                     y: 6,
@@ -68,7 +67,7 @@ impl Default for StoryScene {
                 },
                 BUTTON_FONT,
             )),
-            text_speed: LineSpeed::Normal,
+            text_speed: default_speed,
         }
     }
 }
@@ -189,22 +188,8 @@ impl Scene for StoryScene {
             .flatten();
 
         if let (Some(font), Some(text_box)) = (maybe_font, &self.text_box) {
-            let anchor = text_box.bounds;
-            for (line_idx, line) in text_box.text.lines().iter().enumerate() {
-                let leading = text_box.leading;
-                let offset_y = leading as usize
-                    + line_idx * (leading + text_box.line_height) as usize
-                    + leading as usize * line_idx;
-                let anchor = Rect {
-                    x: anchor.x,
-                    y: anchor.y as isize + offset_y as isize,
-                    width: anchor.width,
-                    height: text_box.line_height as isize,
-                };
-                draw_text_anchored(&line, &anchor, &font, renderer.as_mut(), FontAlign::Left);
-            }
+            text_box.draw(font, renderer.as_mut());
         }
-
         if let Some(btn) = self.next_btn.as_mut() {
             btn.draw(game_context, &layout);
         };

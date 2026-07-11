@@ -1,7 +1,8 @@
 use crate::ReadyState;
 use crate::Rect;
-use crate::font::FontMetrics;
+use crate::font::{FontAlign, FontMetrics, LoadedFont, draw_text_anchored};
 use crate::grid_layout::GridLayout;
+use crate::renderer::Renderer;
 
 /*
  * PAGE 0
@@ -129,6 +130,10 @@ impl TextBox {
             }
         }
     }
+
+    pub fn draw(&self, font: &LoadedFont, renderer: &mut dyn Renderer) {
+        draw_text_box_left_aligned(self, font, renderer);
+    }
 }
 
 pub fn text_box_bounds_on_grid(layout: &GridLayout, grid_bounds: &Rect) -> Rect {
@@ -139,6 +144,27 @@ pub fn text_box_bounds_on_grid(layout: &GridLayout, grid_bounds: &Rect) -> Rect 
         y: top_left.y,
         width: cw * grid_bounds.width,
         height: ch * grid_bounds.height,
+    }
+}
+
+pub fn draw_text_box_left_aligned(
+    text_box: &TextBox,
+    font: &LoadedFont,
+    renderer: &mut dyn Renderer,
+) {
+    let anchor = text_box.bounds;
+    for (line_idx, line) in text_box.text.lines().iter().enumerate() {
+        let leading = text_box.leading;
+        let offset_y = leading as usize
+            + line_idx * (leading + text_box.line_height) as usize
+            + leading as usize * line_idx;
+        let anchor = Rect {
+            x: anchor.x,
+            y: anchor.y as isize + offset_y as isize,
+            width: anchor.width,
+            height: text_box.line_height as isize,
+        };
+        draw_text_anchored(&line, &anchor, &font, renderer, FontAlign::Left);
     }
 }
 
