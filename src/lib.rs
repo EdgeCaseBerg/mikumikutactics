@@ -23,7 +23,6 @@ pub mod scene;
 use std::ops::{Add, Div, Sub};
 
 use crate::backend::init_backend;
-use crate::font::BitmapFontLibrary;
 use crate::game::Game;
 use crate::game_options::GameOptions;
 use crate::scene::Scene;
