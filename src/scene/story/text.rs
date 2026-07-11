@@ -21,7 +21,7 @@ use crate::font::FontMetrics;
 */
 #[derive(Debug, Clone)]
 pub struct TextBox {
-    /// top left anchor for box, world coordinates or grid coordinates...?
+    /// top left anchor for box, screen coordinates.
     pub bounds: Rect,
     /// leading is the vertical space between lines.
     pub leading: i32,
@@ -59,10 +59,6 @@ impl TextBox {
         }
 
         // We have to split the text up into multiple lines
-        // How many lines can we fit into the bounds?
-        let line_height = font_metrics.line_height() + leading * 2;
-        let lines_per_page = (bounds.height as usize / line_height as usize).max(1);
-
         let mut size = 0;
         let words = text.split_ascii_whitespace();
         let mut lines = vec![];
@@ -89,6 +85,9 @@ impl TextBox {
             lines.push(Line::text_at_speed(line, speed));
         }
 
+        // How many lines can we fit into the bounds?
+        let line_height = font_metrics.line_height() + leading * 2;
+        let lines_per_page = (bounds.height as usize / line_height as usize).max(1);
         let mut pages = vec![];
         let mut page = Page {
             lines: vec![],
