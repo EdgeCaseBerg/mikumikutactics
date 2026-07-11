@@ -93,7 +93,9 @@ impl FontLibrary for BitmapFontLibrary {
             String::from_utf8_unchecked(bytes)
         };
         // In a backend specific font library, we'd render the font to a surface, load it into a texture
-        // and then create the appropriate rects to fetch each letter out as needed.
+        // and then create the appropriate rects to fetch each letter out as needed. Right now the method
+        // here ONLY handles the BoldPixels properly since get_rects_for_str is using the layout for that
+        // but that's ok. We can address the issue when we add a new font.
         let ascii_glyphs = get_rects_for_str(&ascii);
         let font = LoadedFont {
             id,
@@ -109,6 +111,7 @@ impl FontLibrary for BitmapFontLibrary {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum FontAlign {
     Left,
     Center,
