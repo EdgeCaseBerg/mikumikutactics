@@ -4,6 +4,7 @@ use crate::backend::*;
 use crate::clock::Clock;
 use crate::constants::*;
 use crate::constants::{MusicId, SfxId};
+use crate::font::{BitmapFontLibrary, FontLibrary};
 use crate::game::Game;
 use crate::game::GameContext;
 use crate::game_options::GameOptions;
@@ -636,6 +637,10 @@ impl BackendEventLoop for EventLoopWasm {
     fn create_audio(&self, game_options: &GameOptions) -> Box<dyn Audio> {
         let s = WasmSounds::new(game_options);
         Box::new(s)
+    }
+
+    fn create_font_library(&self, _game_options: &GameOptions) -> Box<dyn FontLibrary> {
+        Box::new(BitmapFontLibrary::new())
     }
 }
 

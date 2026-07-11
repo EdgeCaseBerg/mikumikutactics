@@ -149,9 +149,10 @@ pub fn run(game_options: &GameOptions, mut game: Game) {
     let mut game_context = crate::game::GameContext::default();
     let renderer = event_loop.new_renderer(game_options);
     let asset_loader = event_loop.create_asset_loader(game_options);
+    let font_library = event_loop.create_font_library(game_options);
     let audio = event_loop.create_audio(game_options);
     let clock = backend.create_clock();
-    game_context.font_library = Some(Box::new(BitmapFontLibrary::new()));
+    game_context.font_library = Some(font_library);
     game_context.screen_size = (game_options.window_width, game_options.window_height);
     game_context.renderer = Some(renderer);
     game_context.asset_loader = Some(asset_loader);
