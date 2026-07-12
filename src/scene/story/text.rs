@@ -1,8 +1,10 @@
 use crate::ReadyState;
 use crate::Rect;
+use crate::constants::FontId;
 use crate::font::{FontAlign, FontMetrics, LoadedFont, draw_text_anchored};
 use crate::grid_layout::GridLayout;
 use crate::renderer::Renderer;
+use crate::scene::GameContext;
 
 /*
  * PAGE 0
@@ -31,15 +33,12 @@ pub struct TextBox {
     pub line_height: i32,
     /// The actual text, separated in pages that fit in the box's bounds
     pub text: Text,
+    /// The font to draw with
+    pub font_id: FontId,
 }
 
 impl TextBox {
-    pub fn new(
-        bounds: Rect,
-        text: String,
-        font_metrics: &impl FontMetrics,
-        speed: LineSpeed,
-    ) -> TextBox {
+    pub fn new(bounds: Rect, text: String, font_metrics: &LoadedFont, speed: LineSpeed) -> TextBox {
         let leading = font_metrics.line_height() / 4;
 
         let total_width = font_metrics.measure_width(&text);
@@ -57,6 +56,7 @@ impl TextBox {
                     }],
                     current_page: 0,
                 },
+                font_id: font_metrics.id,
             };
         }
 
@@ -117,6 +117,7 @@ impl TextBox {
                 pages,
                 current_page: 0,
             },
+            font_id: font_metrics.id,
         }
     }
     pub fn next_page(&mut self) {
@@ -131,8 +132,16 @@ impl TextBox {
         }
     }
 
-    pub fn draw(&self, font: &LoadedFont, renderer: &mut dyn Renderer) {
-        draw_text_box_left_aligned(self, font, renderer);
+    pub fn draw(&mut self, game_context: &mut GameContext) {
+        let maybe_font: Option<&LoadedFont> = game_context
+            .font_library
+            .as_mut()
+            .map(|font_library| font_library.get(self.font_id))
+            .flatten();
+
+        if let (Some(font), Some(renderer)) = (maybe_font, game_context.renderer.as_mut()) {
+            draw_text_box_left_aligned(self, font, renderer.as_mut());
+        }
     }
 }
 

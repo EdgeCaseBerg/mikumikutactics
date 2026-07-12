@@ -181,14 +181,8 @@ impl Scene for StoryScene {
             destination: Rect::new(0, 0, layout.area.width, layout.area.height),
         });
 
-        let maybe_font: Option<&LoadedFont> = game_context
-            .font_library
-            .as_mut()
-            .map(|font_library| font_library.get(STORY_FONT))
-            .flatten();
-
-        if let (Some(font), Some(text_box)) = (maybe_font, &self.text_box) {
-            text_box.draw(font, renderer.as_mut());
+        if let Some(text_box) = self.text_box.as_mut() {
+            text_box.draw(game_context);
         }
         if let Some(btn) = self.next_btn.as_mut() {
             btn.draw(game_context, &layout);
