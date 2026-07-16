@@ -266,4 +266,77 @@ mod visual_novel_tests {
             panic!("should have had an error, had: {:?}", result);
         }
     }
+
+    #[test]
+    fn goto_a_choice_that_does_not_exist_raises_errors() {
+        let result = compile_program(vec![
+            UnvalidatedNovelOps::Say(
+                "a label that doesnt match will be an error on compilation".to_string(),
+            ),
+            UnvalidatedNovelOps::Label("304".to_string()),
+            UnvalidatedNovelOps::Choices(vec![
+                Choice {
+                    label: "404".to_owned(),
+                    text: "Missing target".to_owned(),
+                },
+                Choice {
+                    label: "304".to_owned(),
+                    text: "Hits target, but choice will still fail".to_owned(),
+                },
+            ]),
+        ]);
+        if let Err(problem) = result {
+            assert_eq!(
+                problem.description(),
+                "cannot create choice because label 404 does not exist"
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
+
+    #[test]
+    fn goto_a_choice_that_does_exist_compiles() {
+        let result = compile_program(vec![
+            UnvalidatedNovelOps::Say(
+                "a label that doesnt match will be an error on compilation".to_string(),
+            ),
+            UnvalidatedNovelOps::Label("304".to_string()),
+            UnvalidatedNovelOps::Choices(vec![
+                Choice {
+                    label: "200".to_owned(),
+                    text: "Target exists".to_owned(),
+                },
+                Choice {
+                    label: "304".to_owned(),
+                    text: "Hits target, but choice will still fail".to_owned(),
+                },
+            ]),
+            UnvalidatedNovelOps::Label("200".to_string()),
+        ]);
+        if let Ok(operations) = result {
+            assert_eq!(
+                operations,
+                vec![
+                    NovelOps::Say(
+                        "a label that doesnt match will be an error on compilation".to_string(),
+                    ),
+                    NovelOps::Label("304".to_string()),
+                    NovelOps::Choices(vec![
+                        Choice {
+                            label: "200".to_owned(),
+                            text: "Target exists".to_owned(),
+                        },
+                        Choice {
+                            label: "304".to_owned(),
+                            text: "Hits target, but choice will still fail".to_owned(),
+                        },
+                    ]),
+                    NovelOps::Label("200".to_string()),
+                ]
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
 }
