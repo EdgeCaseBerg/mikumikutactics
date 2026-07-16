@@ -129,7 +129,19 @@ fn compile_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<d
                 valid_ops.push(NovelOps::Say(s));
             }
             UnvalidatedNovelOps::Choices(choices) => {
-                valid_ops.push(NovelOps::Choices(choices));
+                let mut all_valid = true;
+                for choice in &choices {
+                    if !set_of_all_labels.contains(&choice.label) {
+                        all_valid = false;
+                        errors.push(format!(
+                            "cannot create choice because label {} does not exist",
+                            &choice.label
+                        ));
+                    }
+                }
+                if all_valid {
+                    valid_ops.push(NovelOps::Choices(choices));
+                }
             }
             UnvalidatedNovelOps::Label(s) => {
                 valid_ops.push(NovelOps::Label(s));
