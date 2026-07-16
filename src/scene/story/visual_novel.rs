@@ -41,9 +41,9 @@ pub enum UnvalidatedNovelOps {
     Choices(Vec<Choice>),
     Label(String),
     Goto(String),
-    Show(Character, PortraitPosition),
+    Show(String, String),
     Hide(PortraitPosition),
-    SetCharacterState(Character, String),
+    NewCharacterState(String, String),
     Background(String),
     PlaySfx(String),
     PlayMusic(String),
@@ -61,7 +61,7 @@ pub struct Choice {
 pub struct Character {
     name: String,
     state: CharacterState,
-    texture_id: Option<TextureId>,
+    texture_id: TextureId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -71,12 +71,37 @@ pub enum CharacterState {
     Mad,
 }
 
+impl CharacterState {
+    fn lift(s: &str) -> Option<CharacterState> {
+        let pp = match &s.to_lowercase()[..] {
+            "idle" => CharacterState::Idle,
+            "happy" => CharacterState::Happy,
+            "mad" => CharacterState::Mad,
+            _ => return None,
+        };
+        Some(pp)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PortraitPosition {
     Left,
     Center,
     Right,
 }
+
+impl PortraitPosition {
+    fn lift(s: &str) -> Option<PortraitPosition> {
+        let pp = match &s.to_lowercase()[..] {
+            "left" => PortraitPosition::Left,
+            "center" => PortraitPosition::Center,
+            "right" => PortraitPosition::Right,
+            _ => return None,
+        };
+        Some(pp)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum NovelOps {
     Say(String),
@@ -85,7 +110,7 @@ pub enum NovelOps {
     Goto(String),
     Show(Character, PortraitPosition),
     Hide(PortraitPosition),
-    SetCharacterState(Character, CharacterState),
+    NewCharacterState(Character),
     Background(TextureId),
     PlaySfx(SfxId),
     PlayMusic(MusicId),
@@ -156,32 +181,50 @@ fn compile_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<d
                     valid_ops.push(NovelOps::Goto(s));
                 }
             }
-            UnvalidatedNovelOps::Show(character, pp) => {
-                if let Some(texture_id) = tmp_name_to_texture(&character.name) {
-                    let mut character = character.clone();
-                    character.texture_id = Some(texture_id);
-                    valid_ops.push(NovelOps::Show(character, pp));
+            UnvalidatedNovelOps::Show(character_name, pp) => {
+                if let Some(texture_id) = tmp_name_to_texture(&character_name) {
+                    let character = Character {
+                        name: character_name,
+                        state: CharacterState::Idle,
+                        texture_id,
+                    };
+                    if let Some(pp) = PortraitPosition::lift(&pp) {
+                        valid_ops.push(NovelOps::Show(character, pp));
+                    } else {
+                        errors.push(format!(
+                            "cannot show character at position {:?} as position is not valid",
+                            pp
+                        ));
+                    }
                 } else {
-                    errors.push(format!("cannot load texture for character {:?}", character));
+                    errors.push(format!(
+                        "cannot load texture for character {:?}",
+                        character_name
+                    ));
                 }
             }
             UnvalidatedNovelOps::Hide(pp) => {
                 valid_ops.push(NovelOps::Hide(pp));
             }
-            UnvalidatedNovelOps::SetCharacterState(c, state) => {
-                if state.contains("happy") {
-                    let state = CharacterState::Happy;
-                    valid_ops.push(NovelOps::SetCharacterState(c, state));
-                } else if state.contains("angry") {
-                    let state = CharacterState::Mad;
-                    valid_ops.push(NovelOps::SetCharacterState(c, state));
-                } else if state.contains("idle") {
-                    let state = CharacterState::Idle;
-                    valid_ops.push(NovelOps::SetCharacterState(c, state));
+            UnvalidatedNovelOps::NewCharacterState(character_name, state) => {
+                if let Some(texture_id) = tmp_name_to_texture(&character_name) {
+                    if let Some(state) = CharacterState::lift(&state) {
+                        let character = Character {
+                            name: character_name,
+                            state,
+                            texture_id,
+                        };
+                        valid_ops.push(NovelOps::NewCharacterState(character));
+                    } else {
+                        errors.push(format!(
+                            "unknown character state {} for character {:?}",
+                            state, character_name
+                        ));
+                    }
                 } else {
                     errors.push(format!(
-                        "unknown character state {} for character {:?}",
-                        state, c
+                        "cannot load texture for character {:?}",
+                        character_name
                     ));
                 }
             }
