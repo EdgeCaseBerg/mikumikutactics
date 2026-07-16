@@ -35,7 +35,7 @@ use std::error::Error;
 // Unresolved novel ops are loaded from the file, but have not been validated against
 // the existing textures, sfx, and music assets to be turned into ids that can be loaded
 // by the rest of the game.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnvalidatedNovelOps {
     Say(String),
     Choices(Vec<Choice>),
@@ -51,33 +51,33 @@ pub enum UnvalidatedNovelOps {
     // LOAD_SCRIPT another_scene to start?
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Choice {
     pub label: String,
     pub text: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Character {
     name: String,
     state: CharacterState,
     texture_id: Option<TextureId>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CharacterState {
     Idle, // This potentially just becomes Idle and Tagged("state") maybe? maybe some convention like sprite sheet tagged with emotional state to load?
     Happy,
     Mad,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PortraitPosition {
     Left,
     Center,
     Right,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NovelOps {
     Say(String),
     Choices(Vec<Choice>),
@@ -219,4 +219,51 @@ struct VisualNovelMachine {
     slot_left: Option<Character>,
     slot_center: Option<Character>,
     slot_right: Option<Character>,
+}
+
+#[cfg(test)]
+mod visual_novel_tests {
+    use super::*;
+    // use crate::backend_dummy::FakeRenderer;
+    // use crate::backend_dummy::click_button_with_left_mouse;
+
+    #[test]
+    fn goto_a_label_that_doesnt_exist_is_invalid() {
+        let result = compile_program(vec![
+            UnvalidatedNovelOps::Say(
+                "a label that doesnt match will be an error on compilation".to_string(),
+            ),
+            UnvalidatedNovelOps::Label("304".to_string()),
+            UnvalidatedNovelOps::Goto("404".to_string()),
+        ]);
+        if let Err(problem) = result {
+            assert_eq!(
+                problem.description(),
+                "cannot create GOTO (404) because label 404 does not exist"
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
+
+    #[test]
+    fn goto_a_label_that_exists_is_valid() {
+        let result = compile_program(vec![
+            UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
+            UnvalidatedNovelOps::Label("304".to_string()),
+            UnvalidatedNovelOps::Goto("304".to_string()),
+        ]);
+        if let Ok(operations) = result {
+            assert_eq!(
+                operations,
+                vec![
+                    NovelOps::Say("a label that does match will compile".to_string()),
+                    NovelOps::Label("304".to_string()),
+                    NovelOps::Goto("304".to_string()),
+                ]
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
 }
