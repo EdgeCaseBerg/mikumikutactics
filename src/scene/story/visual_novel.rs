@@ -317,12 +317,16 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
     }
 }
 
-fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<NovelOps>> {
+fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     Ok(vec![])
 }
 
-fn parse_scene(raw_scene: &str) -> VnResult<VisualNovelMachine> {
+fn parse_scene(
+    raw_scene: &str,
+    context: &impl SceneLoadingContext,
+) -> VnResult<VisualNovelMachine> {
     let ops = parse_scene_to_operations(raw_scene)?;
+    let ops = validate_program(ops, context)?;
     let vn = ops.into();
     Ok(vn)
 }
