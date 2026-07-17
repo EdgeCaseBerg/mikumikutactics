@@ -284,6 +284,30 @@ struct VisualNovelMachine {
     slot_right: Option<Character>,
 }
 
+impl Default for VisualNovelMachine {
+    fn default() -> Self {
+        VisualNovelMachine {
+            program_counter: 0,
+            program: vec![],
+            music: None,
+            sfx: None,
+            focused: None,
+            background: None,
+            slot_left: None,
+            slot_center: None,
+            slot_right: None,
+        }
+    }
+}
+
+impl From<Vec<NovelOps>> for VisualNovelMachine {
+    fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
+        let mut vn = VisualNovelMachine::default();
+        vn.program = ops;
+        vn
+    }
+}
+
 #[cfg(test)]
 mod visual_novel_tests {
     use super::*;
