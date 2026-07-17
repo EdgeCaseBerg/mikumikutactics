@@ -15,6 +15,7 @@ use std::error::Error;
  *   | c
  * LABEL a
  * SHOW rin right
+ * FOCUS right
  * CHARACTER rin happy
  * SAY bla bla bla bla
  * GOTO d
@@ -43,6 +44,7 @@ pub enum UnvalidatedNovelOps {
     Goto(String),
     Show(String, String),
     Hide(String),
+    Focus(String),
     NewCharacterState(String, String),
     Background(String),
     PlaySfx(String),
@@ -110,6 +112,7 @@ pub enum NovelOps {
     Goto(String),
     Show(Character, PortraitPosition),
     Hide(PortraitPosition),
+    Focus(PortraitPosition),
     NewCharacterState(Character),
     Background(TextureId),
     PlaySfx(SfxId),
@@ -209,6 +212,16 @@ fn compile_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<d
                 } else {
                     errors.push(format!(
                         "cannot hide character at position {:?} as position is not valid",
+                        pp
+                    ));
+                }
+            }
+            UnvalidatedNovelOps::Focus(pp) => {
+                if let Some(pp) = PortraitPosition::lift(&pp) {
+                    valid_ops.push(NovelOps::Focus(pp));
+                } else {
+                    errors.push(format!(
+                        "cannot focus position {:?} as position is not valid",
                         pp
                     ));
                 }
