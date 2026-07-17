@@ -351,6 +351,23 @@ fn parse_label(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelO
     Some(UnvalidatedNovelOps::Label(name.to_owned()))
 }
 
+fn parse_hide(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("HIDE") {
+        return None;
+    }
+    let Some((_, position)) = line.split_once("HIDE ") else {
+        errors.push(format!("could not parse hide position from {}", line));
+        return None;
+    };
+    if position.trim().is_empty() {
+        errors.push(
+            "could not parse label name from empty string, add a label name to scene".to_string(),
+        );
+        return None;
+    }
+    Some(UnvalidatedNovelOps::Hide(position.to_owned()))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -360,6 +377,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             operations.push(op);
         }
         if let Some(op) = parse_label(line, &mut errors) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_hide(line, &mut errors) {
             operations.push(op);
         }
     }
@@ -436,6 +456,42 @@ mod visual_novel_tests {
     }
 
     #[test]
+    fn parse_empty_hide_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("HIDE ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse label name from empty string, add a label name to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_hide_scene_op_successfully() {
+        let ops = parse_scene_to_operations("HIDE foo");
+        if let Ok(ops) = ops {
+            assert_eq!(ops, vec![UnvalidatedNovelOps::Hide("foo".to_owned()),]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_hide_scene_op_failure() {
+        let ops = parse_scene_to_operations("HIDE");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse hide position from HIDE"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
     fn parse_empty_label_scene_op_is_failure() {
         let ops = parse_scene_to_operations("LABEL ");
         if let Err(problem) = ops {
@@ -445,6 +501,23 @@ mod visual_novel_tests {
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_full_scene_ops_successfully() {
+        let ops = parse_scene_to_operations("LABEL foo\nBACKGROUND battlefield\nHIDE left");
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![
+                    UnvalidatedNovelOps::Label("foo".to_owned()),
+                    UnvalidatedNovelOps::Background("battlefield".to_owned()),
+                    UnvalidatedNovelOps::Hide("left".to_owned()),
+                ]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
         }
     }
 
