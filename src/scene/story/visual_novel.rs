@@ -1,5 +1,8 @@
-use crate::constants::{MusicId, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, TextureId};
-use std::collections::HashSet;
+use crate::constants::{
+    MUSIC_ID_PACHEBAL, MusicId, SFX_ID_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG,
+    TextureId,
+};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
 /* Scripts like
@@ -123,19 +126,17 @@ pub enum NovelOps {
     // LOAD_SCRIPT another_scene to start?
 }
 
-// This and the compile program are just placeholders mostly.
-// we'd have a struct or some sort of atlas layer to resolve
-// things when we 'compile' which we'd do when we load the data
-// up into the VN for use in a scene
-fn tmp_name_to_texture(name: &str) -> Option<TextureId> {
-    let t = match name {
-        "battlefield" => TEXTURE_ID_STORY_BG,
-        _ => TEXTURE_ID_LEEKSHEET,
-    };
-    Some(t)
+/// Trait for a scene or backend to implement in order to convert stuff like 'miku idle' into a proper sprite texture
+pub trait SceneLoadingContext {
+    fn name_to_texture(&self, name: &str) -> Option<TextureId>;
+    fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
+    fn name_to_music(&self, name: &str) -> Option<MusicId>;
 }
 
-fn validate_program(raw: Vec<UnvalidatedNovelOps>) -> VnResult<Vec<NovelOps>> {
+fn validate_program(
+    raw: Vec<UnvalidatedNovelOps>,
+    context: &impl SceneLoadingContext,
+) -> VnResult<Vec<NovelOps>> {
     // once we're done with toy programs, this will probably need to work with
     // a proper struct getting the game context passed in to resolve textures
     // and that sort of thing. For now... just hardcode so we can keep prototyping.
@@ -187,7 +188,7 @@ fn validate_program(raw: Vec<UnvalidatedNovelOps>) -> VnResult<Vec<NovelOps>> {
                 }
             }
             UnvalidatedNovelOps::Show(character_name, pp) => {
-                if let Some(texture_id) = tmp_name_to_texture(&character_name) {
+                if let Some(texture_id) = context.name_to_texture(&character_name) {
                     let character = Character {
                         name: character_name,
                         state: CharacterState::Idle,
@@ -229,7 +230,7 @@ fn validate_program(raw: Vec<UnvalidatedNovelOps>) -> VnResult<Vec<NovelOps>> {
                 }
             }
             UnvalidatedNovelOps::NewCharacterState(character_name, state) => {
-                if let Some(texture_id) = tmp_name_to_texture(&character_name) {
+                if let Some(texture_id) = context.name_to_texture(&character_name) {
                     if let Some(state) = CharacterState::lift(&state) {
                         let character = Character {
                             name: character_name,
@@ -251,19 +252,25 @@ fn validate_program(raw: Vec<UnvalidatedNovelOps>) -> VnResult<Vec<NovelOps>> {
                 }
             }
             UnvalidatedNovelOps::Background(name) => {
-                if let Some(texture_id) = tmp_name_to_texture(&name) {
+                if let Some(texture_id) = context.name_to_texture(&name) {
                     valid_ops.push(NovelOps::Background(texture_id));
                 } else {
                     errors.push(format!("cannot load texture for background {:?}", name));
                 }
             }
-            UnvalidatedNovelOps::PlaySfx(String) => {
-                // TODO: load proper sfx and music
-                valid_ops.push(NovelOps::PlaySfx(SfxId(0)));
+            UnvalidatedNovelOps::PlaySfx(name) => {
+                if let Some(sfx_id) = context.name_to_sfx(&name) {
+                    valid_ops.push(NovelOps::PlaySfx(sfx_id));
+                } else {
+                    errors.push(format!("cannot load sound effect for name {:?}", name));
+                }
             }
-            UnvalidatedNovelOps::PlayMusic(String) => {
-                // TODO: load proper sfx and music
-                valid_ops.push(NovelOps::PlayMusic(MusicId(0)));
+            UnvalidatedNovelOps::PlayMusic(name) => {
+                if let Some(music_id) = context.name_to_music(&name) {
+                    valid_ops.push(NovelOps::PlayMusic(music_id));
+                } else {
+                    errors.push(format!("cannot load music for name {:?}", name));
+                }
             }
         }
     }
@@ -324,15 +331,50 @@ fn parse_scene(raw_scene: &str) -> VnResult<VisualNovelMachine> {
 mod visual_novel_tests {
     use super::*;
 
+    struct TmpSceneLoadingContext {
+        textures: HashMap<String, TextureId>,
+        sounds: HashMap<String, SfxId>,
+        music: HashMap<String, MusicId>,
+    }
+
+    impl Default for TmpSceneLoadingContext {
+        fn default() -> TmpSceneLoadingContext {
+            TmpSceneLoadingContext {
+                textures: HashMap::from([
+                    ("battlefield".to_owned(), TEXTURE_ID_STORY_BG),
+                    ("miku".to_owned(), TEXTURE_ID_LEEKSHEET),
+                    ("rin".to_owned(), TEXTURE_ID_LEEKSHEET),
+                ]),
+                sounds: HashMap::from([("blip".to_owned(), SFX_ID_BLIP)]),
+                music: HashMap::from([("pachebal".to_owned(), MUSIC_ID_PACHEBAL)]),
+            }
+        }
+    }
+
+    impl SceneLoadingContext for TmpSceneLoadingContext {
+        fn name_to_texture(&self, name: &str) -> Option<TextureId> {
+            self.textures.get(name).copied()
+        }
+        fn name_to_sfx(&self, name: &str) -> Option<SfxId> {
+            self.sounds.get(name).copied()
+        }
+        fn name_to_music(&self, name: &str) -> Option<MusicId> {
+            self.music.get(name).copied()
+        }
+    }
+
     #[test]
     fn goto_a_label_that_doesnt_exist_is_invalid() {
-        let result = validate_program(vec![
-            UnvalidatedNovelOps::Say(
-                "a label that doesnt match will be an error on compilation".to_string(),
-            ),
-            UnvalidatedNovelOps::Label("304".to_string()),
-            UnvalidatedNovelOps::Goto("404".to_string()),
-        ]);
+        let result = validate_program(
+            vec![
+                UnvalidatedNovelOps::Say(
+                    "a label that doesnt match will be an error on compilation".to_string(),
+                ),
+                UnvalidatedNovelOps::Label("304".to_string()),
+                UnvalidatedNovelOps::Goto("404".to_string()),
+            ],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Err(problem) = result {
             assert_eq!(
                 problem.to_string(),
@@ -345,11 +387,14 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_label_that_exists_is_valid() {
-        let result = validate_program(vec![
-            UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
-            UnvalidatedNovelOps::Label("304".to_string()),
-            UnvalidatedNovelOps::Goto("304".to_string()),
-        ]);
+        let result = validate_program(
+            vec![
+                UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
+                UnvalidatedNovelOps::Label("304".to_string()),
+                UnvalidatedNovelOps::Goto("304".to_string()),
+            ],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Ok(operations) = result {
             assert_eq!(
                 operations,
@@ -366,22 +411,25 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_choice_that_does_not_exist_raises_errors() {
-        let result = validate_program(vec![
-            UnvalidatedNovelOps::Say(
-                "a label that doesnt match will be an error on compilation".to_string(),
-            ),
-            UnvalidatedNovelOps::Label("304".to_string()),
-            UnvalidatedNovelOps::Choices(vec![
-                Choice {
-                    label: "404".to_owned(),
-                    text: "Missing target".to_owned(),
-                },
-                Choice {
-                    label: "304".to_owned(),
-                    text: "Hits target, but choice will still fail".to_owned(),
-                },
-            ]),
-        ]);
+        let result = validate_program(
+            vec![
+                UnvalidatedNovelOps::Say(
+                    "a label that doesnt match will be an error on compilation".to_string(),
+                ),
+                UnvalidatedNovelOps::Label("304".to_string()),
+                UnvalidatedNovelOps::Choices(vec![
+                    Choice {
+                        label: "404".to_owned(),
+                        text: "Missing target".to_owned(),
+                    },
+                    Choice {
+                        label: "304".to_owned(),
+                        text: "Hits target, but choice will still fail".to_owned(),
+                    },
+                ]),
+            ],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Err(problem) = result {
             assert_eq!(
                 problem.to_string(),
@@ -394,23 +442,26 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_choice_that_does_exist_compiles() {
-        let result = validate_program(vec![
-            UnvalidatedNovelOps::Say(
-                "a label that doesnt match will be an error on compilation".to_string(),
-            ),
-            UnvalidatedNovelOps::Label("304".to_string()),
-            UnvalidatedNovelOps::Choices(vec![
-                Choice {
-                    label: "200".to_owned(),
-                    text: "Target exists".to_owned(),
-                },
-                Choice {
-                    label: "304".to_owned(),
-                    text: "Hits target, but choice will still fail".to_owned(),
-                },
-            ]),
-            UnvalidatedNovelOps::Label("200".to_string()),
-        ]);
+        let result = validate_program(
+            vec![
+                UnvalidatedNovelOps::Say(
+                    "a label that doesnt match will be an error on compilation".to_string(),
+                ),
+                UnvalidatedNovelOps::Label("304".to_string()),
+                UnvalidatedNovelOps::Choices(vec![
+                    Choice {
+                        label: "200".to_owned(),
+                        text: "Target exists".to_owned(),
+                    },
+                    Choice {
+                        label: "304".to_owned(),
+                        text: "Hits target, but choice will still fail".to_owned(),
+                    },
+                ]),
+                UnvalidatedNovelOps::Label("200".to_string()),
+            ],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Ok(operations) = result {
             assert_eq!(
                 operations,
@@ -439,9 +490,12 @@ mod visual_novel_tests {
 
     #[test]
     fn an_unknown_portrait_position_is_invalid() {
-        let result = validate_program(vec![UnvalidatedNovelOps::Hide(
-            "not a valid position".to_string(),
-        )]);
+        let result = validate_program(
+            vec![UnvalidatedNovelOps::Hide(
+                "not a valid position".to_string(),
+            )],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Err(problem) = result {
             assert_eq!(
                 problem.to_string(),
@@ -454,10 +508,13 @@ mod visual_novel_tests {
 
     #[test]
     fn hide_a_known_position_is_valid() {
-        let result = validate_program(vec![
-            UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
-            UnvalidatedNovelOps::Hide("left".to_string()),
-        ]);
+        let result = validate_program(
+            vec![
+                UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
+                UnvalidatedNovelOps::Hide("left".to_string()),
+            ],
+            &TmpSceneLoadingContext::default(),
+        );
         if let Ok(operations) = result {
             assert_eq!(
                 operations,
