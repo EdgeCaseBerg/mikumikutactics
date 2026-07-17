@@ -33,6 +33,8 @@ use std::error::Error;
  *
  */
 
+type VnResult<T> = Result<T, Box<dyn Error>>;
+
 // Unresolved novel ops are loaded from the file, but have not been validated against
 // the existing textures, sfx, and music assets to be turned into ids that can be loaded
 // by the rest of the game.
@@ -133,7 +135,7 @@ fn tmp_name_to_texture(name: &str) -> Option<TextureId> {
     Some(t)
 }
 
-fn validated_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<dyn Error>> {
+fn validated_program(raw: Vec<UnvalidatedNovelOps>) -> VnResult<Vec<NovelOps>> {
     // once we're done with toy programs, this will probably need to work with
     // a proper struct getting the game context passed in to resolve textures
     // and that sort of thing. For now... just hardcode so we can keep prototyping.
