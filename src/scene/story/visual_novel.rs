@@ -368,6 +368,23 @@ fn parse_hide(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOp
     Some(UnvalidatedNovelOps::Hide(position.to_owned()))
 }
 
+fn parse_goto(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("GOTO") {
+        return None;
+    }
+    let Some((_, target)) = line.split_once("GOTO ") else {
+        errors.push(format!("could not parse goto from {}", line));
+        return None;
+    };
+    if target.trim().is_empty() {
+        errors.push(
+            "could not parse goto target from empty string, add a goto target to scene".to_string(),
+        );
+        return None;
+    }
+    Some(UnvalidatedNovelOps::Goto(target.to_owned()))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -380,6 +397,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             operations.push(op);
         }
         if let Some(op) = parse_hide(line, &mut errors) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_goto(line, &mut errors) {
             operations.push(op);
         }
     }
@@ -498,6 +518,39 @@ mod visual_novel_tests {
             assert_eq!(
                 problem.to_string(),
                 "could not parse label name from empty string, add a label name to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_goto_scene_op_successfully() {
+        let ops = parse_scene_to_operations("GOTO foo");
+        if let Ok(ops) = ops {
+            assert_eq!(ops, vec![UnvalidatedNovelOps::Goto("foo".to_owned()),]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_goto_scene_op_failure() {
+        let ops = parse_scene_to_operations("GOTO");
+        if let Err(problem) = ops {
+            assert_eq!(problem.to_string(), "could not parse goto from GOTO");
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_goto_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("GOTO ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse goto target from empty string, add a goto target to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
