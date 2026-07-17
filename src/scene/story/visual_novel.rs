@@ -10,7 +10,7 @@ use std::error::Error;
  *
  * BACKGROUND battlefield
  * SHOW miku left
- * CHARACTER miku idle
+ * CHARACTER miku IS idle
  * SAY blablablabl blabla bla blabl bla
  * CHOICE leading | optional, but parse empty choice ignored for ease of script writing.
  *   | a You're my bestie!
@@ -19,7 +19,7 @@ use std::error::Error;
  * LABEL a
  * SHOW rin right
  * FOCUS right
- * CHARACTER rin happy
+ * CHARACTER rin IS happy
  * SAY bla bla bla bla
  * GOTO d
  * LABEL b
@@ -29,7 +29,7 @@ use std::error::Error;
  * SAY bla bla bla bla
  * GOTO d
  * LABEL d
- * CHARACTER miku mad
+ * CHARACTER miku IS mad
  * SAY bla bla bla bla
  * HIDE left
  * HIDE right
@@ -556,11 +556,85 @@ mod visual_novel_tests {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
+    ///
+    #[test]
+    fn parse_character_state_scene_op_successfully() {
+        let ops = parse_scene_to_operations("CHARACTER miku IS idle");
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::NewCharacterState(
+                    "miku".to_owned(),
+                    "idle".to_owned()
+                )]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_character_state_scene_op_failure() {
+        let ops = parse_scene_to_operations("CHARACTER");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse character from CHARACTER"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_character_state_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("CHARACTER ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse character from empty string, add a character and state to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_state_character_state_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("CHARACTER miku");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse character from empty string, add a character and state to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_missing_state_character_state_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("CHARACTER miku ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse character from empty string, add a character and state to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+    ///
 
     #[test]
     fn parse_full_scene_ops_successfully() {
-        let ops =
-            parse_scene_to_operations("\nGOTO foo\nLABEL foo\nBACKGROUND battlefield\nHIDE left");
+        let ops = parse_scene_to_operations(concat!(
+            "\nGOTO foo",
+            "\nLABEL foo",
+            "\nBACKGROUND battlefield",
+            "\nHIDE left",
+            "\nCHARACTER miku idle"
+        ));
         if let Ok(ops) = ops {
             assert_eq!(
                 ops,
@@ -569,6 +643,7 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::Label("foo".to_owned()),
                     UnvalidatedNovelOps::Background("battlefield".to_owned()),
                     UnvalidatedNovelOps::Hide("left".to_owned()),
+                    UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
                 ]
             );
         } else {
