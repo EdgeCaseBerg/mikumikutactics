@@ -310,6 +310,16 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
     }
 }
 
+fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<NovelOps>> {
+    Ok(vec![])
+}
+
+fn parse_scene(raw_scene: &str) -> VnResult<VisualNovelMachine> {
+    let ops = parse_scene_to_operations(raw_scene)?;
+    let vn = ops.into();
+    Ok(vn)
+}
+
 #[cfg(test)]
 mod visual_novel_tests {
     use super::*;
