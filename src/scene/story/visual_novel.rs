@@ -42,7 +42,7 @@ pub enum UnvalidatedNovelOps {
     Label(String),
     Goto(String),
     Show(String, String),
-    Hide(PortraitPosition),
+    Hide(String),
     NewCharacterState(String, String),
     Background(String),
     PlaySfx(String),
@@ -204,7 +204,14 @@ fn compile_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<d
                 }
             }
             UnvalidatedNovelOps::Hide(pp) => {
-                valid_ops.push(NovelOps::Hide(pp));
+                if let Some(pp) = PortraitPosition::lift(&pp) {
+                    valid_ops.push(NovelOps::Hide(pp));
+                } else {
+                    errors.push(format!(
+                        "cannot hide character at position {:?} as position is not valid",
+                        pp
+                    ));
+                }
             }
             UnvalidatedNovelOps::NewCharacterState(character_name, state) => {
                 if let Some(texture_id) = tmp_name_to_texture(&character_name) {
@@ -267,8 +274,6 @@ struct VisualNovelMachine {
 #[cfg(test)]
 mod visual_novel_tests {
     use super::*;
-    // use crate::backend_dummy::FakeRenderer;
-    // use crate::backend_dummy::click_button_with_left_mouse;
 
     #[test]
     fn goto_a_label_that_doesnt_exist_is_invalid() {
@@ -281,7 +286,7 @@ mod visual_novel_tests {
         ]);
         if let Err(problem) = result {
             assert_eq!(
-                problem.description(),
+                problem.to_string(),
                 "cannot create GOTO (404) because label 404 does not exist"
             );
         } else {
@@ -330,7 +335,7 @@ mod visual_novel_tests {
         ]);
         if let Err(problem) = result {
             assert_eq!(
-                problem.description(),
+                problem.to_string(),
                 "cannot create choice because label 404 does not exist"
             );
         } else {
@@ -376,6 +381,40 @@ mod visual_novel_tests {
                         },
                     ]),
                     NovelOps::Label("200".to_string()),
+                ]
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
+
+    #[test]
+    fn an_unknown_portrait_position_is_invalid() {
+        let result = compile_program(vec![UnvalidatedNovelOps::Hide(
+            "not a valid position".to_string(),
+        )]);
+        if let Err(problem) = result {
+            assert_eq!(
+                problem.to_string(),
+                "cannot hide character at position \"not a valid position\" as position is not valid"
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
+
+    #[test]
+    fn hide_a_known_position_is_valid() {
+        let result = compile_program(vec![
+            UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
+            UnvalidatedNovelOps::Hide("left".to_string()),
+        ]);
+        if let Ok(operations) = result {
+            assert_eq!(
+                operations,
+                vec![
+                    NovelOps::Say("a label that does match will compile".to_string()),
+                    NovelOps::Hide(PortraitPosition::Left),
                 ]
             );
         } else {
