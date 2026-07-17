@@ -10,9 +10,9 @@ use std::error::Error;
  * CHARACTER miku idle
  * SAY blablablabl blabla bla blabl bla
  * CHOICE leading | optional, but parse empty choice ignored for ease of script writing.
- *   | a
- *   | b
- *   | c
+ *   | a You're my bestie!
+ *   | b Sure it neat to have a friend like you rin!
+ *   | c ...
  * LABEL a
  * SHOW rin right
  * FOCUS right
