@@ -559,11 +559,13 @@ mod visual_novel_tests {
 
     #[test]
     fn parse_full_scene_ops_successfully() {
-        let ops = parse_scene_to_operations("LABEL foo\nBACKGROUND battlefield\nHIDE left");
+        let ops =
+            parse_scene_to_operations("\nGOTO foo\nLABEL foo\nBACKGROUND battlefield\nHIDE left");
         if let Ok(ops) = ops {
             assert_eq!(
                 ops,
                 vec![
+                    UnvalidatedNovelOps::Goto("foo".to_owned()),
                     UnvalidatedNovelOps::Label("foo".to_owned()),
                     UnvalidatedNovelOps::Background("battlefield".to_owned()),
                     UnvalidatedNovelOps::Hide("left".to_owned()),
