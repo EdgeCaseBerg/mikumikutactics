@@ -318,7 +318,22 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
 }
 
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
-    Ok(vec![])
+    let mut operations = Vec::new();
+    let mut line_iter = raw_scene.lines();
+    let mut errors = Vec::new();
+    while let Some(line) = line_iter.next() {
+        if line.starts_with("BACKGROUND") {
+            let Some((_, bg_name)) = line.split_once("BACKGROUND ") else {
+                errors.push(format!("could not parse background name from {}", line));
+                continue;
+            };
+            operations.push(UnvalidatedNovelOps::Background(bg_name.to_owned()));
+        }
+    }
+    if errors.len() > 0 {
+        return Err(errors.join(", ").into());
+    }
+    Ok(operations)
 }
 
 fn parse_scene(
@@ -372,6 +387,19 @@ mod visual_novel_tests {
         let ops = parse_scene_to_operations("");
         if let Ok(ops) = ops {
             assert_eq!(ops, vec![]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_background_scene_op() {
+        let ops = parse_scene_to_operations("BACKGROUND battlefield");
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::Background("battlefield".to_owned()),]
+            );
         } else {
             panic!("expected successful parse, got {:?}", ops);
         }
