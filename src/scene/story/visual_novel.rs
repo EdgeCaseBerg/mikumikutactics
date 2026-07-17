@@ -133,7 +133,7 @@ fn tmp_name_to_texture(name: &str) -> Option<TextureId> {
     Some(t)
 }
 
-fn compile_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<dyn Error>> {
+fn validated_program(raw: Vec<UnvalidatedNovelOps>) -> Result<Vec<NovelOps>, Box<dyn Error>> {
     // once we're done with toy programs, this will probably need to work with
     // a proper struct getting the game context passed in to resolve textures
     // and that sort of thing. For now... just hardcode so we can keep prototyping.
@@ -290,7 +290,7 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_label_that_doesnt_exist_is_invalid() {
-        let result = compile_program(vec![
+        let result = validated_program(vec![
             UnvalidatedNovelOps::Say(
                 "a label that doesnt match will be an error on compilation".to_string(),
             ),
@@ -309,7 +309,7 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_label_that_exists_is_valid() {
-        let result = compile_program(vec![
+        let result = validated_program(vec![
             UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
             UnvalidatedNovelOps::Label("304".to_string()),
             UnvalidatedNovelOps::Goto("304".to_string()),
@@ -330,7 +330,7 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_choice_that_does_not_exist_raises_errors() {
-        let result = compile_program(vec![
+        let result = validated_program(vec![
             UnvalidatedNovelOps::Say(
                 "a label that doesnt match will be an error on compilation".to_string(),
             ),
@@ -358,7 +358,7 @@ mod visual_novel_tests {
 
     #[test]
     fn goto_a_choice_that_does_exist_compiles() {
-        let result = compile_program(vec![
+        let result = validated_program(vec![
             UnvalidatedNovelOps::Say(
                 "a label that doesnt match will be an error on compilation".to_string(),
             ),
@@ -403,7 +403,7 @@ mod visual_novel_tests {
 
     #[test]
     fn an_unknown_portrait_position_is_invalid() {
-        let result = compile_program(vec![UnvalidatedNovelOps::Hide(
+        let result = validated_program(vec![UnvalidatedNovelOps::Hide(
             "not a valid position".to_string(),
         )]);
         if let Err(problem) = result {
@@ -418,7 +418,7 @@ mod visual_novel_tests {
 
     #[test]
     fn hide_a_known_position_is_valid() {
-        let result = compile_program(vec![
+        let result = validated_program(vec![
             UnvalidatedNovelOps::Say("a label that does match will compile".to_string()),
             UnvalidatedNovelOps::Hide("left".to_string()),
         ]);
