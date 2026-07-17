@@ -318,8 +318,10 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
 }
 
 fn parse_background(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("BACKGROUND") {
+        return None;
+    }
     let Some((_, bg_name)) = line.split_once("BACKGROUND ") else {
-        errors.push(format!("could not parse background name from {}", line));
         return None;
     };
     if bg_name.trim().is_empty() {
@@ -332,12 +334,32 @@ fn parse_background(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedN
     Some(UnvalidatedNovelOps::Background(bg_name.to_owned()))
 }
 
+fn parse_label(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("LABEL") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("LABEL ") else {
+        errors.push(format!("could not parse label name from {}", line));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(
+            "could not parse label name from empty string, add a label name to scene".to_string(),
+        );
+        return None;
+    }
+    Some(UnvalidatedNovelOps::Label(name.to_owned()))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
     let mut errors = Vec::new();
     while let Some(line) = line_iter.next() {
         if let Some(op) = parse_background(line, &mut errors) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_label(line, &mut errors) {
             operations.push(op);
         }
     }
@@ -394,48 +416,32 @@ mod visual_novel_tests {
     }
 
     #[test]
-    fn parse_empty_scene_parses_to_nothing() {
-        let ops = parse_scene_to_operations("");
+    fn parse_label_scene_op_successfully() {
+        let ops = parse_scene_to_operations("LABEL foo");
         if let Ok(ops) = ops {
-            assert_eq!(ops, vec![]);
+            assert_eq!(ops, vec![UnvalidatedNovelOps::Label("foo".to_owned()),]);
         } else {
             panic!("expected successful parse, got {:?}", ops);
         }
     }
 
     #[test]
-    fn parse_background_scene_op_successfully() {
-        let ops = parse_scene_to_operations("BACKGROUND battlefield");
-        if let Ok(ops) = ops {
-            assert_eq!(
-                ops,
-                vec![UnvalidatedNovelOps::Background("battlefield".to_owned()),]
-            );
-        } else {
-            panic!("expected successful parse, got {:?}", ops);
-        }
-    }
-
-    #[test]
-    fn parse_background_scene_op_failure() {
-        let ops = parse_scene_to_operations("BACKGROUND");
+    fn parse_label_scene_op_failure() {
+        let ops = parse_scene_to_operations("LABEL");
         if let Err(problem) = ops {
-            assert_eq!(
-                problem.to_string(),
-                "could not parse background name from BACKGROUND"
-            );
+            assert_eq!(problem.to_string(), "could not parse label name from LABEL");
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
 
     #[test]
-    fn parse_empty_background_scene_op_is_failure() {
-        let ops = parse_scene_to_operations("BACKGROUND ");
+    fn parse_empty_label_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("LABEL ");
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse background name from empty string, add a background name to scene"
+                "could not parse label name from empty string, add a label name to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
