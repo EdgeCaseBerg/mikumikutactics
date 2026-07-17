@@ -385,6 +385,50 @@ fn parse_goto(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOp
     Some(UnvalidatedNovelOps::Goto(target.to_owned()))
 }
 
+fn parse_new_character_state(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("CHARACTER") {
+        return None;
+    }
+    let Some((_, name_and_state)) = line.split_once("CHARACTER ") else {
+        errors.push(format!("could not parse character from {}", line));
+        return None;
+    };
+    if name_and_state.trim().is_empty() {
+        errors.push(
+            "could not parse character from empty string, add a character and state to scene"
+                .to_string(),
+        );
+        return None;
+    }
+    let Some((name, state)) = name_and_state.split_once(" IS ") else {
+        errors.push(format!(
+            "could not parse character from {}, missing IS between character and state",
+            line
+        ));
+        return None;
+    };
+
+    if name.trim().is_empty() {
+        errors.push(
+            "could not parse character from empty string, add a character and state to scene"
+                .to_string(),
+        );
+        return None;
+    }
+    if state.trim().is_empty() {
+        errors.push(
+            "could not parse state from empty string, add a character and state to scene"
+                .to_string(),
+        );
+        return None;
+    }
+
+    Some(UnvalidatedNovelOps::NewCharacterState(
+        name.to_owned(),
+        state.to_owned(),
+    ))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -400,6 +444,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             operations.push(op);
         }
         if let Some(op) = parse_goto(line, &mut errors) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_new_character_state(line, &mut errors) {
             operations.push(op);
         }
     }
@@ -601,11 +648,11 @@ mod visual_novel_tests {
 
     #[test]
     fn parse_empty_state_character_state_scene_op_is_failure() {
-        let ops = parse_scene_to_operations("CHARACTER miku");
+        let ops = parse_scene_to_operations("CHARACTER miku IS ");
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from empty string, add a character and state to scene"
+                "could not parse character from CHARACTER miku IS , missing IS between character and state"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -614,11 +661,11 @@ mod visual_novel_tests {
 
     #[test]
     fn parse_missing_state_character_state_scene_op_is_failure() {
-        let ops = parse_scene_to_operations("CHARACTER miku ");
+        let ops = parse_scene_to_operations("CHARACTER miku IS");
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from empty string, add a character and state to scene"
+                "could not parse character from CHARACTER miku IS, missing IS between character and state"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
