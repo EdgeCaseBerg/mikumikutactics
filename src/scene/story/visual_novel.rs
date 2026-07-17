@@ -317,21 +317,28 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
     }
 }
 
+fn parse_background(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+    let Some((_, bg_name)) = line.split_once("BACKGROUND ") else {
+        errors.push(format!("could not parse background name from {}", line));
+        return None;
+    };
+    if bg_name.trim().is_empty() {
+        errors.push(
+            "could not parse background name from empty string, add a background name to scene"
+                .to_string(),
+        );
+        return None;
+    }
+    Some(UnvalidatedNovelOps::Background(bg_name.to_owned()))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
     let mut errors = Vec::new();
     while let Some(line) = line_iter.next() {
-        if line.starts_with("BACKGROUND") {
-            let Some((_, bg_name)) = line.split_once("BACKGROUND ") else {
-                errors.push(format!("could not parse background name from {}", line));
-                continue;
-            };
-            if bg_name.trim().is_empty() {
-                errors.push("could not parse background name from empty string, add a background name to scene".to_string());
-                continue;
-            }
-            operations.push(UnvalidatedNovelOps::Background(bg_name.to_owned()));
+        if let Some(op) = parse_background(line, &mut errors) {
+            operations.push(op);
         }
     }
     if errors.len() > 0 {
