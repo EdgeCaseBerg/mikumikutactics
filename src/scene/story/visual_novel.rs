@@ -327,6 +327,10 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 errors.push(format!("could not parse background name from {}", line));
                 continue;
             };
+            if bg_name.trim().is_empty() {
+                errors.push("could not parse background name from empty string, add a background name to scene".to_string());
+                continue;
+            }
             operations.push(UnvalidatedNovelOps::Background(bg_name.to_owned()));
         }
     }
@@ -393,7 +397,7 @@ mod visual_novel_tests {
     }
 
     #[test]
-    fn parse_background_scene_op() {
+    fn parse_background_scene_op_successfully() {
         let ops = parse_scene_to_operations("BACKGROUND battlefield");
         if let Ok(ops) = ops {
             assert_eq!(
@@ -402,6 +406,32 @@ mod visual_novel_tests {
             );
         } else {
             panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_background_scene_op_failure() {
+        let ops = parse_scene_to_operations("BACKGROUND");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse background name from BACKGROUND"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_background_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("BACKGROUND ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "could not parse background name from empty string, add a background name to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
 
