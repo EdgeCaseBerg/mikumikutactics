@@ -368,6 +368,16 @@ mod visual_novel_tests {
     }
 
     #[test]
+    fn parse_empty_scene_parses_to_nothing() {
+        let ops = parse_scene_to_operations("");
+        if let Ok(ops) = ops {
+            assert_eq!(ops, vec![]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
     fn goto_a_label_that_doesnt_exist_is_invalid() {
         let result = validate_program(
             vec![
