@@ -313,7 +313,6 @@ fn validate_program(
     Ok(valid_ops)
 }
 
-
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -922,7 +921,14 @@ mod visual_novel_tests {
             "\nHIDE left",
             "\nCHARACTER miku IS idle",
             "\nENTER miku FROM left",
+            "\nCHOICE",
+            "\n| label1 text for label one",
+            "\n| label2 choice ends once no more pipes on left",
+            "\n", // empty line is a no-op and means nothing
             "\nFOCUS left",
+            "\nCHOICE",
+            "\n| label3 text for label one of choice 2",
+            "\n| label4 choice ends when there's no more stuff"
         ));
         if let Ok(ops) = ops {
             assert_eq!(
@@ -934,7 +940,27 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::Hide("left".to_owned()),
                     UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
                     UnvalidatedNovelOps::Show("miku".to_owned(), "left".to_owned()),
+                    UnvalidatedNovelOps::Choices(vec![
+                        Choice {
+                            label: "label1".to_owned(),
+                            text: "text for label one".to_owned(),
+                        },
+                        Choice {
+                            label: "label2".to_owned(),
+                            text: "choice ends once no more pipes on left".to_owned(),
+                        },
+                    ]),
                     UnvalidatedNovelOps::Focus("left".to_owned()),
+                    UnvalidatedNovelOps::Choices(vec![
+                        Choice {
+                            label: "label3".to_owned(),
+                            text: "text for label one of choice 2".to_owned(),
+                        },
+                        Choice {
+                            label: "label4".to_owned(),
+                            text: "choice ends when there's no more stuff".to_owned(),
+                        },
+                    ]),
                 ]
             );
         } else {
