@@ -9,10 +9,10 @@ use std::error::Error;
  * ENTER miku FROM left
  * CHARACTER miku IS idle
  * SAY blablablabl blabla bla blabl bla
- * CHOICE leading | optional, but parse empty choice ignored for ease of script writing.
- *   | a You're my bestie!
- *   | b Sure it neat to have a friend like you rin!
- *   | c ...
+ * CHOICE | optional OPTION newlines are not needed for the first option if you hate legibility
+ *   | happy OPTION You're my bestie!
+ *   | friend points gained OPTION Sure is neat to have a friend like you rin!
+ *   | angry rival gained OPTION you're a dumb meany doo doo head!
  * LABEL a
  * ENTER rin FROM right
  * FOCUS right
@@ -313,7 +313,6 @@ fn validate_program(
     Ok(valid_ops)
 }
 
-
 pub fn parse_scene(
     raw_scene: &str,
     context: &impl SceneLoadingContext,
@@ -326,9 +325,10 @@ pub fn parse_scene(
 
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
-    let mut line_iter = raw_scene.lines();
+    let mut line_iter = raw_scene.lines().peekable();
     let mut errors = Vec::new();
     let mut line_number = 0;
+    let mut partial_choice = None;
     while let Some(line) = line_iter.next() {
         line_number += 1;
         if let Some(op) = parse_background(line, &mut errors, line_number) {
@@ -352,11 +352,91 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_focus(line, &mut errors, line_number) {
             operations.push(op);
         }
+        if let Some(UnvalidatedNovelOps::Choices(choices)) =
+            parse_choice_start(line, &mut errors, line_number)
+        {
+            // Choices shouldn't come after each other since they
+            // have labels for each choice, though this does mean that a writer needs to pretty much
+            // always follow a choice up with a label... but they should anyway. So...
+            if partial_choice.is_some() {
+                errors.push("choice started before another choice has ended, your script likely needs labels between choices".to_owned());
+            }
+            partial_choice = Some(UnvalidatedNovelOps::Choices(choices));
+            if !line_iter.peek().is_some() {
+                errors.push(
+                    format!("script ended before choice options were included, your script likely options for your CHOICE on line {}", line_number)
+                );
+            }
+        } else if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
+            if let Some(UnvalidatedNovelOps::Choices(choices)) = partial_choice.as_mut() {
+                choices.push(choice);
+            } else {
+                errors
+                    .push("invalid state, trying to add choice to empty choice partial".to_owned());
+            }
+        } else if partial_choice.is_some() {
+            if let Some(op) = partial_choice.take() {
+                operations.push(op);
+            } else {
+                errors.push(
+                    "invalid state, trying to add choice option when no choice is active"
+                        .to_owned(),
+                );
+            }
+        }
     }
     if errors.len() > 0 {
         return Err(errors.join(", ").into());
     }
     Ok(operations)
+}
+
+fn parse_choice_start(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("CHOICE") {
+        return None;
+    }
+    let Some((_, trailing_info)) = line.trim().split_once("CHOICE") else {
+        eprintln!("DEBUG: parse_choice_start else hit");
+        return Some(UnvalidatedNovelOps::Choices(vec![]));
+    };
+    if trailing_info.is_empty() {
+        eprintln!("DEBUG: parse_choice_start empty trailing info hit");
+        return Some(UnvalidatedNovelOps::Choices(vec![]));
+    }
+    eprintln!("DEBUG: parse_choice_start else not hit `{}`", trailing_info);
+    if let Some(choice) = parse_choice_option(trailing_info.trim(), errors, line_number) {
+        eprintln!("DEBUG: parse_choice_start inner parse_choice_option else hit");
+        return Some(UnvalidatedNovelOps::Choices(vec![choice]));
+    }
+    eprintln!("DEBUG: parse_choice_start outer return hit");
+    // if we hit this, it means that the same-line choice option was invalid, so return the found
+    // choice that existed and let whatever errors that were found bubble up alongside it.
+    Some(UnvalidatedNovelOps::Choices(vec![]))
+}
+
+fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize) -> Option<Choice> {
+    if !line.starts_with('|') {
+        return None;
+    }
+    let Some((label, text)) = line.split_once(" OPTION ") else {
+        return None;
+    };
+    let c = if let Some(label) = label.strip_prefix('|') {
+        Choice {
+            label: label.trim().to_owned(),
+            text: text.trim().to_owned(),
+        }
+    } else {
+        Choice {
+            label: label.trim().to_owned(),
+            text: text.trim().to_owned(),
+        }
+    };
+    Some(c)
 }
 
 fn parse_background(
@@ -902,6 +982,28 @@ mod visual_novel_tests {
             assert_eq!(
                 problem.to_string(),
                 "line 1 could not parse focus position from FOCUS"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_choice_scene_op_failure() {
+        let ops = parse_scene_to_operations("CHOICE");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "script ended before choice options were included, your script likely options for your CHOICE on line 1"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+        let ops = parse_scene_to_operations("CHOICE ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "script ended before choice options were included, your script likely options for your CHOICE on line 1"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
