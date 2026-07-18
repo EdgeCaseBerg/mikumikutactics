@@ -313,6 +313,17 @@ fn validate_program(
     Ok(valid_ops)
 }
 
+
+pub fn parse_scene(
+    raw_scene: &str,
+    context: &impl SceneLoadingContext,
+) -> VnResult<VisualNovelMachine> {
+    let ops = parse_scene_to_operations(raw_scene)?;
+    let ops = validate_program(ops, context)?;
+    let vn = ops.into();
+    Ok(vn)
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -346,16 +357,6 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         return Err(errors.join(", ").into());
     }
     Ok(operations)
-}
-
-pub fn parse_scene(
-    raw_scene: &str,
-    context: &impl SceneLoadingContext,
-) -> VnResult<VisualNovelMachine> {
-    let ops = parse_scene_to_operations(raw_scene)?;
-    let ops = validate_program(ops, context)?;
-    let vn = ops.into();
-    Ok(vn)
 }
 
 fn parse_background(
