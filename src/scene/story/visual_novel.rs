@@ -710,7 +710,13 @@ mod visual_novel_tests {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
-    ///
+
+    /*
+    SHOW
+    SAY
+    CHOICE
+    FOCUS
+    */
 
     #[test]
     fn parse_full_scene_ops_successfully() {
