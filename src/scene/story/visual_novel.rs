@@ -361,11 +361,17 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             if partial_choice.is_some() {
                 errors.push("choice started before another choice has ended, your script likely needs labels between choices".to_owned());
             }
-            partial_choice = Some(UnvalidatedNovelOps::Choices(choices));
-            if !line_iter.peek().is_some() {
+            // if there is no next token, and the choice had no inline option...
+            if !line_iter.peek().is_some() && choices.is_empty() {
                 errors.push(
                     format!("script ended before choice options were included, your script likely options for your CHOICE on line {}", line_number)
                 );
+            }
+            partial_choice = Some(UnvalidatedNovelOps::Choices(choices));
+            // if there is no next token, then take the last token and push onto the options
+            // rather than let it ride in the partial_choice til the next loop (which will never happen)
+            if !line_iter.peek().is_some() {
+                operations.push(partial_choice.take().unwrap());
             }
         } else if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
             if let Some(UnvalidatedNovelOps::Choices(choices)) = partial_choice.as_mut() {
@@ -1007,6 +1013,26 @@ mod visual_novel_tests {
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_single_option_choice_scene_op_successfully() {
+        let ops = parse_scene_to_operations("CHOICE | label OPTION using pipe as expected");
+        if let Ok(ref choices) = ops {
+            assert_eq!(choices.len(), 1, "expected choices to be non-empty");
+            let UnvalidatedNovelOps::Choices(choices) = choices.iter().next().unwrap() else {
+                panic!("expected successful parse, got {:?}", ops);
+            };
+            assert_eq!(
+                choices,
+                &vec![Choice {
+                    label: "label".to_owned(),
+                    text: "using pipe as expected".to_owned()
+                }]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
         }
     }
 
