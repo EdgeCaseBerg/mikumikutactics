@@ -380,6 +380,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 errors
                     .push("invalid state, trying to add choice to empty choice partial".to_owned());
             }
+            if !line_iter.peek().is_some() && partial_choice.is_some() {
+                operations.push(partial_choice.take().unwrap());
+            }
         } else if partial_choice.is_some() {
             if let Some(op) = partial_choice.take() {
                 operations.push(op);
