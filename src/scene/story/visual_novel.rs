@@ -1140,6 +1140,66 @@ mod visual_novel_tests {
         }
     }
 
+    #[test]
+    fn parse_say_text_from_a_single_line_successfully() {
+        let ops = parse_scene_to_operations(concat!("SAY some text on a line"));
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::Say("some text on a line".to_owned()),]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_say_text_from_multiple_lines_successfully() {
+        let ops = parse_scene_to_operations(concat!(
+            "SAY\n",
+            "say text can go on multiple lines and shouldn't cause any problems\n",
+            "for other operations unless someone were to randomly put a keyword in\n",
+            "but as long as thigns like LABEL, ENTER, CHARACTER, SAY, CHOICE, FOCUS, HIDE\n",
+            "and all that other business like GOTO or similar aren't the first word it should\n",
+            "be fiiiine.\n",
+        ));
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::Say(concat!(
+                    "say text can go on multiple lines and shouldn't cause any problems ",
+                    "for other operations unless someone were to randomly put a keyword in ",
+                    "but as long as thigns like LABEL, ENTER, CHARACTER, SAY, CHOICE, FOCUS, HIDE ",
+                    "and all that other business like GOTO or similar aren't the first word it should ",
+                    "be fiiiine. ",
+                ).to_owned()),]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_say_text_with_operations_between() {
+        let ops = parse_scene_to_operations(concat!(
+            "SAY some text on a line\n",
+            "HIDE left\n",
+            "SAY some text on another line\n",
+        ));
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![
+                    UnvalidatedNovelOps::Say("some text on a line".to_owned()),
+                    UnvalidatedNovelOps::Hide("left".to_owned()),
+                    UnvalidatedNovelOps::Say("some text on another line".to_owned()),
+                ]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
     /*
     SAY
     PLAYSFX
