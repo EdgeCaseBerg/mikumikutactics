@@ -414,19 +414,14 @@ fn parse_choice_start(
         return None;
     }
     let Some((_, trailing_info)) = line.trim().split_once("CHOICE") else {
-        eprintln!("DEBUG: parse_choice_start else hit");
         return Some(UnvalidatedNovelOps::Choices(vec![]));
     };
     if trailing_info.is_empty() {
-        eprintln!("DEBUG: parse_choice_start empty trailing info hit");
         return Some(UnvalidatedNovelOps::Choices(vec![]));
     }
-    eprintln!("DEBUG: parse_choice_start else not hit `{}`", trailing_info);
     if let Some(choice) = parse_choice_option(trailing_info.trim(), errors, line_number) {
-        eprintln!("DEBUG: parse_choice_start inner parse_choice_option else hit");
         return Some(UnvalidatedNovelOps::Choices(vec![choice]));
     }
-    eprintln!("DEBUG: parse_choice_start outer return hit");
     // if we hit this, it means that the same-line choice option was invalid, so return the found
     // choice that existed and let whatever errors that were found bubble up alongside it.
     Some(UnvalidatedNovelOps::Choices(vec![]))
