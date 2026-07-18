@@ -428,7 +428,7 @@ fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize)
     if !line.starts_with('|') {
         return None;
     }
-    let Some((label, text)) = line.split_once(" OPTION ") else {
+    let Some((label, text)) = line.split_once(" OPTION") else {
         return None;
     };
     let c = if let Some(label) = label.strip_prefix('|') {
@@ -442,6 +442,18 @@ fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize)
             text: text.trim().to_owned(),
         }
     };
+    if c.label.is_empty() {
+        errors.push(format!(
+            "line {} option is missing label in CHOICE",
+            line_number
+        ));
+    }
+    if c.text.is_empty() {
+        errors.push(format!(
+            "line {} option is missing text in CHOICE, use ... for an empty choice if needed",
+            line_number
+        ));
+    }
     Some(c)
 }
 
@@ -1033,6 +1045,33 @@ mod visual_novel_tests {
             );
         } else {
             panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_single_option_choice_scene_op_failed_on_empty_label() {
+        let ops = parse_scene_to_operations("CHOICE | OPTION using pipe as expected");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 option is missing label in CHOICE",
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_single_option_choice_scene_op_failed_on_empty_text() {
+        let ops = parse_scene_to_operations("CHOICE |label OPTION ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 option is missing text in CHOICE, use ... for an empty choice if needed"
+                    .to_owned(),
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
 
