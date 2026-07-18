@@ -30,7 +30,12 @@ use std::error::Error;
  * SAY bla bla bla bla
  * HIDE left
  * HIDE right
- *
+ * SAY blablabla
+ * say text can go on multiple lines and shouldn't cause any problems
+ * for other operations unless someone were to randomly put a keyword in
+ * but as long as thigns like LABEL, ENTER, CHARACTER, SAY, CHOICE, FOCUS, HIDE
+ * and all that other business like GOTO or similar aren't the first word it should
+ * be fiiiine.
  */
 
 type VnResult<T> = Result<T, Box<dyn Error>>;
@@ -1142,6 +1147,8 @@ mod visual_novel_tests {
 
     /*
     SAY
+    PLAYSFX
+    PLAYMUSIC
     */
 
     #[test]
