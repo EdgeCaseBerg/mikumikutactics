@@ -129,6 +129,42 @@ pub trait SceneLoadingContext {
     fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
     fn name_to_music(&self, name: &str) -> Option<MusicId>;
 }
+#[derive(Debug)]
+pub struct VisualNovelMachine {
+    pub program_counter: usize,
+    pub program: Vec<NovelOps>,
+    pub music: Option<MusicId>,
+    pub sfx: Option<SfxId>,
+    pub focused: Option<PortraitPosition>,
+    pub background: Option<TextureId>,
+    pub slot_left: Option<Character>,
+    pub slot_center: Option<Character>,
+    pub slot_right: Option<Character>,
+}
+
+impl Default for VisualNovelMachine {
+    fn default() -> Self {
+        VisualNovelMachine {
+            program_counter: 0,
+            program: vec![],
+            music: None,
+            sfx: None,
+            focused: None,
+            background: None,
+            slot_left: None,
+            slot_center: None,
+            slot_right: None,
+        }
+    }
+}
+
+impl From<Vec<NovelOps>> for VisualNovelMachine {
+    fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
+        let mut vn = VisualNovelMachine::default();
+        vn.program = ops;
+        vn
+    }
+}
 
 fn validate_program(
     raw: Vec<UnvalidatedNovelOps>,
@@ -277,41 +313,50 @@ fn validate_program(
     Ok(valid_ops)
 }
 
-#[derive(Debug)]
-pub struct VisualNovelMachine {
-    pub program_counter: usize,
-    pub program: Vec<NovelOps>,
-    pub music: Option<MusicId>,
-    pub sfx: Option<SfxId>,
-    pub focused: Option<PortraitPosition>,
-    pub background: Option<TextureId>,
-    pub slot_left: Option<Character>,
-    pub slot_center: Option<Character>,
-    pub slot_right: Option<Character>,
-}
 
-impl Default for VisualNovelMachine {
-    fn default() -> Self {
-        VisualNovelMachine {
-            program_counter: 0,
-            program: vec![],
-            music: None,
-            sfx: None,
-            focused: None,
-            background: None,
-            slot_left: None,
-            slot_center: None,
-            slot_right: None,
+fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
+    let mut operations = Vec::new();
+    let mut line_iter = raw_scene.lines();
+    let mut errors = Vec::new();
+    let mut line_number = 0;
+    while let Some(line) = line_iter.next() {
+        line_number += 1;
+        if let Some(op) = parse_background(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_label(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_hide(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_goto(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_new_character_state(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_show_character(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_focus(line, &mut errors, line_number) {
+            operations.push(op);
         }
     }
+    if errors.len() > 0 {
+        return Err(errors.join(", ").into());
+    }
+    Ok(operations)
 }
 
-impl From<Vec<NovelOps>> for VisualNovelMachine {
-    fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
-        let mut vn = VisualNovelMachine::default();
-        vn.program = ops;
-        vn
-    }
+pub fn parse_scene(
+    raw_scene: &str,
+    context: &impl SceneLoadingContext,
+) -> VnResult<VisualNovelMachine> {
+    let ops = parse_scene_to_operations(raw_scene)?;
+    let ops = validate_program(ops, context)?;
+    let vn = ops.into();
+    Ok(vn)
 }
 
 fn parse_background(
@@ -530,51 +575,6 @@ fn parse_show_character(
         name.to_owned(),
         position.to_owned(),
     ))
-}
-
-fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
-    let mut operations = Vec::new();
-    let mut line_iter = raw_scene.lines();
-    let mut errors = Vec::new();
-    let mut line_number = 0;
-    while let Some(line) = line_iter.next() {
-        line_number += 1;
-        if let Some(op) = parse_background(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_label(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_hide(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_goto(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_new_character_state(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_show_character(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_focus(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-    }
-    if errors.len() > 0 {
-        return Err(errors.join(", ").into());
-    }
-    Ok(operations)
-}
-
-pub fn parse_scene(
-    raw_scene: &str,
-    context: &impl SceneLoadingContext,
-) -> VnResult<VisualNovelMachine> {
-    let ops = parse_scene_to_operations(raw_scene)?;
-    let ops = validate_program(ops, context)?;
-    let vn = ops.into();
-    Ok(vn)
 }
 
 #[cfg(test)]
@@ -911,7 +911,6 @@ mod visual_novel_tests {
     /*
     SAY
     CHOICE
-    FOCUS
     */
 
     #[test]
