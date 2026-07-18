@@ -317,7 +317,11 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
     }
 }
 
-fn parse_background(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+fn parse_background(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
     if !line.starts_with("BACKGROUND") {
         return None;
     }
@@ -326,100 +330,128 @@ fn parse_background(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedN
     };
     if bg_name.trim().is_empty() {
         errors.push(
-            "could not parse background name from empty string, add a background name to scene"
-                .to_string(),
+            format!("line {} could not parse background name from empty string, add a background name to scene", line_number)
         );
         return None;
     }
     Some(UnvalidatedNovelOps::Background(bg_name.to_owned()))
 }
 
-fn parse_label(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+fn parse_label(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
     if !line.starts_with("LABEL") {
         return None;
     }
     let Some((_, name)) = line.split_once("LABEL ") else {
-        errors.push(format!("could not parse label name from {}", line));
+        errors.push(format!(
+            "line {} could not parse label name from {}",
+            line_number, line
+        ));
         return None;
     };
     if name.trim().is_empty() {
-        errors.push(
-            "could not parse label name from empty string, add a label name to scene".to_string(),
-        );
+        errors.push(format!(
+            "line {} could not parse label name from empty string, add a label name to scene",
+            line_number
+        ));
         return None;
     }
     Some(UnvalidatedNovelOps::Label(name.to_owned()))
 }
 
-fn parse_hide(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+fn parse_hide(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
     if !line.starts_with("HIDE") {
         return None;
     }
     let Some((_, position)) = line.split_once("HIDE ") else {
-        errors.push(format!("could not parse hide position from {}", line));
+        errors.push(format!(
+            "line {} could not parse hide position from {}",
+            line_number, line
+        ));
         return None;
     };
     if position.trim().is_empty() {
-        errors.push(
-            "could not parse label name from empty string, add a label name to scene".to_string(),
-        );
+        errors.push(format!(
+            "line {} could not parse label name from empty string, add a label name to scene",
+            line_number
+        ));
         return None;
     }
     Some(UnvalidatedNovelOps::Hide(position.to_owned()))
 }
 
-fn parse_goto(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+fn parse_goto(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
     if !line.starts_with("GOTO") {
         return None;
     }
     let Some((_, target)) = line.split_once("GOTO ") else {
-        errors.push(format!("could not parse goto from {}", line));
+        errors.push(format!(
+            "line {} could not parse goto from {}",
+            line_number, line
+        ));
         return None;
     };
     if target.trim().is_empty() {
-        errors.push(
-            "could not parse goto target from empty string, add a goto target to scene".to_string(),
-        );
+        errors.push(format!(
+            "line {} could not parse goto target from empty string, add a goto target to scene",
+            line_number
+        ));
         return None;
     }
     Some(UnvalidatedNovelOps::Goto(target.to_owned()))
 }
 
-fn parse_new_character_state(line: &str, errors: &mut Vec<String>) -> Option<UnvalidatedNovelOps> {
+fn parse_new_character_state(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
     if !line.starts_with("CHARACTER") {
         return None;
     }
     let Some((_, name_and_state)) = line.split_once("CHARACTER ") else {
-        errors.push(format!("could not parse character from {}", line));
+        errors.push(format!(
+            "line {} could not parse character from {}",
+            line_number, line
+        ));
         return None;
     };
     if name_and_state.trim().is_empty() {
         errors.push(
-            "could not parse character from empty string, add a character and state to scene"
-                .to_string(),
+            format!("line {} could not parse character from empty string, add a character and state to scene", line_number),
         );
         return None;
     }
     let Some((name, state)) = name_and_state.split_once(" IS ") else {
         errors.push(format!(
-            "could not parse character from {}, missing IS between character and state",
-            line
+            "line {} could not parse character from {}, missing IS between character and state",
+            line_number, line
         ));
         return None;
     };
 
     if name.trim().is_empty() {
         errors.push(
-            "could not parse character from empty string, add a character and state to scene"
-                .to_string(),
+            format!("line {} could not parse character from empty string, add a character and state to scene", line_number),
         );
         return None;
     }
     if state.trim().is_empty() {
-        errors.push(
-            "could not parse state from empty string, add a character and state to scene"
-                .to_string(),
-        );
+        errors.push(format!(
+            "line {} could not parse state from empty string, add a character and state to scene",
+            line_number
+        ));
         return None;
     }
 
@@ -433,20 +465,22 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
     let mut errors = Vec::new();
+    let mut line_number = 0;
     while let Some(line) = line_iter.next() {
-        if let Some(op) = parse_background(line, &mut errors) {
+        line_number += 1;
+        if let Some(op) = parse_background(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(op) = parse_label(line, &mut errors) {
+        if let Some(op) = parse_label(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(op) = parse_hide(line, &mut errors) {
+        if let Some(op) = parse_hide(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(op) = parse_goto(line, &mut errors) {
+        if let Some(op) = parse_goto(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(op) = parse_new_character_state(line, &mut errors) {
+        if let Some(op) = parse_new_character_state(line, &mut errors, line_number) {
             operations.push(op);
         }
     }
@@ -516,7 +550,10 @@ mod visual_novel_tests {
     fn parse_label_scene_op_failure() {
         let ops = parse_scene_to_operations("LABEL");
         if let Err(problem) = ops {
-            assert_eq!(problem.to_string(), "could not parse label name from LABEL");
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse label name from LABEL"
+            );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
@@ -528,7 +565,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse label name from empty string, add a label name to scene"
+                "line 1 could not parse label name from empty string, add a label name to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -551,7 +588,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse hide position from HIDE"
+                "line 1 could not parse hide position from HIDE"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -564,7 +601,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse label name from empty string, add a label name to scene"
+                "line 1 could not parse label name from empty string, add a label name to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -585,7 +622,7 @@ mod visual_novel_tests {
     fn parse_goto_scene_op_failure() {
         let ops = parse_scene_to_operations("GOTO");
         if let Err(problem) = ops {
-            assert_eq!(problem.to_string(), "could not parse goto from GOTO");
+            assert_eq!(problem.to_string(), "line 1 could not parse goto from GOTO");
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
@@ -597,7 +634,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse goto target from empty string, add a goto target to scene"
+                "line 1 could not parse goto target from empty string, add a goto target to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -626,7 +663,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from CHARACTER"
+                "line 1 could not parse character from CHARACTER"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -639,7 +676,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from empty string, add a character and state to scene"
+                "line 1 could not parse character from empty string, add a character and state to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -652,7 +689,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse state from empty string, add a character and state to scene"
+                "line 1 could not parse state from empty string, add a character and state to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -665,7 +702,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from CHARACTER miku IS, missing IS between character and state"
+                "line 1 could not parse character from CHARACTER miku IS, missing IS between character and state"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
