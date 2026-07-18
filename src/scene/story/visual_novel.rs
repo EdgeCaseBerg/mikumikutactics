@@ -1075,6 +1075,36 @@ mod visual_novel_tests {
         }
     }
 
+    #[test]
+    fn parse_typical_option_choice_in_scene_op_successfully() {
+        let ops = parse_scene_to_operations(concat!(
+            "CHOICE\n",
+            "| label 1 OPTION text1\n",
+            "| label 2 OPTION text2\n",
+        ));
+        if let Ok(ref choices) = ops {
+            assert_eq!(choices.len(), 1, "expected choices to be non-empty");
+            let UnvalidatedNovelOps::Choices(choices) = choices.iter().next().unwrap() else {
+                panic!("expected successful parse, got {:?}", ops);
+            };
+            assert_eq!(
+                choices,
+                &vec![
+                    Choice {
+                        label: "label 1".to_owned(),
+                        text: "text1".to_owned()
+                    },
+                    Choice {
+                        label: "label 2".to_owned(),
+                        text: "text2".to_owned()
+                    }
+                ]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
     /*
     SAY
     CHOICE
