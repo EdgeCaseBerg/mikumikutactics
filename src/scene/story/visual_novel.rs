@@ -6,7 +6,7 @@ use std::error::Error;
  * Use CHARACTER BACKGROUND PLAYSFX PLAYMUSIC ops to determine what to load for each scene
  *
  * BACKGROUND battlefield
- * SHOW miku left
+ * SHOW miku ENTER left
  * CHARACTER miku IS idle
  * SAY blablablabl blabla bla blabl bla
  * CHOICE leading | optional, but parse empty choice ignored for ease of script writing.
@@ -14,7 +14,7 @@ use std::error::Error;
  *   | b Sure it neat to have a friend like you rin!
  *   | c ...
  * LABEL a
- * SHOW rin right
+ * SHOW rin ENTER right
  * FOCUS right
  * CHARACTER rin IS happy
  * SAY bla bla bla bla
@@ -458,6 +458,55 @@ fn parse_new_character_state(
     ))
 }
 
+fn parse_show_character(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("SHOW") {
+        return None;
+    }
+    let Some((_, name_and_position)) = line.split_once("SHOW ") else {
+        errors.push(format!(
+            "line {} could not parse show character from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name_and_position.trim().is_empty() {
+        errors.push(
+            format!("line {} could not parse show character from empty string, add a character and position to scene", line_number),
+        );
+        return None;
+    }
+    let Some((name, position)) = name_and_position.split_once(" ENTER ") else {
+        errors.push(format!(
+            "line {} could not parse show character from {}, missing ENTER between character and position",
+            line_number, line
+        ));
+        return None;
+    };
+
+    if name.trim().is_empty() {
+        errors.push(
+            format!("line {} could not parse character from empty string, add a character and position to scene", line_number),
+        );
+        return None;
+    }
+    if position.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse position from empty string, add a character and position to scene",
+            line_number
+        ));
+        return None;
+    }
+
+    Some(UnvalidatedNovelOps::Show(
+        name.to_owned(),
+        position.to_owned(),
+    ))
+}
+
 fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOps>> {
     let mut operations = Vec::new();
     let mut line_iter = raw_scene.lines();
@@ -478,6 +527,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             operations.push(op);
         }
         if let Some(op) = parse_new_character_state(line, &mut errors, line_number) {
+            operations.push(op);
+        }
+        if let Some(op) = parse_show_character(line, &mut errors, line_number) {
             operations.push(op);
         }
     }
@@ -711,8 +763,76 @@ mod visual_novel_tests {
         }
     }
 
+    // TODO KINDA like "ENTER miku FROM center" more....
+    #[test]
+    fn parse_character_position_scene_op_successfully() {
+        let ops = parse_scene_to_operations("SHOW miku ENTER center");
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::Show(
+                    "miku".to_owned(),
+                    "center".to_owned()
+                )]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_character_show_scene_op_failure() {
+        let ops = parse_scene_to_operations("SHOW");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse show character from SHOW"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_character_show_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("SHOW ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse show character from empty string, add a character and position to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_position_character_show_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("SHOW miku ENTER ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse position from empty string, add a character and position to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_missing_position_character_show_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("SHOW miku ENTER");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse show character from SHOW miku ENTER, missing ENTER between character and position"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
     /*
-    SHOW
     SAY
     CHOICE
     FOCUS
@@ -725,7 +845,8 @@ mod visual_novel_tests {
             "\nLABEL foo",
             "\nBACKGROUND battlefield",
             "\nHIDE left",
-            "\nCHARACTER miku IS idle"
+            "\nCHARACTER miku IS idle",
+            "\nSHOW miku ENTER left"
         ));
         if let Ok(ops) = ops {
             assert_eq!(
@@ -736,6 +857,7 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::Background("battlefield".to_owned()),
                     UnvalidatedNovelOps::Hide("left".to_owned()),
                     UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
+                    UnvalidatedNovelOps::Show("miku".to_owned(), "left".to_owned()),
                 ]
             );
         } else {
