@@ -376,12 +376,37 @@ fn parse_hide(
     };
     if position.trim().is_empty() {
         errors.push(format!(
-            "line {} could not parse label name from empty string, add a label name to scene",
+            "line {} could not parse hide position from empty string, add a position to scene",
             line_number
         ));
         return None;
     }
     Some(UnvalidatedNovelOps::Hide(position.to_owned()))
+}
+
+fn parse_focus(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("FOCUS") {
+        return None;
+    }
+    let Some((_, position)) = line.split_once("FOCUS ") else {
+        errors.push(format!(
+            "line {} could not parse focus position from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if position.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse focus position from empty string, add a position to scene",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::Focus(position.to_owned()))
 }
 
 fn parse_goto(
@@ -532,6 +557,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_show_character(line, &mut errors, line_number) {
             operations.push(op);
         }
+        if let Some(op) = parse_focus(line, &mut errors, line_number) {
+            operations.push(op);
+        }
     }
     if errors.len() > 0 {
         return Err(errors.join(", ").into());
@@ -619,7 +647,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "line 1 could not parse label name from empty string, add a label name to scene"
+                "line 1 could not parse hide position from empty string, add a position to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -844,6 +872,42 @@ mod visual_novel_tests {
         }
     }
 
+    #[test]
+    fn parse_empty_focus_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("FOCUS ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse focus position from empty string, add a position to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_focus_scene_op_successfully() {
+        let ops = parse_scene_to_operations("FOCUS left");
+        if let Ok(ops) = ops {
+            assert_eq!(ops, vec![UnvalidatedNovelOps::Focus("left".to_owned()),]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_focus_scene_op_failure() {
+        let ops = parse_scene_to_operations("FOCUS");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse focus position from FOCUS"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
     /*
     SAY
     CHOICE
@@ -858,7 +922,8 @@ mod visual_novel_tests {
             "\nBACKGROUND battlefield",
             "\nHIDE left",
             "\nCHARACTER miku IS idle",
-            "\nENTER miku FROM left"
+            "\nENTER miku FROM left",
+            "\nFOCUS left",
         ));
         if let Ok(ops) = ops {
             assert_eq!(
@@ -870,6 +935,7 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::Hide("left".to_owned()),
                     UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
                     UnvalidatedNovelOps::Show("miku".to_owned(), "left".to_owned()),
+                    UnvalidatedNovelOps::Focus("left".to_owned()),
                 ]
             );
         } else {
