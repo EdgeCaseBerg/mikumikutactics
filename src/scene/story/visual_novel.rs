@@ -1110,7 +1110,6 @@ mod visual_novel_tests {
 
     /*
     SAY
-    CHOICE
     */
 
     #[test]
