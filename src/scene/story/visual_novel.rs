@@ -1108,6 +1108,38 @@ mod visual_novel_tests {
         }
     }
 
+    #[test]
+    fn parse_floating_option_choice_scene_op_fail_even_after_open_choice() {
+        let ops = parse_scene_to_operations(concat!(
+            "CHOICE\n",
+            "| label 1 OPTION text1\n",
+            "| label 2 OPTION text2\n",
+            "\n",
+            "| label 2 OPTION floating text\n",
+        ));
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "invalid state, trying to add choice to empty choice partial".to_owned(),
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_floatinge_option_choice_scene_op_fail() {
+        let ops = parse_scene_to_operations("|label OPTION text");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "invalid state, trying to add choice to empty choice partial".to_owned(),
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
     /*
     SAY
     */
