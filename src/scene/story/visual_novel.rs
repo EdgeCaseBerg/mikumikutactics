@@ -1123,13 +1123,13 @@ mod visual_novel_tests {
             "\nCHARACTER miku IS idle",
             "\nENTER miku FROM left",
             "\nCHOICE",
-            "\n| label1 text for label one",
-            "\n| label2 choice ends once no more pipes on left",
+            "\n| label1 OPTION text for label one",
+            "\n| label2 OPTION choice ends once no more pipes on left",
             "\n", // empty line is a no-op and means nothing
             "\nFOCUS left",
             "\nCHOICE",
-            "\n| label3 text for label one of choice 2",
-            "\n| label4 choice ends when there's no more stuff"
+            "\n| label3 OPTION text for label one of choice 2",
+            "\n| label4 OPTION choice ends when there's no more stuff"
         ));
         if let Ok(ops) = ops {
             assert_eq!(
