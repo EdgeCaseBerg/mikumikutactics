@@ -1,8 +1,5 @@
-use crate::constants::{
-    MUSIC_ID_PACHEBAL, MusicId, SFX_ID_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG,
-    TextureId,
-};
-use std::collections::{HashMap, HashSet};
+use crate::constants::{MusicId, SfxId, TextureId};
+use std::collections::HashSet;
 use std::error::Error;
 
 /* Scripts like
@@ -140,7 +137,7 @@ fn validate_program(
     // once we're done with toy programs, this will probably need to work with
     // a proper struct getting the game context passed in to resolve textures
     // and that sort of thing. For now... just hardcode so we can keep prototyping.
-    let mut set_of_all_labels: HashSet<String> = raw
+    let set_of_all_labels: HashSet<String> = raw
         .iter()
         .filter_map(|r| {
             if let UnvalidatedNovelOps::Label(s) = r {
@@ -281,16 +278,16 @@ fn validate_program(
 }
 
 #[derive(Debug)]
-struct VisualNovelMachine {
-    program_counter: usize,
-    program: Vec<NovelOps>,
-    music: Option<MusicId>,
-    sfx: Option<SfxId>,
-    focused: Option<PortraitPosition>,
-    background: Option<TextureId>,
-    slot_left: Option<Character>,
-    slot_center: Option<Character>,
-    slot_right: Option<Character>,
+pub struct VisualNovelMachine {
+    pub program_counter: usize,
+    pub program: Vec<NovelOps>,
+    pub music: Option<MusicId>,
+    pub sfx: Option<SfxId>,
+    pub focused: Option<PortraitPosition>,
+    pub background: Option<TextureId>,
+    pub slot_left: Option<Character>,
+    pub slot_center: Option<Character>,
+    pub slot_right: Option<Character>,
 }
 
 impl Default for VisualNovelMachine {
@@ -490,7 +487,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     Ok(operations)
 }
 
-fn parse_scene(
+pub fn parse_scene(
     raw_scene: &str,
     context: &impl SceneLoadingContext,
 ) -> VnResult<VisualNovelMachine> {
@@ -503,6 +500,11 @@ fn parse_scene(
 #[cfg(test)]
 mod visual_novel_tests {
     use super::*;
+    use crate::constants::{
+        MUSIC_ID_PACHEBAL, MusicId, SFX_ID_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG,
+        TextureId,
+    };
+    use std::collections::HashMap;
 
     struct TmpSceneLoadingContext {
         textures: HashMap<String, TextureId>,
@@ -640,7 +642,7 @@ mod visual_novel_tests {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
-    ///
+
     #[test]
     fn parse_character_state_scene_op_successfully() {
         let ops = parse_scene_to_operations("CHARACTER miku IS idle");
