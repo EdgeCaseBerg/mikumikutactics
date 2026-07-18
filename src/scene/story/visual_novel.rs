@@ -652,7 +652,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "could not parse character from CHARACTER miku IS , missing IS between character and state"
+                "could not parse state from empty string, add a character and state to scene"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -680,7 +680,7 @@ mod visual_novel_tests {
             "\nLABEL foo",
             "\nBACKGROUND battlefield",
             "\nHIDE left",
-            "\nCHARACTER miku idle"
+            "\nCHARACTER miku IS idle"
         ));
         if let Ok(ops) = ops {
             assert_eq!(
