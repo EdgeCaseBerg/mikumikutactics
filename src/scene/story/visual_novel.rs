@@ -1200,6 +1200,104 @@ mod visual_novel_tests {
         }
     }
 
+    #[test]
+    fn parse_say_text_with_empty_lines_between() {
+        let ops = parse_scene_to_operations(concat!(
+            "SAY like if someone is writing a paragraph of text\n",
+            "\n",
+            "and wanted to have a couple of those. the question is if\n",
+            "that should be broken out into multiple says or not, or if\n",
+            "the newline is respected at all and turned into another say?\n",
+        ));
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![
+                    UnvalidatedNovelOps::Say("some text on a line".to_owned()),
+                    UnvalidatedNovelOps::Hide("left".to_owned()),
+                    UnvalidatedNovelOps::Say("some text on another line".to_owned()),
+                ]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_play_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("PLAY ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse focus position from empty string, add a position to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_sound_scene_op_successfully() {
+        let ops = parse_scene_to_operations("PLAY blip");
+        if let Ok(ops) = ops {
+            assert_eq!(ops, vec![UnvalidatedNovelOps::PlaySfx("blip".to_owned()),]);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_play_no_name_scene_op_failure() {
+        let ops = parse_scene_to_operations("PLAY");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse play name from PLAY"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_empty_music_scene_op_is_failure() {
+        let ops = parse_scene_to_operations("MUSIC ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse music name from empty string"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_music_scene_op_successfully() {
+        let ops = parse_scene_to_operations("MUSIC pachebal");
+        if let Ok(ops) = ops {
+            assert_eq!(
+                ops,
+                vec![UnvalidatedNovelOps::PlayMusic("pachebal".to_owned()),]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_music_no_name_scene_op_failure() {
+        let ops = parse_scene_to_operations("MUSIC");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse play name from PLAY"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
     /*
     SAY
     PLAYSFX
