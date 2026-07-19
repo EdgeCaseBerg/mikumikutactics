@@ -357,6 +357,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_focus(line, &mut errors, line_number) {
             operations.push(op);
         }
+        if let Some(op) = parse_play(line, &mut errors, line_number) {
+            operations.push(op);
+        }
         if let Some(UnvalidatedNovelOps::Choices(choices)) =
             parse_choice_start(line, &mut errors, line_number)
         {
@@ -403,6 +406,14 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         return Err(errors.join(", ").into());
     }
     Ok(operations)
+}
+
+fn parse_play(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    None
 }
 
 fn parse_choice_start(
