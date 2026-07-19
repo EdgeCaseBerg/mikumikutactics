@@ -1306,7 +1306,7 @@ mod visual_novel_tests {
                     "for other operations unless someone were to randomly put a keyword in ",
                     "but as long as thigns like LABEL, ENTER, CHARACTER, SAY, CHOICE, FOCUS, HIDE ",
                     "and all that other business like GOTO or similar aren't the first word it should ",
-                    "be fiiiine. ",
+                    "be fiiiine.",
                 ).to_owned()),]
             );
         } else {
