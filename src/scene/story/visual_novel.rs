@@ -416,7 +416,24 @@ fn parse_play(
     errors: &mut Vec<String>,
     line_number: usize,
 ) -> Option<UnvalidatedNovelOps> {
-    None
+    if !line.starts_with("PLAY") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("PLAY ") else {
+        errors.push(format!(
+            "line {} could not parse sound effect name from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse PLAY sound effect name from empty string",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::PlaySfx(name.to_owned()))
 }
 
 fn parse_music(
@@ -424,7 +441,24 @@ fn parse_music(
     errors: &mut Vec<String>,
     line_number: usize,
 ) -> Option<UnvalidatedNovelOps> {
-    None
+    if !line.starts_with("MUSIC") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("MUSIC ") else {
+        errors.push(format!(
+            "line {} could not parse music name from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse music name from empty string",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::PlayMusic(name.to_owned()))
 }
 
 fn parse_choice_start(
@@ -491,6 +525,10 @@ fn parse_background(
         return None;
     }
     let Some((_, bg_name)) = line.split_once("BACKGROUND ") else {
+        errors.push(format!(
+            "line {} could not parse background name from {}",
+            line_number, line
+        ));
         return None;
     };
     if bg_name.trim().is_empty() {
@@ -1251,7 +1289,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "line 1 could not parse focus position from empty string, add a position to scene"
+                "line 1 could not parse PLAY sound effect name from empty string"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -1274,7 +1312,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "line 1 could not parse play name from PLAY"
+                "line 1 could not parse sound effect name from PLAY"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -1313,7 +1351,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "line 1 could not parse play name from PLAY"
+                "line 1 could not parse music name from MUSIC"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
