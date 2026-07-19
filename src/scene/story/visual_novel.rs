@@ -334,7 +334,6 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut errors = Vec::new();
     let mut line_number = 0;
     let mut partial_choice = None;
-    let mut partial_say = None;
     while let Some(line) = line_iter.next() {
         line_number += 1;
         if let Some(op) = parse_single_line_ops(line, &mut errors, line_number) {
@@ -381,36 +380,12 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 );
             }
         }
-        // if we've found a new operation besides say, then ensure that current say
-        // is added BEFORE the newly added op
-        let postparse_count = operations.len() + errors.len();
-        if postparse_count != preparse_count {
-            if let Some(op) = partial_say.take() {
-                operations.insert(operations.len() - 1, op);
-            }
-            continue;
-        }
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
         // in "SAY" mode for a while until we hit a fully blank line.
-        match parse_say(line, partial_say.take()) {
-            (None, None) => {}
-            (Some(current), None) => {
-                // no new words to add in
-                operations.push(current);
-            }
-            (Some(current), Some(next_say)) => {
-                operations.push(current);
-                partial_say = Some(next_say);
-            }
-            (None, Some(next_say)) => {
-                partial_say = Some(next_say);
-            }
-        }
-        // Handle end of the incoming tokens, ensure a say in progress
-        // gets added onto the list of ops
-        if line_iter.peek().is_none() && partial_say.is_some() {
-            operations.push(partial_say.take().unwrap());
+        let mut ops = parse_say(line, &mut errors, line_number, &mut line_iter);
+        if ops.len() > 0 {
+            operations.append(&mut ops);
         }
     }
     if errors.len() > 0 {
@@ -464,14 +439,51 @@ fn parse_say<'a>(
         return vec![];
     };
 
-    if text.trim().is_empty() {
-        return (current_say, None);
+    let mut words = vec![];
+    // We are now in SAY mode. Start chewing lines until we hit either a
+    // fresh newline with nothing on it, the end of the stream, OR another
+    // known operation (which we can check via \nCHOICE and parse_simple )
+    if !text.is_empty() {
+        words.push(text.trim());
     }
 
-    (
-        current_say,
-        Some(UnvalidatedNovelOps::Say(text.trim().to_owned())),
-    )
+    if line_iter.peek().is_none() {
+        return vec![UnvalidatedNovelOps::Say(words.join(" "))];
+    }
+
+    let mut ops = vec![];
+    while let Some(next_line) = line_iter.peek() {
+        if next_line.trim().is_empty() {
+            // DONE! We found a boundary for SAY
+            ops.push(UnvalidatedNovelOps::Say(words.join(" ")));
+            words = vec![];
+            line_iter.next();
+            continue;
+        }
+
+        let upcoming_choice = next_line.starts_with("CHOICE");
+        let has_single_line_op = parse_single_line_ops(next_line, &mut vec![], 0).is_some();
+        if has_single_line_op || upcoming_choice {
+            // There is a new op, so SAY is ending. Break out.
+            let w = words.join(" ");
+            if !w.is_empty() {
+                ops.push(UnvalidatedNovelOps::Say(w));
+            }
+            return ops;
+        }
+
+        // otherwise, we're still in the say, so it to the words
+        // and consume the iter.
+        words.push(next_line);
+        line_iter.next();
+    }
+
+    let w = words.join(" ");
+    if !w.is_empty() {
+        ops.push(UnvalidatedNovelOps::Say(w));
+    }
+
+    return ops;
 }
 
 fn parse_play(
