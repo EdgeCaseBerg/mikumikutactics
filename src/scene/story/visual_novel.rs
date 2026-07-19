@@ -337,32 +337,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut partial_say = None;
     while let Some(line) = line_iter.next() {
         line_number += 1;
-        let preparse_count = operations.len() + errors.len();
-        if let Some(op) = parse_background(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_label(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_hide(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_goto(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_new_character_state(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_show_character(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_focus(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_play(line, &mut errors, line_number) {
-            operations.push(op);
-        }
-        if let Some(op) = parse_music(line, &mut errors, line_number) {
+        if let Some(op) = parse_single_line_ops(line, &mut errors, line_number) {
             operations.push(op);
         }
         if let Some(UnvalidatedNovelOps::Choices(choices)) =
@@ -444,33 +419,49 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     Ok(operations)
 }
 
-fn parse_say(
+fn parse_single_line_ops(
     line: &str,
-    current_say: Option<UnvalidatedNovelOps>,
-) -> (Option<UnvalidatedNovelOps>, Option<UnvalidatedNovelOps>) {
-    let trimmed = line.trim();
-    if trimmed.is_empty() {
-        return (current_say, None);
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if let Some(op) = parse_background(line, errors, line_number) {
+        return Some(op);
     }
-    let Some((_, text)) = trimmed.split_once("SAY") else {
-        if trimmed.is_empty() {
-            return (current_say, None);
-        } else {
-            // merge onto current say.
-            eprintln!("DEBUG MERGING TIME");
-            let words = match current_say {
-                Some(UnvalidatedNovelOps::Say(words)) => {
-                    let new_words = words + " " + trimmed;
-                    eprintln!("DEBUG merged");
-                    Some(new_words)
-                }
-                _ => {
-                    eprintln!("DEBUG didnt merge because {:?}", &current_say);
-                    Some(trimmed.to_owned())
-                }
-            };
-            return (words.map(|w| UnvalidatedNovelOps::Say(w)), None);
-        }
+    if let Some(op) = parse_label(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_hide(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_goto(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_new_character_state(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_show_character(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_focus(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_play(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_music(line, errors, line_number) {
+        return Some(op);
+    }
+    None
+}
+
+fn parse_say<'a>(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+    line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
+) -> Vec<UnvalidatedNovelOps> {
+    let Some((_, text)) = line.split_once("SAY") else {
+        return vec![];
     };
 
     if text.trim().is_empty() {
