@@ -360,6 +360,9 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_play(line, &mut errors, line_number) {
             operations.push(op);
         }
+        if let Some(op) = parse_music(line, &mut errors, line_number) {
+            operations.push(op);
+        }
         if let Some(UnvalidatedNovelOps::Choices(choices)) =
             parse_choice_start(line, &mut errors, line_number)
         {
@@ -409,6 +412,14 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
 }
 
 fn parse_play(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    None
+}
+
+fn parse_music(
     line: &str,
     errors: &mut Vec<String>,
     line_number: usize,
