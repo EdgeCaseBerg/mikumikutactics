@@ -1273,9 +1273,17 @@ mod visual_novel_tests {
             assert_eq!(
                 ops,
                 vec![
-                    UnvalidatedNovelOps::Say("some text on a line".to_owned()),
-                    UnvalidatedNovelOps::Hide("left".to_owned()),
-                    UnvalidatedNovelOps::Say("some text on another line".to_owned()),
+                    UnvalidatedNovelOps::Say(
+                        "like if someone is writing a paragraph of text".to_owned()
+                    ),
+                    UnvalidatedNovelOps::Say(
+                        concat!(
+                            "and wanted to have a couple of those. the question is if ",
+                            "that should be broken out into multiple says or not, or if ",
+                            "the newline is respected at all and turned into another say?",
+                        )
+                        .to_owned()
+                    ),
                 ]
             );
         } else {
