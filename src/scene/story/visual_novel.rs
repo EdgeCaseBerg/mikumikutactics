@@ -413,9 +413,6 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             if let Some(op) = partial_say.take() {
                 operations.insert(operations.len() - 1, op);
             }
-            if let Some(op) = partial_choice.take() {
-                operations.insert(operations.len() - 1, op);
-            }
             continue;
         }
         // we parse say last since its the only op that spans multiple lines
