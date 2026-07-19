@@ -334,8 +334,10 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut errors = Vec::new();
     let mut line_number = 0;
     let mut partial_choice = None;
+    let mut partial_say = None;
     while let Some(line) = line_iter.next() {
         line_number += 1;
+        let preparse_count = operations.len() + errors.len();
         if let Some(op) = parse_background(line, &mut errors, line_number) {
             operations.push(op);
         }
@@ -404,11 +406,84 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 );
             }
         }
+        // if we've found a new operation besides say, then ensure that current say
+        // is added BEFORE the newly added op
+        let postparse_count = operations.len() + errors.len();
+        if postparse_count != preparse_count {
+            if let Some(op) = partial_say.take() {
+                operations.insert(operations.len() - 1, op);
+            }
+            if let Some(op) = partial_choice.take() {
+                operations.insert(operations.len() - 1, op);
+            }
+            continue;
+        }
+        // we parse say last since its the only op that spans multiple lines
+        // in a way that has no delimiter beyond the SAY itself, so we are
+        // in "SAY" mode for a while until we hit a fully blank line.
+        match parse_say(line, partial_say.take()) {
+            (None, None) => {}
+            (Some(current), None) => {
+                // no new words to add in
+                operations.push(current);
+            }
+            (Some(current), Some(next_say)) => {
+                operations.push(current);
+                partial_say = Some(next_say);
+            }
+            (None, Some(next_say)) => {
+                partial_say = Some(next_say);
+            }
+        }
+        // Handle end of the incoming tokens, ensure a say in progress
+        // gets added onto the list of ops
+        if line_iter.peek().is_none() && partial_say.is_some() {
+            operations.push(partial_say.take().unwrap());
+        }
     }
     if errors.len() > 0 {
         return Err(errors.join(", ").into());
     }
     Ok(operations)
+}
+
+fn parse_say(
+    line: &str,
+    current_say: Option<UnvalidatedNovelOps>,
+) -> (Option<UnvalidatedNovelOps>, Option<UnvalidatedNovelOps>) {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return (current_say, None);
+    }
+    let Some((_, text)) = trimmed.split_once("SAY") else {
+        if trimmed.is_empty() {
+            return (current_say, None);
+        } else {
+            // merge onto current say.
+            eprintln!("DEBUG MERGING TIME");
+            let words = match current_say {
+                Some(UnvalidatedNovelOps::Say(words)) => {
+                    let new_words = words + " " + trimmed;
+                    eprintln!("DEBUG merged");
+                    Some(new_words)
+                }
+                _ => {
+                    eprintln!("DEBUG didnt merge because {:?}", &current_say);
+                    Some(trimmed.to_owned())
+                }
+            };
+            return (words.map(|w| UnvalidatedNovelOps::Say(w)), None);
+        }
+    };
+
+    if text.trim().is_empty() {
+        return (current_say, None);
+    }
+
+    (
+        current_say,
+        Some(UnvalidatedNovelOps::Say(text.trim().to_owned())),
+    )
 }
 
 fn parse_play(
