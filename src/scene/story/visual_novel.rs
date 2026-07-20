@@ -40,6 +40,57 @@ use std::error::Error;
 
 type VnResult<T> = Result<T, Box<dyn Error>>;
 
+
+#[derive(Debug)]
+pub struct VisualNovelMachine {
+    pub program_counter: usize,
+    pub program: Vec<NovelOps>,
+    pub music: Option<MusicId>,
+    pub sfx: Option<SfxId>,
+    pub focused: Option<PortraitPosition>,
+    pub background: Option<TextureId>,
+    pub slot_left: Option<Character>,
+    pub slot_center: Option<Character>,
+    pub slot_right: Option<Character>,
+}
+
+// clippy is all like "wah wah you match rust defaults use OUR Derive"
+// but its better for us to have this spelled out explicitly here because
+// it makes it more obvious that we're choosing these values on purpose.
+// clippy's default lints channeling Microsoft Office Clippy's spirit.
+// I'd [allow(clippy::derivable_impls)] add, but I added it to the toml instead
+impl Default for VisualNovelMachine {
+    fn default() -> Self {
+        VisualNovelMachine {
+            program_counter: 0,
+            program: vec![],
+            music: None,
+            sfx: None,
+            focused: None,
+            background: None,
+            slot_left: None,
+            slot_center: None,
+            slot_right: None,
+        }
+    }
+}
+
+impl From<Vec<NovelOps>> for VisualNovelMachine {
+    fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
+        VisualNovelMachine {
+            program: ops,
+            ..Default::default()
+        }
+    }
+}
+
+/// Trait for a scene or backend to implement in order to convert stuff like 'miku idle' into a proper sprite texture
+pub trait SceneLoadingContext {
+    fn name_to_texture(&self, name: &str) -> Option<TextureId>;
+    fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
+    fn name_to_music(&self, name: &str) -> Option<MusicId>;
+}
+
 // Unresolved novel ops are loaded from the file, but have not been validated against
 // the existing textures, sfx, and music assets to be turned into ids that can be loaded
 // by the rest of the game.
@@ -126,55 +177,6 @@ pub enum NovelOps {
     PlayMusic(MusicId),
     // later, triggers? like SET FLAG x, IF FLAG x ?
     // LOAD_SCRIPT another_scene to start?
-}
-
-/// Trait for a scene or backend to implement in order to convert stuff like 'miku idle' into a proper sprite texture
-pub trait SceneLoadingContext {
-    fn name_to_texture(&self, name: &str) -> Option<TextureId>;
-    fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
-    fn name_to_music(&self, name: &str) -> Option<MusicId>;
-}
-#[derive(Debug)]
-pub struct VisualNovelMachine {
-    pub program_counter: usize,
-    pub program: Vec<NovelOps>,
-    pub music: Option<MusicId>,
-    pub sfx: Option<SfxId>,
-    pub focused: Option<PortraitPosition>,
-    pub background: Option<TextureId>,
-    pub slot_left: Option<Character>,
-    pub slot_center: Option<Character>,
-    pub slot_right: Option<Character>,
-}
-
-// clippy is all like "wah wah you match rust defaults use OUR Derive"
-// but its better for us to have this spelled out explicitly here because
-// it makes it more obvious that we're choosing these values on purpose.
-// clippy's default lints channeling Microsoft Office Clippy's spirit.
-// I'd [allow(clippy::derivable_impls)] add, but I added it to the toml instead
-impl Default for VisualNovelMachine {
-    fn default() -> Self {
-        VisualNovelMachine {
-            program_counter: 0,
-            program: vec![],
-            music: None,
-            sfx: None,
-            focused: None,
-            background: None,
-            slot_left: None,
-            slot_center: None,
-            slot_right: None,
-        }
-    }
-}
-
-impl From<Vec<NovelOps>> for VisualNovelMachine {
-    fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
-        VisualNovelMachine {
-            program: ops,
-            ..Default::default()
-        }
-    }
 }
 
 fn validate_program(
