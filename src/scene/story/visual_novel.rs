@@ -407,13 +407,8 @@ fn parse_choices<'a>(
 ) -> Option<UnvalidatedNovelOps> {
     let (_, potential_inline_choice) = line.split_once("CHOICE")?;
 
-    let mut choices = if let Some(choice) =
-        parse_choice_option(potential_inline_choice.trim(), errors, line_number)
-    {
-        vec![choice]
-    } else {
-        vec![]
-    };
+    let mut choices = parse_choice_option(potential_inline_choice.trim(), errors, line_number)
+        .map_or(vec![], |c| vec![c]);
 
     // then advance the iter
     let mut option_line_number = line_number;
