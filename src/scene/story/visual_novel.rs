@@ -347,7 +347,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_choices(line, &mut errors, line_number, &mut line_iter) {
             operations.push(op);
         }
-        if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
+        if parse_choice_option(line, &mut errors, line_number).is_some() {
             errors.push("invalid state, trying to add choice to empty choice partial".to_owned());
         }
         // we parse say last since its the only op that spans multiple lines
@@ -405,9 +405,7 @@ fn parse_choices<'a>(
     line_number: usize,
     line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
 ) -> Option<UnvalidatedNovelOps> {
-    let Some((_, potential_inline_choice)) = line.split_once("CHOICE") else {
-        return None;
-    };
+    let (_, potential_inline_choice) = line.split_once("CHOICE")?;
 
     let mut choices = if let Some(choice) =
         parse_choice_option(potential_inline_choice.trim(), errors, line_number)
@@ -441,28 +439,6 @@ fn parse_choices<'a>(
     }
 
     Some(UnvalidatedNovelOps::Choices(choices))
-}
-
-fn parse_choice_start(
-    line: &str,
-    errors: &mut Vec<String>,
-    line_number: usize,
-) -> Option<UnvalidatedNovelOps> {
-    if !line.starts_with("CHOICE") {
-        return None;
-    }
-    let Some((_, trailing_info)) = line.trim().split_once("CHOICE") else {
-        return Some(UnvalidatedNovelOps::Choices(vec![]));
-    };
-    if trailing_info.is_empty() {
-        return Some(UnvalidatedNovelOps::Choices(vec![]));
-    }
-    if let Some(choice) = parse_choice_option(trailing_info.trim(), errors, line_number) {
-        return Some(UnvalidatedNovelOps::Choices(vec![choice]));
-    }
-    // if we hit this, it means that the same-line choice option was invalid, so return the found
-    // choice that existed and let whatever errors that were found bubble up alongside it.
-    Some(UnvalidatedNovelOps::Choices(vec![]))
 }
 
 fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize) -> Option<Choice> {
