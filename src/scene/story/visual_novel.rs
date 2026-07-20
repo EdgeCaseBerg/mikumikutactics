@@ -339,52 +339,16 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut line_iter = raw_scene.lines().peekable();
     let mut errors = Vec::new();
     let mut line_number = 0;
-    let mut partial_choice = None;
     while let Some(line) = line_iter.next() {
         line_number += 1;
         if let Some(op) = parse_single_line_ops(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(UnvalidatedNovelOps::Choices(choices)) =
-            parse_choice_start(line, &mut errors, line_number)
-        {
-            // Choices shouldn't come after each other since they
-            // have labels for each choice, though this does mean that a writer needs to pretty much
-            // always follow a choice up with a label... but they should anyway. So...
-            if partial_choice.is_some() {
-                errors.push("choice started before another choice has ended, your script likely needs labels between choices".to_owned());
-            }
-            // if there is no next token, and the choice had no inline option...
-            if line_iter.peek().is_none() && choices.is_empty() {
-                errors.push(
-                    format!("script ended before choice options were included, your script likely options for your CHOICE on line {}", line_number)
-                );
-            }
-            partial_choice = Some(UnvalidatedNovelOps::Choices(choices));
-            // if there is no next token, then take the last token and push onto the options
-            // rather than let it ride in the partial_choice til the next loop (which will never happen)
-            if line_iter.peek().is_none() {
-                operations.push(partial_choice.take().unwrap());
-            }
-        } else if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
-            if let Some(UnvalidatedNovelOps::Choices(choices)) = partial_choice.as_mut() {
-                choices.push(choice);
-            } else {
-                errors
-                    .push("invalid state, trying to add choice to empty choice partial".to_owned());
-            }
-            if line_iter.peek().is_none() && partial_choice.is_some() {
-                operations.push(partial_choice.take().unwrap());
-            }
-        } else if partial_choice.is_some() {
-            if let Some(op) = partial_choice.take() {
-                operations.push(op);
-            } else {
-                errors.push(
-                    "invalid state, trying to add choice option when no choice is active"
-                        .to_owned(),
-                );
-            }
+        if let Some(op) = parse_choices(line, &mut errors, line_number, &mut line_iter) {
+            operations.push(op);
+        }
+        if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
+            errors.push("invalid state, trying to add choice to empty choice partial".to_owned());
         }
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
@@ -433,6 +397,103 @@ fn parse_single_line_ops(
         return Some(op);
     }
     None
+}
+
+fn parse_choices<'a>(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+    line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
+) -> Option<UnvalidatedNovelOps> {
+    let Some((_, potential_inline_choice)) = line.split_once("CHOICE") else {
+        return None;
+    };
+
+    let mut choices = if let Some(choice) =
+        parse_choice_option(potential_inline_choice.trim(), errors, line_number)
+    {
+        vec![choice]
+    } else {
+        vec![]
+    };
+
+    // then advance the iter
+    let mut option_line_number = line_number;
+    while let Some(next_line) = line_iter.peek() {
+        option_line_number += 1;
+        if let Some(choice) = parse_choice_option(next_line, errors, option_line_number) {
+            choices.push(choice);
+            line_iter.next();
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    if line_iter.peek().is_none() && choices.is_empty() {
+        errors.push(
+            format!("script ended before choice options were included, your script likely needs options for your CHOICE on line {}", line_number)
+        );
+    } else if choices.is_empty() {
+        errors.push(
+            format!("no choice options found for CHOICE, your script likely needs options for your CHOICE on line {}", line_number)
+        );
+    }
+
+    Some(UnvalidatedNovelOps::Choices(choices))
+}
+
+fn parse_choice_start(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("CHOICE") {
+        return None;
+    }
+    let Some((_, trailing_info)) = line.trim().split_once("CHOICE") else {
+        return Some(UnvalidatedNovelOps::Choices(vec![]));
+    };
+    if trailing_info.is_empty() {
+        return Some(UnvalidatedNovelOps::Choices(vec![]));
+    }
+    if let Some(choice) = parse_choice_option(trailing_info.trim(), errors, line_number) {
+        return Some(UnvalidatedNovelOps::Choices(vec![choice]));
+    }
+    // if we hit this, it means that the same-line choice option was invalid, so return the found
+    // choice that existed and let whatever errors that were found bubble up alongside it.
+    Some(UnvalidatedNovelOps::Choices(vec![]))
+}
+
+fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize) -> Option<Choice> {
+    if !line.starts_with('|') {
+        return None;
+    }
+    let (label, text) = line.split_once(" OPTION")?;
+    let c = if let Some(label) = label.strip_prefix('|') {
+        Choice {
+            label: label.trim().to_owned(),
+            text: text.trim().to_owned(),
+        }
+    } else {
+        Choice {
+            label: label.trim().to_owned(),
+            text: text.trim().to_owned(),
+        }
+    };
+    if c.label.is_empty() {
+        errors.push(format!(
+            "line {} option is missing label in CHOICE",
+            line_number
+        ));
+    }
+    if c.text.is_empty() {
+        errors.push(format!(
+            "line {} option is missing text in CHOICE, use ... for an empty choice if needed",
+            line_number
+        ));
+    }
+    Some(c)
 }
 
 fn parse_say<'a>(
@@ -538,59 +599,6 @@ fn parse_music(
         return None;
     }
     Some(UnvalidatedNovelOps::PlayMusic(name.to_owned()))
-}
-
-fn parse_choice_start(
-    line: &str,
-    errors: &mut Vec<String>,
-    line_number: usize,
-) -> Option<UnvalidatedNovelOps> {
-    if !line.starts_with("CHOICE") {
-        return None;
-    }
-    let Some((_, trailing_info)) = line.trim().split_once("CHOICE") else {
-        return Some(UnvalidatedNovelOps::Choices(vec![]));
-    };
-    if trailing_info.is_empty() {
-        return Some(UnvalidatedNovelOps::Choices(vec![]));
-    }
-    if let Some(choice) = parse_choice_option(trailing_info.trim(), errors, line_number) {
-        return Some(UnvalidatedNovelOps::Choices(vec![choice]));
-    }
-    // if we hit this, it means that the same-line choice option was invalid, so return the found
-    // choice that existed and let whatever errors that were found bubble up alongside it.
-    Some(UnvalidatedNovelOps::Choices(vec![]))
-}
-
-fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize) -> Option<Choice> {
-    if !line.starts_with('|') {
-        return None;
-    }
-    let (label, text) = line.split_once(" OPTION")?;
-    let c = if let Some(label) = label.strip_prefix('|') {
-        Choice {
-            label: label.trim().to_owned(),
-            text: text.trim().to_owned(),
-        }
-    } else {
-        Choice {
-            label: label.trim().to_owned(),
-            text: text.trim().to_owned(),
-        }
-    };
-    if c.label.is_empty() {
-        errors.push(format!(
-            "line {} option is missing label in CHOICE",
-            line_number
-        ));
-    }
-    if c.text.is_empty() {
-        errors.push(format!(
-            "line {} option is missing text in CHOICE, use ... for an empty choice if needed",
-            line_number
-        ));
-    }
-    Some(c)
 }
 
 fn parse_background(
@@ -1152,7 +1160,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "script ended before choice options were included, your script likely options for your CHOICE on line 1"
+                "script ended before choice options were included, your script likely needs options for your CHOICE on line 1"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -1161,7 +1169,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "script ended before choice options were included, your script likely options for your CHOICE on line 1"
+                "script ended before choice options were included, your script likely needs options for your CHOICE on line 1"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -1253,10 +1261,11 @@ mod visual_novel_tests {
         ));
         if let Ok(ref choices) = ops {
             assert_eq!(choices.len(), 2, "expected choices to be non-empty");
-            let UnvalidatedNovelOps::Choices(choices1) = choices.iter().next().unwrap() else {
+            let mut choices_iter = choices.iter();
+            let UnvalidatedNovelOps::Choices(choices1) = choices_iter.next().unwrap() else {
                 panic!("expected successful parse, got {:?}", ops);
             };
-            let UnvalidatedNovelOps::Choices(choices2) = choices.iter().next().unwrap() else {
+            let UnvalidatedNovelOps::Choices(choices2) = choices_iter.next().unwrap() else {
                 panic!("expected successful parse, got {:?}", ops);
             };
             assert_eq!(
