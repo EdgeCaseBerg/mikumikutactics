@@ -200,6 +200,60 @@ fn validate_program(
             UnvalidatedNovelOps::Say(s) => {
                 valid_ops.push(NovelOps::Say(s));
             }
+            UnvalidatedNovelOps::Label(s) => {
+                valid_ops.push(NovelOps::Label(s));
+            }
+            UnvalidatedNovelOps::Goto(s) => {
+                if !set_of_all_labels.contains(&s) {
+                    errors.push(format!(
+                        "cannot create GOTO ({0}) because label {0} does not exist",
+                        s
+                    ));
+                } else {
+                    valid_ops.push(NovelOps::Goto(s));
+                }
+            }
+            UnvalidatedNovelOps::Hide(pp) => {
+                if let Some(pp) = PortraitPosition::lift(&pp) {
+                    valid_ops.push(NovelOps::Hide(pp));
+                } else {
+                    errors.push(format!(
+                        "cannot hide character at position {:?} as position is not valid",
+                        pp
+                    ));
+                }
+            }
+            UnvalidatedNovelOps::Focus(pp) => {
+                if let Some(pp) = PortraitPosition::lift(&pp) {
+                    valid_ops.push(NovelOps::Focus(pp));
+                } else {
+                    errors.push(format!(
+                        "cannot focus position {:?} as position is not valid",
+                        pp
+                    ));
+                }
+            }
+            UnvalidatedNovelOps::Background(name) => {
+                if let Some(texture_id) = context.name_to_texture(&name) {
+                    valid_ops.push(NovelOps::Background(texture_id));
+                } else {
+                    errors.push(format!("cannot load texture for background {:?}", name));
+                }
+            }
+            UnvalidatedNovelOps::PlaySfx(name) => {
+                if let Some(sfx_id) = context.name_to_sfx(&name) {
+                    valid_ops.push(NovelOps::PlaySfx(sfx_id));
+                } else {
+                    errors.push(format!("cannot load sound effect for name {:?}", name));
+                }
+            }
+            UnvalidatedNovelOps::PlayMusic(name) => {
+                if let Some(music_id) = context.name_to_music(&name) {
+                    valid_ops.push(NovelOps::PlayMusic(music_id));
+                } else {
+                    errors.push(format!("cannot load music for name {:?}", name));
+                }
+            }
             UnvalidatedNovelOps::Choices(choices) => {
                 let mut all_valid = true;
                 for choice in &choices {
@@ -213,19 +267,6 @@ fn validate_program(
                 }
                 if all_valid {
                     valid_ops.push(NovelOps::Choices(choices));
-                }
-            }
-            UnvalidatedNovelOps::Label(s) => {
-                valid_ops.push(NovelOps::Label(s));
-            }
-            UnvalidatedNovelOps::Goto(s) => {
-                if !set_of_all_labels.contains(&s) {
-                    errors.push(format!(
-                        "cannot create GOTO ({0}) because label {0} does not exist",
-                        s
-                    ));
-                } else {
-                    valid_ops.push(NovelOps::Goto(s));
                 }
             }
             UnvalidatedNovelOps::Show(character_name, pp) => {
@@ -250,26 +291,6 @@ fn validate_program(
                     ));
                 }
             }
-            UnvalidatedNovelOps::Hide(pp) => {
-                if let Some(pp) = PortraitPosition::lift(&pp) {
-                    valid_ops.push(NovelOps::Hide(pp));
-                } else {
-                    errors.push(format!(
-                        "cannot hide character at position {:?} as position is not valid",
-                        pp
-                    ));
-                }
-            }
-            UnvalidatedNovelOps::Focus(pp) => {
-                if let Some(pp) = PortraitPosition::lift(&pp) {
-                    valid_ops.push(NovelOps::Focus(pp));
-                } else {
-                    errors.push(format!(
-                        "cannot focus position {:?} as position is not valid",
-                        pp
-                    ));
-                }
-            }
             UnvalidatedNovelOps::NewCharacterState(character_name, state) => {
                 if let Some(texture_id) = context.name_to_texture(&character_name) {
                     if let Some(state) = CharacterState::lift(&state) {
@@ -290,27 +311,6 @@ fn validate_program(
                         "cannot load texture for character {:?}",
                         character_name
                     ));
-                }
-            }
-            UnvalidatedNovelOps::Background(name) => {
-                if let Some(texture_id) = context.name_to_texture(&name) {
-                    valid_ops.push(NovelOps::Background(texture_id));
-                } else {
-                    errors.push(format!("cannot load texture for background {:?}", name));
-                }
-            }
-            UnvalidatedNovelOps::PlaySfx(name) => {
-                if let Some(sfx_id) = context.name_to_sfx(&name) {
-                    valid_ops.push(NovelOps::PlaySfx(sfx_id));
-                } else {
-                    errors.push(format!("cannot load sound effect for name {:?}", name));
-                }
-            }
-            UnvalidatedNovelOps::PlayMusic(name) => {
-                if let Some(music_id) = context.name_to_music(&name) {
-                    valid_ops.push(NovelOps::PlayMusic(music_id));
-                } else {
-                    errors.push(format!("cannot load music for name {:?}", name));
                 }
             }
         }
