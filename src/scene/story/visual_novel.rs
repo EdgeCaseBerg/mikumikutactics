@@ -1246,6 +1246,39 @@ mod visual_novel_tests {
     }
 
     #[test]
+    fn parse_two_inline_choices_successfully() {
+        let ops = parse_scene_to_operations(concat!(
+            "CHOICE | label 1 OPTION text1\n",
+            "CHOICE | label 2 OPTION text2\n",
+        ));
+        if let Ok(ref choices) = ops {
+            assert_eq!(choices.len(), 2, "expected choices to be non-empty");
+            let UnvalidatedNovelOps::Choices(choices1) = choices.iter().next().unwrap() else {
+                panic!("expected successful parse, got {:?}", ops);
+            };
+            let UnvalidatedNovelOps::Choices(choices2) = choices.iter().next().unwrap() else {
+                panic!("expected successful parse, got {:?}", ops);
+            };
+            assert_eq!(
+                choices1,
+                &vec![Choice {
+                    label: "label 1".to_owned(),
+                    text: "text1".to_owned()
+                },]
+            );
+            assert_eq!(
+                choices2,
+                &vec![Choice {
+                    label: "label 2".to_owned(),
+                    text: "text2".to_owned()
+                }]
+            );
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
     fn parse_floating_option_choice_scene_op_fail_even_after_open_choice() {
         let ops = parse_scene_to_operations(concat!(
             "CHOICE\n",
@@ -1442,12 +1475,6 @@ mod visual_novel_tests {
             panic!("expected unsuccessful parse, got {:?}", ops);
         }
     }
-
-    /*
-    SAY
-    PLAYSFX
-    PLAYMUSIC
-    */
 
     #[test]
     fn parse_full_scene_ops_successfully() {
