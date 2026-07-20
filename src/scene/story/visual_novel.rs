@@ -407,8 +407,18 @@ fn parse_choices<'a>(
 ) -> Option<UnvalidatedNovelOps> {
     let (_, potential_inline_choice) = line.split_once("CHOICE")?;
 
-    let mut choices = parse_choice_option(potential_inline_choice.trim(), errors, line_number)
-        .map_or(vec![], |c| vec![c]);
+    let mut choices = if let Some(c) =
+        parse_choice_option(potential_inline_choice.trim(), errors, line_number)
+    {
+        vec![c]
+    } else if potential_inline_choice.trim().is_empty() {
+        vec![]
+    } else {
+        errors.push(
+            format!("invalid inline choice after start of CHOICE on line {}, ensure you begin the option with |", line_number)
+        );
+        vec![]
+    };
 
     // then advance the iter
     let mut option_line_number = line_number;
@@ -1174,6 +1184,21 @@ mod visual_novel_tests {
             assert_eq!(
                 problem.to_string(),
                 "line 1 option is missing label in CHOICE",
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_invalid_inline_option_choice_scene_op_failure() {
+        let ops = parse_scene_to_operations(
+            "CHOICE OPTION using pipe as expected\n|banana OPTION two\nSAY hi",
+        );
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "invalid inline choice after start of CHOICE on line 1, ensure you begin the option with |"
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
