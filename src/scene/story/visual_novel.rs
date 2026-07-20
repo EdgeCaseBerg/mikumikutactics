@@ -181,9 +181,6 @@ fn validate_program(
     raw: Vec<UnvalidatedNovelOps>,
     context: &impl SceneLoadingContext,
 ) -> VnResult<Vec<NovelOps>> {
-    // once we're done with toy programs, this will probably need to work with
-    // a proper struct getting the game context passed in to resolve textures
-    // and that sort of thing. For now... just hardcode so we can keep prototyping.
     let set_of_all_labels: HashSet<String> = raw
         .iter()
         .filter_map(|r| {
