@@ -91,28 +91,25 @@ impl Scene for TitleScene {
             self.fade = fade;
         }
 
-        let layout = TitleScene::layout(&game_context);
+        let layout = TitleScene::layout(game_context);
         self.quit_btn.update(ticks, game_context, &layout);
 
-        match self.played_intro {
-            ReadyState::Ready => {
-                self.played_intro = ReadyState::Cooldown {
-                    wait_for: u32::MAX,
-                    ticks_waited: 0,
-                };
-                game_context.audio.as_mut().map(|audio| {
-                    let _ = audio.play_sfx(SFX_ID_MEME);
-                });
-            }
-            _ => {}
+        if let ReadyState::Ready = self.played_intro {
+            self.played_intro = ReadyState::Cooldown {
+                wait_for: u32::MAX,
+                ticks_waited: 0,
+            };
+            if let Some(audio) = game_context.audio.as_mut() {
+                let _ = audio.play_sfx(SFX_ID_MEME);
+            };
         }
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
 
         if self.quit_btn.clicked && game_context.next_scene.is_none() {
-            game_context.audio.as_mut().map(|audio| {
+            if let Some(audio) = game_context.audio.as_mut() {
                 let _ = audio.play_sfx(SFX_ID_BLIP);
-            });
+            }
             // TODO restore shut down once we have another scene to swap to
             // game_context.shutdown();
             self.quit_btn.clicked = false;
@@ -121,7 +118,7 @@ impl Scene for TitleScene {
         }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
-        let layout = TitleScene::layout(&game_context);
+        let layout = TitleScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
@@ -134,7 +131,9 @@ impl Scene for TitleScene {
         });
 
         self.quit_btn.draw(game_context, &layout);
-        self.fade.as_mut().map(|f| f.draw(game_context));
+        if let Some(fade) = self.fade.as_mut() {
+            fade.draw(game_context);
+        }
     }
 }
 

@@ -112,7 +112,7 @@ impl Button {
                 draw_text_anchored(
                     &self.text,
                     &anchor,
-                    &font,
+                    font,
                     renderer.as_mut(),
                     FontAlign::Center,
                 );

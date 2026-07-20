@@ -27,3 +27,7 @@ web-sys = { version = "0.3", features = [
 	"HtmlAudioElement",
 ]}
 console_error_panic_hook = "0.1"
+
+[lints.clippy]
+derivable_impls = "allow"
+manual_range_contains = "allow"

@@ -131,13 +131,13 @@ impl SDL3Sounds {
 
 impl SfxStream {
     fn is_free(&self, now: Instant) -> bool {
-        self.free_at.map_or(true, |t| now >= t)
+        self.free_at.is_none_or(|t| now >= t)
     }
 
     fn claim(&mut self, entry: &SoundData, now: Instant) -> Result<(), Box<dyn Error>> {
-        let _ = self.stream.clear()?;
-        let _ = self.stream.put_data(entry.spec.buffer())?;
-        let _ = self.stream.resume()?;
+        self.stream.clear()?;
+        self.stream.put_data(entry.spec.buffer())?;
+        self.stream.resume()?;
         self.free_at = Some(now + entry.duration);
         Ok(())
     }
@@ -164,11 +164,11 @@ impl Audio for SDL3Sounds {
             // All busy — steal the one that will free soonest
             bucket.streams.iter_mut().min_by_key(|s| s.free_at).unwrap()
         };
-        stream.claim(&sound_data, now)?;
+        stream.claim(sound_data, now)?;
         Ok(())
     }
     fn load_sfx(&mut self, sound_id: SfxId) -> AudioResult<()> {
-        if !self.sound_by_id.get(&sound_id).is_none() {
+        if self.sound_by_id.contains_key(&sound_id) {
             return Ok(());
         }
 
@@ -189,13 +189,13 @@ impl Audio for SDL3Sounds {
 
         let ctx = &mut *self.context.borrow_mut();
         ctx.mixer.pause_all()?;
-        ctx.mixer.play_audio(&mixer_audio)?;
+        ctx.mixer.play_audio(mixer_audio)?;
         Ok(())
     }
 
     /// Calling this method with the same id multiple times will only load the music once.
     fn load_music(&mut self, id: MusicId) -> AudioResult<()> {
-        if !self.music_by_id.get(&id).is_none() {
+        if self.music_by_id.contains_key(&id) {
             return Ok(());
         }
         let path = self.base_path.join(music_id_to_relative_path(id));
@@ -240,8 +240,7 @@ impl Audio for SDL3Sounds {
                     continue;
                 }
 
-                let Some(extension) = path.extension().map(|os_str| os_str.to_str()).flatten()
-                else {
+                let Some(extension) = path.extension().and_then(|os_str| os_str.to_str()) else {
                     continue;
                 };
                 if !allowed_extensions.contains(extension) {
@@ -254,16 +253,16 @@ impl Audio for SDL3Sounds {
                 }
 
                 let desired_id = filename[0..filename.len() - extension.len() - 1].parse::<usize>();
-                if desired_id.is_ok() {
-                    let music_id = MusicId(desired_id.unwrap());
-                    if !self.music_by_id.get(&music_id).is_none() {
+                if let Ok(desired_id) = desired_id {
+                    let music_id = MusicId(desired_id);
+                    if self.music_by_id.contains_key(&music_id) {
                         // Tricky tricky, make sure you put the music id if we're re-loading the level scene
                         // and generating the list of music ids again. Just because we don't need to load the
                         // music audio into the hashmap, doesn't mean we don't need to return the id here!
                         ids.push(Ok(music_id));
                     }
                     let ctx = &mut *self.context.borrow_mut();
-                    match ctx.mixer.load_audio(&user_wav_folder.join(path), true) {
+                    match ctx.mixer.load_audio(user_wav_folder.join(path), true) {
                         Ok(audio) => {
                             self.music_by_id.insert(music_id, audio);
                             ids.push(Ok(music_id));
@@ -308,7 +307,7 @@ impl Audio for SDL3Sounds {
         self.buckets.retain_mut(|bucket| {
             let exists = specs_to_prepare.contains(&bucket.spec);
             if exists {
-                already_exist.insert(bucket.spec.clone());
+                already_exist.insert(bucket.spec);
             }
             for SfxStream { stream, .. } in &bucket.streams {
                 let _ = stream.pause();
@@ -395,7 +394,7 @@ impl AssetLoaderSDL3 {
 impl AssetLoader for AssetLoaderSDL3 {
     fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) {
         let ctx = &mut *self.context.borrow_mut();
-        if !ctx.textures.get_texture(id).is_none() {
+        if ctx.textures.get_texture(id).is_some() {
             return;
         }
         let asset_path = id_to_relative_path(id);
@@ -533,12 +532,12 @@ impl BackendEventLoop for EventLoopSDL3 {
                             Some((x, y)),
                         );
                     }
-                    Event::Window { win_event, .. } => match win_event {
-                        WindowEvent::Resized(w, h) => {
-                            game_context.screen_size = (w as u32, h as u32);
-                        }
-                        _ => {}
-                    },
+                    Event::Window {
+                        win_event: WindowEvent::Resized(w, h),
+                        ..
+                    } => {
+                        game_context.screen_size = (w as u32, h as u32);
+                    }
                     _ => {}
                 }
             }
@@ -578,7 +577,7 @@ impl BackendEventLoop for EventLoopSDL3 {
     }
 
     fn create_font_library(&self, _game_options: &GameOptions) -> Box<dyn FontLibrary> {
-        Box::new(BitmapFontLibrary::new())
+        Box::new(BitmapFontLibrary::default())
     }
 }
 

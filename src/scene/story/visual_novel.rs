@@ -147,6 +147,11 @@ pub struct VisualNovelMachine {
     pub slot_right: Option<Character>,
 }
 
+// clippy is all like "wah wah you match rust defaults use OUR Derive"
+// but its better for us to have this spelled out explicitly here because
+// it makes it more obvious that we're choosing these values on purpose.
+// clippy's default lints channeling Microsoft Office Clippy's spirit.
+// I'd [allow(clippy::derivable_impls)] add, but I added it to the toml instead
 impl Default for VisualNovelMachine {
     fn default() -> Self {
         VisualNovelMachine {
@@ -165,9 +170,10 @@ impl Default for VisualNovelMachine {
 
 impl From<Vec<NovelOps>> for VisualNovelMachine {
     fn from(ops: Vec<NovelOps>) -> VisualNovelMachine {
-        let mut vn = VisualNovelMachine::default();
-        vn.program = ops;
-        vn
+        VisualNovelMachine {
+            program: ops,
+            ..Default::default()
+        }
     }
 }
 
@@ -312,7 +318,7 @@ fn validate_program(
             }
         }
     }
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         return Err(errors.join(", ").into());
     }
     Ok(valid_ops)
@@ -349,7 +355,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 errors.push("choice started before another choice has ended, your script likely needs labels between choices".to_owned());
             }
             // if there is no next token, and the choice had no inline option...
-            if !line_iter.peek().is_some() && choices.is_empty() {
+            if line_iter.peek().is_none() && choices.is_empty() {
                 errors.push(
                     format!("script ended before choice options were included, your script likely options for your CHOICE on line {}", line_number)
                 );
@@ -357,7 +363,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             partial_choice = Some(UnvalidatedNovelOps::Choices(choices));
             // if there is no next token, then take the last token and push onto the options
             // rather than let it ride in the partial_choice til the next loop (which will never happen)
-            if !line_iter.peek().is_some() {
+            if line_iter.peek().is_none() {
                 operations.push(partial_choice.take().unwrap());
             }
         } else if let Some(choice) = parse_choice_option(line, &mut errors, line_number) {
@@ -367,7 +373,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
                 errors
                     .push("invalid state, trying to add choice to empty choice partial".to_owned());
             }
-            if !line_iter.peek().is_some() && partial_choice.is_some() {
+            if line_iter.peek().is_none() && partial_choice.is_some() {
                 operations.push(partial_choice.take().unwrap());
             }
         } else if partial_choice.is_some() {
@@ -383,12 +389,13 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
         // in "SAY" mode for a while until we hit a fully blank line.
-        let mut ops = parse_say(line, &mut errors, line_number, &mut line_iter);
-        if ops.len() > 0 {
+        let mut ops = parse_say(line, &mut line_iter);
+        if !ops.is_empty() {
             operations.append(&mut ops);
         }
+        eprintln!("DEBUG: {:?}", (line, &operations));
     }
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         return Err(errors.join(", ").into());
     }
     Ok(operations)
@@ -431,8 +438,6 @@ fn parse_single_line_ops(
 
 fn parse_say<'a>(
     line: &str,
-    errors: &mut Vec<String>,
-    line_number: usize,
     line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
 ) -> Vec<UnvalidatedNovelOps> {
     let Some((_, text)) = line.split_once("SAY") else {
@@ -483,7 +488,7 @@ fn parse_say<'a>(
         ops.push(UnvalidatedNovelOps::Say(w));
     }
 
-    return ops;
+    ops
 }
 
 fn parse_play(
@@ -562,9 +567,7 @@ fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize)
     if !line.starts_with('|') {
         return None;
     }
-    let Some((label, text)) = line.split_once(" OPTION") else {
-        return None;
-    };
+    let (label, text) = line.split_once(" OPTION")?;
     let c = if let Some(label) = label.strip_prefix('|') {
         Choice {
             label: label.trim().to_owned(),

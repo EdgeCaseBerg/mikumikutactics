@@ -88,8 +88,8 @@ impl GameContext {
     pub fn queue_game_over(&mut self) {}
 }
 
-impl Game {
-    pub fn new() -> Self {
+impl Default for Game {
+    fn default() -> Game {
         Game {
             prev_tick: 0,
             next_tick: 0,
@@ -100,7 +100,9 @@ impl Game {
             scene: None,
         }
     }
+}
 
+impl Game {
     pub fn reset_for_next_scene(&mut self) {
         self.tick_loops = 0;
         self.next_draw_tick = 0;

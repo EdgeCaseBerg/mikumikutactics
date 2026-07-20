@@ -35,11 +35,7 @@ impl GridLayout {
         &self,
         mouse_position: Option<(f32, f32)>,
     ) -> Option<(usize, usize, Rect)> {
-        if mouse_position.is_none() {
-            return None;
-        }
-
-        let (x, y) = mouse_position.unwrap();
+        let (x, y) = mouse_position?;
         self.screen_to_cell(x, y)
     }
 

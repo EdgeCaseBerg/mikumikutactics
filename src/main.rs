@@ -3,7 +3,7 @@ use mikumikutactics::game_options::GameOptions;
 
 fn main() {
     let options = GameOptions::default();
-    let game = Game::new();
+    let game = Game::default();
     mikumikutactics::run(&options, game);
 }
 

@@ -36,9 +36,9 @@ impl LoadedFont {
             .map(|c| {
                 let ascii = c as u32;
                 if ascii > 127 {
-                    self.ascii_glyphs[0].clone()
+                    self.ascii_glyphs[0]
                 } else {
-                    self.ascii_glyphs[ascii as usize].clone()
+                    self.ascii_glyphs[ascii as usize]
                 }
             })
             .collect()
@@ -47,11 +47,12 @@ impl LoadedFont {
 
 impl FontMetrics for LoadedFont {
     fn line_height(&self) -> i32 {
-        // ascii_glyphs.iter().max_by_key(|r| r.height)
-        if self.ascii_glyphs.len() <= 0 {
+        if self.ascii_glyphs.is_empty() {
             return 0; // This should never happen. But still.
         }
         // As our own little convention, we'll use L as the height because its nice and tall and its arbitrary
+        // if we ever needed to deal with non mono fonts, then we'd probably want to do something like
+        // ascii_glyphs.iter().max_by_key(|r| r.height)
         let glyph_height = self.ascii_glyphs['L' as usize].height as i32;
         (self.scale * glyph_height as f32) as i32
     }
@@ -70,8 +71,8 @@ pub struct BitmapFontLibrary {
     pub fonts: HashMap<FontId, LoadedFont>,
 }
 
-impl BitmapFontLibrary {
-    pub fn new() -> Self {
+impl Default for BitmapFontLibrary {
+    fn default() -> Self {
         Self {
             fonts: HashMap::new(),
         }
@@ -125,25 +126,25 @@ pub fn draw_text_anchored(
     renderer: &mut dyn Renderer,
     align: FontAlign,
 ) {
-    let glyphs = font.glyphs_for(&text);
+    let glyphs = font.glyphs_for(text);
     let glyph_display_height = font.line_height() as isize;
     let align_offset = match align {
         FontAlign::Left => 0,
         FontAlign::Center => {
-            let fw = font.measure_width(&text) as isize;
+            let fw = font.measure_width(text) as isize;
             let center = anchor.width / 2;
             center - fw / 2
         }
         FontAlign::Right => {
             // [ offset | --- text width --- ] right side of anchor
-            let fw = font.measure_width(&text) as isize;
-            anchor.width - fw as isize
+            let fw = font.measure_width(text) as isize;
+            anchor.width - fw
         }
     };
 
     for (c, src) in glyphs.iter().enumerate() {
         let glyph_display_width = (src.width as f32 * font.scale) as isize;
-        let x_offset = align_offset + c as isize * glyph_display_width as isize;
+        let x_offset = align_offset + c as isize * glyph_display_width;
         let cell = Rect {
             x: anchor.x + x_offset,
             y: anchor.y,
@@ -181,9 +182,9 @@ pub fn get_rects_for_str(str: &str) -> Vec<Rect> {
         .map(|c| {
             let ascii = c as u32;
             if ascii > 127 || ascii < 32 {
-                cells[0].clone()
+                cells[0]
             } else {
-                cells[ascii as usize - 32].clone()
+                cells[ascii as usize - 32]
             }
         })
         .collect()

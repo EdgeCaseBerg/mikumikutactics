@@ -640,7 +640,7 @@ impl BackendEventLoop for EventLoopWasm {
     }
 
     fn create_font_library(&self, _game_options: &GameOptions) -> Box<dyn FontLibrary> {
-        Box::new(BitmapFontLibrary::new())
+        Box::new(BitmapFontLibrary::default())
     }
 }
 

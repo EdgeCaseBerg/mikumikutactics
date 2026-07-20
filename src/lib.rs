@@ -63,10 +63,9 @@ fn advance_ready_state(ready_state: ReadyState, ticks: u32) -> ReadyState {
     }
 }
 
-// z0 - z0 * alpha + z1 * alpha
+// wikipedia.
 fn interpolate(z0: f32, z1: f32, alpha: f32) -> f32 {
-    let i = z0 - z0 * alpha + z1 * alpha;
-    i
+    z0 - z0 * alpha + z1 * alpha
 }
 
 #[derive(Debug, Clone)]
@@ -134,6 +133,12 @@ impl<T: PartialOrd + Copy + Add<Output = T> + Sub<Output = T> + Div<Output = T>>
     }
 
     pub fn center(&self) -> (T, T) {
+        // clippy is stupid and thinks this is illegal and bad.
+        // clippy is a FOOL who doesn't appreciate my GENIUS at
+        // understanding that any number divided by itself is 1
+        // and such cleverness sparks immense JOY at using this
+        // to create the ability to say 1 + 1 = 2 generically.
+        #[allow(clippy::eq_op)]
         let one = self.x / self.x;
         let two = one + one;
         let cx = self.x + self.width / two;
@@ -170,6 +175,6 @@ pub fn start() {
     console_error_panic_hook::set_once();
 
     let options = GameOptions::default();
-    let game = Game::new();
+    let game = Game::default();
     run(&options, game);
 }

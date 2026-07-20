@@ -103,7 +103,7 @@ impl Scene for StoryScene {
             self.fade = fade;
         }
 
-        let layout = StoryScene::layout(&game_context);
+        let layout = StoryScene::layout(game_context);
         // Update is where we'd deal with our VN Machine and get the next set of pages or
         // similar, for now, hard coded it for testing.
         if let (None, Some(font_library)) = (&self.text_box, game_context.font_library.as_mut()) {
@@ -138,21 +138,22 @@ impl Scene for StoryScene {
                 )
             });
         }
-        self.text_box
-            .as_mut()
-            .map(|text_box| text_box.text.update(ticks));
+
+        if let Some(text_box) = self.text_box.as_mut() {
+            text_box.text.update(ticks);
+        }
 
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
-                self.text_box.as_mut().map(|b| {
+                if let Some(b) = self.text_box.as_mut() {
                     if b.text.is_visible() {
                         b.next_page();
                         b.set_speed(self.text_speed);
                     } else {
                         b.set_speed(LineSpeed::Instant);
                     }
-                });
+                };
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
             }
@@ -161,7 +162,9 @@ impl Scene for StoryScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
                 self.text_speed = self.text_speed.cycle_speeds();
-                self.text_box.as_mut().map(|b| b.set_speed(self.text_speed));
+                if let Some(text_box) = self.text_box.as_mut() {
+                    text_box.set_speed(self.text_speed)
+                };
                 btn.text = self.text_speed.to_string();
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
@@ -169,7 +172,7 @@ impl Scene for StoryScene {
         };
     }
     fn draw(&mut self, game_context: &mut GameContext) {
-        let layout = StoryScene::layout(&game_context);
+        let layout = StoryScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
@@ -190,7 +193,9 @@ impl Scene for StoryScene {
         if let Some(btn) = self.speed_btn.as_mut() {
             btn.draw(game_context, &layout);
         };
-        self.fade.as_mut().map(|f| f.draw(game_context));
+        if let Some(fade) = self.fade.as_mut() {
+            fade.draw(game_context);
+        };
     }
 }
 

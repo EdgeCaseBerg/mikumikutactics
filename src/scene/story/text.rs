@@ -66,7 +66,7 @@ impl TextBox {
         let mut lines = vec![];
         let mut line = String::new();
         for word in words {
-            if word.len() == 0 {
+            if word.is_empty() {
                 continue;
             }
 
@@ -105,7 +105,7 @@ impl TextBox {
                 };
             }
         }
-        if page.lines.len() > 0 {
+        if !page.lines.is_empty() {
             pages.push(page);
         }
 
@@ -136,8 +136,7 @@ impl TextBox {
         let maybe_font: Option<&LoadedFont> = game_context
             .font_library
             .as_mut()
-            .map(|font_library| font_library.get(self.font_id))
-            .flatten();
+            .and_then(|font_library| font_library.get(self.font_id));
 
         if let (Some(font), Some(renderer)) = (maybe_font, game_context.renderer.as_mut()) {
             draw_text_box_left_aligned(self, font, renderer.as_mut());
@@ -169,11 +168,11 @@ pub fn draw_text_box_left_aligned(
             + leading as usize * line_idx;
         let anchor = Rect {
             x: anchor.x,
-            y: anchor.y as isize + offset_y as isize,
+            y: anchor.y + offset_y as isize,
             width: anchor.width,
             height: text_box.line_height as isize,
         };
-        draw_text_anchored(&line, &anchor, &font, renderer, FontAlign::Left);
+        draw_text_anchored(line, &anchor, font, renderer, FontAlign::Left);
     }
 }
 
@@ -204,6 +203,8 @@ impl LineSpeed {
         }
     }
 
+    // clippy bothers us about to_string but it can shove off.
+    #[allow(clippy::inherent_to_string)]
     pub fn to_string(&self) -> String {
         match self {
             LineSpeed::Slow => ">".to_owned(),
@@ -240,11 +241,7 @@ struct Line {
 
 impl Line {
     pub fn is_visible(&self) -> bool {
-        if let LineState::Visible = self.line_state {
-            true
-        } else {
-            false
-        }
+        matches!(self.line_state, LineState::Visible)
     }
 
     pub fn text_at_speed(text: String, speed: LineSpeed) -> Self {
@@ -315,7 +312,7 @@ impl Page {
 
         self.lines[self.current_line].update(ticks);
         if self.lines[self.current_line].is_visible() {
-            self.current_line = self.current_line + 1;
+            self.current_line += 1;
         }
     }
 

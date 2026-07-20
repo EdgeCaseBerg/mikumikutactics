@@ -36,10 +36,7 @@ pub struct TransitionScene {
 
 impl TransitionScene {
     pub fn is_done(&self) -> bool {
-        match self.timer {
-            ReadyState::Ready => true,
-            _ => false,
-        }
+        matches!(self.timer, ReadyState::Ready)
     }
 
     pub fn new_fade_out() -> Self {
