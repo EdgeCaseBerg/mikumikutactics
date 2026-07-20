@@ -192,125 +192,63 @@ fn validate_program(
         })
         .collect();
 
-    // let mut set_of_all_goto_targets = HashSet::new();
     let mut valid_ops = Vec::with_capacity(raw.len());
     let mut errors = vec![];
     for unvalidated in raw {
         match unvalidated {
-            UnvalidatedNovelOps::Say(s) => {
-                valid_ops.push(NovelOps::Say(s));
-            }
-            UnvalidatedNovelOps::Label(s) => {
-                valid_ops.push(NovelOps::Label(s));
-            }
-            UnvalidatedNovelOps::Goto(s) => {
-                if !set_of_all_labels.contains(&s) {
-                    errors.push(format!(
-                        "cannot create GOTO ({0}) because label {0} does not exist",
-                        s
-                    ));
-                } else {
-                    valid_ops.push(NovelOps::Goto(s));
+            UnvalidatedNovelOps::Say(_) => {
+                if let Some(op) = validate_say(unvalidated) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::Hide(pp) => {
-                if let Some(pp) = PortraitPosition::lift(&pp) {
-                    valid_ops.push(NovelOps::Hide(pp));
-                } else {
-                    errors.push(format!(
-                        "cannot hide character at position {:?} as position is not valid",
-                        pp
-                    ));
+            UnvalidatedNovelOps::Label(_) => {
+                if let Some(op) = validate_label(unvalidated) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::Focus(pp) => {
-                if let Some(pp) = PortraitPosition::lift(&pp) {
-                    valid_ops.push(NovelOps::Focus(pp));
-                } else {
-                    errors.push(format!(
-                        "cannot focus position {:?} as position is not valid",
-                        pp
-                    ));
+            UnvalidatedNovelOps::Goto(_) => {
+                if let Some(op) = validate_goto(unvalidated, &set_of_all_labels, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::Background(name) => {
-                if let Some(texture_id) = context.name_to_texture(&name) {
-                    valid_ops.push(NovelOps::Background(texture_id));
-                } else {
-                    errors.push(format!("cannot load texture for background {:?}", name));
+            UnvalidatedNovelOps::Hide(_) => {
+                if let Some(op) = validate_hide(unvalidated, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::PlaySfx(name) => {
-                if let Some(sfx_id) = context.name_to_sfx(&name) {
-                    valid_ops.push(NovelOps::PlaySfx(sfx_id));
-                } else {
-                    errors.push(format!("cannot load sound effect for name {:?}", name));
+            UnvalidatedNovelOps::Focus(_) => {
+                if let Some(op) = validate_focus(unvalidated, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::PlayMusic(name) => {
-                if let Some(music_id) = context.name_to_music(&name) {
-                    valid_ops.push(NovelOps::PlayMusic(music_id));
-                } else {
-                    errors.push(format!("cannot load music for name {:?}", name));
+            UnvalidatedNovelOps::Background(_) => {
+                if let Some(op) = validate_background(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::Choices(choices) => {
-                let mut all_valid = true;
-                for choice in &choices {
-                    if !set_of_all_labels.contains(&choice.label) {
-                        all_valid = false;
-                        errors.push(format!(
-                            "cannot create choice because label {} does not exist",
-                            &choice.label
-                        ));
-                    }
-                }
-                if all_valid {
-                    valid_ops.push(NovelOps::Choices(choices));
+            UnvalidatedNovelOps::PlaySfx(_) => {
+                if let Some(op) = validate_play_sfx(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::Show(character_name, pp) => {
-                if let Some(texture_id) = context.name_to_texture(&character_name) {
-                    let character = Character {
-                        name: character_name,
-                        state: CharacterState::Idle,
-                        texture_id,
-                    };
-                    if let Some(pp) = PortraitPosition::lift(&pp) {
-                        valid_ops.push(NovelOps::Show(character, pp));
-                    } else {
-                        errors.push(format!(
-                            "cannot show character at position {:?} as position is not valid",
-                            pp
-                        ));
-                    }
-                } else {
-                    errors.push(format!(
-                        "cannot load texture for character {:?}",
-                        character_name
-                    ));
+            UnvalidatedNovelOps::PlayMusic(_) => {
+                if let Some(op) = validate_play_music(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
-            UnvalidatedNovelOps::NewCharacterState(character_name, state) => {
-                if let Some(texture_id) = context.name_to_texture(&character_name) {
-                    if let Some(state) = CharacterState::lift(&state) {
-                        let character = Character {
-                            name: character_name,
-                            state,
-                            texture_id,
-                        };
-                        valid_ops.push(NovelOps::NewCharacterState(character));
-                    } else {
-                        errors.push(format!(
-                            "unknown character state {} for character {:?}",
-                            state, character_name
-                        ));
-                    }
-                } else {
-                    errors.push(format!(
-                        "cannot load texture for character {:?}",
-                        character_name
-                    ));
+            UnvalidatedNovelOps::Choices(_) => {
+                if let Some(op) = validate_choices(unvalidated, &set_of_all_labels, &mut errors) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::Show(..) => {
+                if let Some(op) = validate_show(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::NewCharacterState(..) => {
+                if let Some(op) = validate_new_character_state(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
                 }
             }
         }
@@ -319,6 +257,205 @@ fn validate_program(
         return Err(errors.join(", ").into());
     }
     Ok(valid_ops)
+}
+
+fn validate_say(unvalidated: UnvalidatedNovelOps) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Say(s) = unvalidated else {
+        return None;
+    };
+    Some(NovelOps::Say(s))
+}
+
+fn validate_label(unvalidated: UnvalidatedNovelOps) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Label(s) = unvalidated else {
+        return None;
+    };
+    Some(NovelOps::Label(s))
+}
+
+fn validate_goto(
+    unvalidated: UnvalidatedNovelOps,
+    set_of_all_labels: &HashSet<String>,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Goto(s) = unvalidated else {
+        return None;
+    };
+    if !set_of_all_labels.contains(&s) {
+        errors.push(format!(
+            "cannot create GOTO ({0}) because label {0} does not exist",
+            s
+        ));
+        None
+    } else {
+        Some(NovelOps::Goto(s))
+    }
+}
+fn validate_hide(unvalidated: UnvalidatedNovelOps, errors: &mut Vec<String>) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Hide(pp) = unvalidated else {
+        return None;
+    };
+    if let Some(pp) = PortraitPosition::lift(&pp) {
+        Some(NovelOps::Hide(pp))
+    } else {
+        errors.push(format!(
+            "cannot hide character at position {:?} as position is not valid",
+            pp
+        ));
+        None
+    }
+}
+
+fn validate_focus(unvalidated: UnvalidatedNovelOps, errors: &mut Vec<String>) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Focus(pp) = unvalidated else {
+        return None;
+    };
+    if let Some(pp) = PortraitPosition::lift(&pp) {
+        Some(NovelOps::Focus(pp))
+    } else {
+        errors.push(format!(
+            "cannot focus position {:?} as position is not valid",
+            pp
+        ));
+        None
+    }
+}
+
+fn validate_background(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Background(name) = unvalidated else {
+        return None;
+    };
+    if let Some(texture_id) = context.name_to_texture(&name) {
+        Some(NovelOps::Background(texture_id))
+    } else {
+        errors.push(format!("cannot load texture for background {:?}", name));
+        None
+    }
+}
+
+fn validate_play_sfx(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::PlaySfx(name) = unvalidated else {
+        return None;
+    };
+    if let Some(sfx_id) = context.name_to_sfx(&name) {
+        Some(NovelOps::PlaySfx(sfx_id))
+    } else {
+        errors.push(format!("cannot load sound effect for name {:?}", name));
+        None
+    }
+}
+
+fn validate_play_music(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::PlayMusic(name) = unvalidated else {
+        return None;
+    };
+    if let Some(music_id) = context.name_to_music(&name) {
+        Some(NovelOps::PlayMusic(music_id))
+    } else {
+        errors.push(format!("cannot load music for name {:?}", name));
+        None
+    }
+}
+
+fn validate_choices(
+    unvalidated: UnvalidatedNovelOps,
+    set_of_all_labels: &HashSet<String>,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Choices(choices) = unvalidated else {
+        return None;
+    };
+    let mut all_valid = true;
+    for choice in &choices {
+        if !set_of_all_labels.contains(&choice.label) {
+            all_valid = false;
+            errors.push(format!(
+                "cannot create choice because label {} does not exist",
+                &choice.label
+            ));
+        }
+    }
+    if all_valid {
+        return Some(NovelOps::Choices(choices));
+    }
+    None
+}
+
+fn validate_show(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::Show(character_name, pp) = unvalidated else {
+        return None;
+    };
+
+    if let Some(texture_id) = context.name_to_texture(&character_name) {
+        let character = Character {
+            name: character_name,
+            state: CharacterState::Idle,
+            texture_id,
+        };
+        if let Some(pp) = PortraitPosition::lift(&pp) {
+            Some(NovelOps::Show(character, pp))
+        } else {
+            errors.push(format!(
+                "cannot show character at position {:?} as position is not valid",
+                pp
+            ));
+            None
+        }
+    } else {
+        errors.push(format!(
+            "cannot load texture for character {:?}",
+            character_name
+        ));
+        None
+    }
+}
+
+fn validate_new_character_state(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::NewCharacterState(character_name, state) = unvalidated else {
+        return None;
+    };
+    if let Some(texture_id) = context.name_to_texture(&character_name) {
+        if let Some(state) = CharacterState::lift(&state) {
+            let character = Character {
+                name: character_name,
+                state,
+                texture_id,
+            };
+            Some(NovelOps::NewCharacterState(character))
+        } else {
+            errors.push(format!(
+                "unknown character state {} for character {:?}",
+                state, character_name
+            ));
+            None
+        }
+    } else {
+        errors.push(format!(
+            "cannot load texture for character {:?}",
+            character_name
+        ));
+        None
+    }
 }
 
 pub fn parse_scene(
