@@ -393,7 +393,6 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if !ops.is_empty() {
             operations.append(&mut ops);
         }
-        eprintln!("DEBUG: {:?}", (line, &operations));
     }
     if !errors.is_empty() {
         return Err(errors.join(", ").into());
