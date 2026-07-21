@@ -1624,7 +1624,9 @@ mod visual_novel_tests {
             "\nLABEL foo",
             "\nBACKGROUND battlefield",
             "\nHIDE left",
+            "\nPLAY blip",
             "\nCHARACTER miku IS idle",
+            "\nMUSIC bgmusic",
             "\nENTER miku FROM left",
             "\nCHOICE",
             "\n| label1 OPTION text for label one",
@@ -1643,7 +1645,9 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::Label("foo".to_owned()),
                     UnvalidatedNovelOps::Background("battlefield".to_owned()),
                     UnvalidatedNovelOps::Hide("left".to_owned()),
+                    UnvalidatedNovelOps::PlaySfx("blip".to_owned()),
                     UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
+                    UnvalidatedNovelOps::PlayMusic("bgmusic".to_owned()),
                     UnvalidatedNovelOps::Show("miku".to_owned(), "left".to_owned()),
                     UnvalidatedNovelOps::Choices(vec![
                         Choice {
