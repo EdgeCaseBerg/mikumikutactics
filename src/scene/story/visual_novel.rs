@@ -40,7 +40,6 @@ use std::error::Error;
 
 type VnResult<T> = Result<T, Box<dyn Error>>;
 
-
 #[derive(Debug)]
 pub struct VisualNovelMachine {
     pub program_counter: usize,
@@ -1627,6 +1626,8 @@ mod visual_novel_tests {
             "\nPLAY blip",
             "\nCHARACTER miku IS idle",
             "\nMUSIC bgmusic",
+            "\nSAY",
+            "\nIt was a lovely day out and time for Miku to sing a song",
             "\nENTER miku FROM left",
             "\nCHOICE",
             "\n| label1 OPTION text for label one",
@@ -1648,6 +1649,9 @@ mod visual_novel_tests {
                     UnvalidatedNovelOps::PlaySfx("blip".to_owned()),
                     UnvalidatedNovelOps::NewCharacterState("miku".to_owned(), "idle".to_owned()),
                     UnvalidatedNovelOps::PlayMusic("bgmusic".to_owned()),
+                    UnvalidatedNovelOps::Say(
+                        "It was a lovely day out and time for Miku to sing a song".to_owned()
+                    ),
                     UnvalidatedNovelOps::Show("miku".to_owned(), "left".to_owned()),
                     UnvalidatedNovelOps::Choices(vec![
                         Choice {
