@@ -478,6 +478,7 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut errors = Vec::new();
     let mut line_number = 0;
     while let Some(line) = line_iter.next() {
+        // BUG: line number does not advance forward enough for choice and say
         line_number += 1;
         if let Some(op) = parse_single_line_ops(line, &mut errors, line_number) {
             operations.push(op);
@@ -532,9 +533,10 @@ fn parse_single_line_ops(
         return Some(op);
     }
     if parse_choice_option(line, errors, line_number).is_some() {
-        errors.push(
-            "invalid state, trying to add choice option when no choice has been started".to_owned(),
-        );
+        errors.push(format!(
+            "line {} invalid state, trying to add choice option when no choice has been started",
+            line_number
+        ));
     }
     None
 }
@@ -1435,7 +1437,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "invalid state, trying to add choice option when no choice has been started"
+                "line 3 invalid state, trying to add choice option when no choice has been started"
                     .to_owned(),
             );
         } else {
@@ -1449,7 +1451,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "invalid state, trying to add choice option when no choice has been started"
+                "line 1 invalid state, trying to add choice option when no choice has been started"
                     .to_owned(),
             );
         } else {
