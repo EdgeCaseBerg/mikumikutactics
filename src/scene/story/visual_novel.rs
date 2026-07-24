@@ -486,7 +486,10 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
             operations.push(op);
         }
         if parse_choice_option(line, &mut errors, line_number).is_some() {
-            errors.push("invalid state, trying to add choice to empty choice partial".to_owned());
+            errors.push(
+                "invalid state, trying to add choice option when no choice has been started"
+                    .to_owned(),
+            );
         }
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
@@ -1433,7 +1436,8 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "invalid state, trying to add choice to empty choice partial".to_owned(),
+                "invalid state, trying to add choice option when no choice has been started"
+                    .to_owned(),
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
@@ -1446,7 +1450,8 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "invalid state, trying to add choice to empty choice partial".to_owned(),
+                "invalid state, trying to add choice option when no choice has been started"
+                    .to_owned(),
             );
         } else {
             panic!("expected unsuccessful parse, got {:?}", ops);
