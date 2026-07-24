@@ -485,12 +485,6 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
         if let Some(op) = parse_choices(line, &mut errors, line_number, &mut line_iter) {
             operations.push(op);
         }
-        if parse_choice_option(line, &mut errors, line_number).is_some() {
-            errors.push(
-                "invalid state, trying to add choice option when no choice has been started"
-                    .to_owned(),
-            );
-        }
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
         // in "SAY" mode for a while until we hit a fully blank line.
@@ -536,6 +530,11 @@ fn parse_single_line_ops(
     }
     if let Some(op) = parse_music(line, errors, line_number) {
         return Some(op);
+    }
+    if parse_choice_option(line, errors, line_number).is_some() {
+        errors.push(
+            "invalid state, trying to add choice option when no choice has been started".to_owned(),
+        );
     }
     None
 }
