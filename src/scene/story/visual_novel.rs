@@ -478,18 +478,17 @@ fn parse_scene_to_operations(raw_scene: &str) -> VnResult<Vec<UnvalidatedNovelOp
     let mut errors = Vec::new();
     let mut line_number = 0;
     while let Some(line) = line_iter.next() {
-        // BUG: line number does not advance forward enough for choice and say
         line_number += 1;
         if let Some(op) = parse_single_line_ops(line, &mut errors, line_number) {
             operations.push(op);
         }
-        if let Some(op) = parse_choices(line, &mut errors, line_number, &mut line_iter) {
+        if let Some(op) = parse_choices(line, &mut errors, &mut line_number, &mut line_iter) {
             operations.push(op);
         }
         // we parse say last since its the only op that spans multiple lines
         // in a way that has no delimiter beyond the SAY itself, so we are
         // in "SAY" mode for a while until we hit a fully blank line.
-        let mut ops = parse_say(line, &mut line_iter);
+        let mut ops = parse_say(line, &mut line_iter, &mut line_number);
         if !ops.is_empty() {
             operations.append(&mut ops);
         }
@@ -544,13 +543,13 @@ fn parse_single_line_ops(
 fn parse_choices<'a>(
     line: &str,
     errors: &mut Vec<String>,
-    line_number: usize,
+    line_number: &mut usize,
     line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
 ) -> Option<UnvalidatedNovelOps> {
     let (_, potential_inline_choice) = line.split_once("CHOICE")?;
 
     let mut choices = if let Some(c) =
-        parse_choice_option(potential_inline_choice.trim(), errors, line_number)
+        parse_choice_option(potential_inline_choice.trim(), errors, *line_number)
     {
         vec![c]
     } else if potential_inline_choice.trim().is_empty() {
@@ -563,10 +562,10 @@ fn parse_choices<'a>(
     };
 
     // then advance the iter
-    let mut option_line_number = line_number;
+    let mut option_line_number = *line_number;
     while let Some(next_line) = line_iter.peek() {
-        option_line_number += 1;
         if let Some(choice) = parse_choice_option(next_line, errors, option_line_number) {
+            option_line_number += 1;
             choices.push(choice);
             line_iter.next();
             continue;
@@ -574,6 +573,8 @@ fn parse_choices<'a>(
             break;
         }
     }
+
+    *line_number += option_line_number - *line_number;
 
     if line_iter.peek().is_none() && choices.is_empty() {
         errors.push(
@@ -622,6 +623,7 @@ fn parse_choice_option(line: &str, errors: &mut Vec<String>, line_number: usize)
 fn parse_say<'a>(
     line: &str,
     line_iter: &mut std::iter::Peekable<impl Iterator<Item = &'a str>>,
+    line_number: &mut usize,
 ) -> Vec<UnvalidatedNovelOps> {
     let Some((_, text)) = line.split_once("SAY") else {
         return vec![];
@@ -646,6 +648,7 @@ fn parse_say<'a>(
             ops.push(UnvalidatedNovelOps::Say(words.join(" ")));
             words = vec![];
             line_iter.next();
+            *line_number += 1;
             continue;
         }
 
@@ -664,6 +667,7 @@ fn parse_say<'a>(
         // and consume the iter.
         words.push(next_line);
         line_iter.next();
+        *line_number += 1;
     }
 
     let w = words.join(" ");
@@ -1437,7 +1441,7 @@ mod visual_novel_tests {
         if let Err(problem) = ops {
             assert_eq!(
                 problem.to_string(),
-                "line 3 invalid state, trying to add choice option when no choice has been started"
+                "line 5 invalid state, trying to add choice option when no choice has been started"
                     .to_owned(),
             );
         } else {
