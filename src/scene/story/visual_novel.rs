@@ -1630,6 +1630,42 @@ mod visual_novel_tests {
     }
 
     #[test]
+    fn parse_empty_background_to_scene_op_failure() {
+        let ops = parse_scene_to_operations("BACKGROUND ");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse background name from empty string, add a background name to scene"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_missing_background_to_scene_op_failure() {
+        let ops = parse_scene_to_operations("BACKGROUND");
+        if let Err(problem) = ops {
+            assert_eq!(
+                problem.to_string(),
+                "line 1 could not parse background name from BACKGROUND"
+            );
+        } else {
+            panic!("expected unsuccessful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
+    fn parse_background_to_scene_op_success() {
+        let ops = parse_scene_to_operations("BACKGROUND battlefield");
+        if let Ok([UnvalidatedNovelOps::Background(name)]) = ops.as_deref() {
+            assert_eq!("battlefield", name);
+        } else {
+            panic!("expected successful parse, got {:?}", ops);
+        }
+    }
+
+    #[test]
     fn parse_full_scene_ops_successfully() {
         let ops = parse_scene_to_operations(concat!(
             "\nGOTO foo",
