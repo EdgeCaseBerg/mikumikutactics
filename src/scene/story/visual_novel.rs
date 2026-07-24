@@ -1848,4 +1848,23 @@ mod visual_novel_tests {
             panic!("should have had an error, had: {:?}", result);
         }
     }
+
+    #[test]
+    fn when_show_has_multiple_errors_both_are_reported() {
+        let result = validate_program(
+            vec![UnvalidatedNovelOps::Show(
+                "noone".to_owned(),
+                "badpp".to_owned(),
+            )],
+            &TmpSceneLoadingContext::default(),
+        );
+        if let Err(problem) = result {
+            assert_eq!(
+                problem.to_string(),
+                "cannot load texture for character \"noone\", cannot show character at position \"badpp\" as position is not valid"
+            );
+        } else {
+            panic!("should have had an error, had: {:?}", result);
+        }
+    }
 }
