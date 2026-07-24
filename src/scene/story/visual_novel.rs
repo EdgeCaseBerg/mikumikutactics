@@ -438,28 +438,28 @@ fn validate_new_character_state(
     let UnvalidatedNovelOps::NewCharacterState(character_name, state) = unvalidated else {
         return None;
     };
-    if let Some(texture_id) = context.name_to_texture(&character_name) {
-        if let Some(state) = CharacterState::lift(&state) {
-            let character = Character {
-                name: character_name,
-                state,
-                texture_id,
-            };
-            Some(NovelOps::NewCharacterState(character))
-        } else {
-            errors.push(format!(
-                "unknown character state {} for character {:?}",
-                state, character_name
-            ));
-            None
-        }
-    } else {
+    let maybe_texture_id = context.name_to_texture(&character_name);
+    let maybe_state = CharacterState::lift(&state);
+    if maybe_texture_id.is_none() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name
         ));
-        None
     }
+    if maybe_state.is_none() {
+        errors.push(format!(
+            "unknown character state {} for character {:?}",
+            state, character_name
+        ));
+    }
+    let texture_id = maybe_texture_id?;
+    let state = maybe_state?;
+    let character = Character {
+        name: character_name,
+        state,
+        texture_id,
+    };
+    Some(NovelOps::NewCharacterState(character))
 }
 
 pub fn parse_scene(
