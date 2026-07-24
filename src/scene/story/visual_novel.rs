@@ -403,28 +403,31 @@ fn validate_show(
         return None;
     };
 
-    if let Some(texture_id) = context.name_to_texture(&character_name) {
-        let character = Character {
-            name: character_name,
-            state: CharacterState::Idle,
-            texture_id,
-        };
-        if let Some(pp) = PortraitPosition::lift(&pp) {
-            Some(NovelOps::Show(character, pp))
-        } else {
-            errors.push(format!(
-                "cannot show character at position {:?} as position is not valid",
-                pp
-            ));
-            None
-        }
-    } else {
+    let maybe_texture_id = context.name_to_texture(&character_name);
+    let maybe_pp = PortraitPosition::lift(&pp);
+
+    if maybe_texture_id.is_none() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name
         ));
-        None
     }
+    if maybe_pp.is_none() {
+        errors.push(format!(
+            "cannot show character at position {:?} as position is not valid",
+            pp
+        ));
+    }
+
+    let texture_id = maybe_texture_id?;
+    let pp = maybe_pp?;
+
+    let character = Character {
+        name: character_name,
+        state: CharacterState::Idle,
+        texture_id,
+    };
+    Some(NovelOps::Show(character, pp))
 }
 
 fn validate_new_character_state(
