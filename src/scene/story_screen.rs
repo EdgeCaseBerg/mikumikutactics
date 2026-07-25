@@ -3,7 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
     FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT, TEXTURE_ID_STORY_BG,
-    TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg,
+    TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg, sprite_info_portrait,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -60,6 +60,62 @@ impl StoryScene {
                 source: src,
                 destination: Rect::new(0, 0, layout.area.width, layout.area.height),
             });
+        }
+
+        // TODO: Hardcoded sprites are just because of hardcoded
+        // scenes, we need a proper way to convert a Character to
+        // a sprite and all that. Probably need to deal with .aes files
+        // and frame tagging to do something like that. For now, this is
+        // okay because we're just implementing the ops bits and testing
+        if let Some(character) = vn.slot_left.as_ref() {
+            let dst = self
+                .placement_left_portrait
+                .relative_rect_to_layout(&layout);
+            let src = SpriteInfo {
+                width: 417,
+                height: 402,
+                ..sprite_info_portrait()
+            }
+            .get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: character.texture_id,
+                source: src,
+                destination: dst,
+            })
+        }
+        if let Some(character) = vn.slot_center.as_ref() {
+            let dst = self
+                .placement_center_portrait
+                .relative_rect_to_layout(&layout);
+            let src = SpriteInfo {
+                start_x: 906,
+                width: 1143 - 906,
+                height: 402,
+                ..sprite_info_portrait()
+            }
+            .get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: character.texture_id,
+                source: src,
+                destination: dst,
+            })
+        }
+        if let Some(character) = vn.slot_right.as_ref() {
+            let dst = self
+                .placement_right_portrait
+                .relative_rect_to_layout(&layout);
+            let src = SpriteInfo {
+                start_x: 462,
+                width: 747 - 462,
+                height: 402,
+                ..sprite_info_portrait()
+            }
+            .get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: character.texture_id,
+                source: src,
+                destination: dst,
+            })
         }
     }
 }
@@ -119,6 +175,7 @@ impl Scene for StoryScene {
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_STORY_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
+            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_PORTRAIT);
         }
 
         if let Some(ref mut audio) = game_context.audio {
