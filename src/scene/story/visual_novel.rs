@@ -171,9 +171,9 @@ pub struct Choice {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Character {
-    name: String,
-    state: CharacterState,
-    texture_id: TextureId,
+    pub name: String,
+    pub state: CharacterState,
+    pub texture_id: TextureId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
