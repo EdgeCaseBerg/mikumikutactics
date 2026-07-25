@@ -27,13 +27,13 @@ pub struct StoryScene {
     text_box: Option<TextBox>,
     next_btn: Option<Button>,
     speed_btn: Option<Button>,
+    vn: Option<VisualNovelMachine>,
     // Placement locations (Grid unit space, used for converting to screen coordinates )
     placement_text: Rect,
     text_speed: LineSpeed,
-    vn: Option<VisualNovelMachine>,
-    // placement_left_portrait: Rect,
-    // placement_right_portrait: Rect,
-    // placement_center_portrait: Rect,
+    placement_left_portrait: Rect,
+    placement_right_portrait: Rect,
+    placement_center_portrait: Rect,
 }
 
 impl StoryScene {
@@ -90,6 +90,24 @@ impl Default for StoryScene {
             )),
             text_speed: default_speed,
             vn: None,
+            placement_left_portrait: Rect {
+                x: 2,
+                y: 0,
+                width: 4,
+                height: 6,
+            },
+            placement_center_portrait: Rect {
+                x: 6,
+                y: 0,
+                width: 4,
+                height: 6,
+            },
+            placement_right_portrait: Rect {
+                x: 10,
+                y: 0,
+                width: 4,
+                height: 6,
+            },
         }
     }
 }
