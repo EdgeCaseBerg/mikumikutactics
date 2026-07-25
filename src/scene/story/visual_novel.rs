@@ -72,6 +72,21 @@ impl VisualNovelMachine {
                 PortraitPosition::Center => self.slot_center = Some(character.clone()),
                 PortraitPosition::Right => self.slot_right = Some(character.clone()),
             },
+            NovelOps::Hide(pp) => match pp {
+                PortraitPosition::Left => self.slot_left = None,
+                PortraitPosition::Center => self.slot_center = None,
+                PortraitPosition::Right => self.slot_right = None,
+            },
+            NovelOps::PlaySfx(sfx_id) => {
+                self.sfx = Some(*sfx_id);
+            }
+            NovelOps::PlayMusic(music_id) => {
+                self.music = Some(*music_id);
+            }
+            NovelOps::Label(_) => {}
+            NovelOps::Goto(label) => {
+                self.jump(&label.clone());
+            }
             _ => {}
         }
     }
