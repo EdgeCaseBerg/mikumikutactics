@@ -145,14 +145,7 @@ impl TextBox {
 }
 
 pub fn text_box_bounds_on_grid(layout: &GridLayout, grid_bounds: &Rect) -> Rect {
-    let top_left = layout.cell_rect(grid_bounds.y as usize, grid_bounds.x as usize);
-    let (cw, ch) = layout.cell_size();
-    Rect {
-        x: top_left.x,
-        y: top_left.y,
-        width: cw * grid_bounds.width,
-        height: ch * grid_bounds.height,
-    }
+    grid_bounds.relative_rect_to_layout(layout)
 }
 
 pub fn draw_text_box_left_aligned(
