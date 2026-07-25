@@ -222,6 +222,7 @@ impl Scene for StoryScene {
         if let Some(btn) = self.speed_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
+                // TODO: this is just temporary while we work on the vn
                 if let Some(vn) = self.vn.as_mut() {
                     vn.advance();
                 }
