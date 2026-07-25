@@ -2,7 +2,8 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, sprite_info_planning_layout_bg,
+    FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT, TEXTURE_ID_STORY_BG,
+    TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -12,6 +13,9 @@ use crate::scene::button::Button;
 use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::story::text::text_box_bounds_on_grid;
+use crate::scene::story::visual_novel::{
+    Character, CharacterState, Choice, NovelOps, PortraitPosition, VisualNovelMachine,
+};
 use crate::scene::transitions::{Transition, TransitionScene};
 
 const STORY_FONT: FontId = FontId::BoldPixelScaled { pixel_size: 24 };
@@ -26,6 +30,7 @@ pub struct StoryScene {
     // Placement locations (Grid unit space, used for converting to screen coordinates )
     placement_text: Rect,
     text_speed: LineSpeed,
+    vn: Option<VisualNovelMachine>,
     // placement_left_portrait: Rect,
     // placement_right_portrait: Rect,
     // placement_center_portrait: Rect,
@@ -39,6 +44,22 @@ impl StoryScene {
             rows: 9,
             columns: 16,
             cell_gap: 0,
+        }
+    }
+
+    fn draw_vn_scene(&self, vn: &VisualNovelMachine, game_context: &mut GameContext) {
+        let layout = StoryScene::layout(game_context);
+        let Some(ref mut renderer) = game_context.renderer else {
+            return;
+        };
+
+        if let Some(background_id) = vn.background {
+            let src = self.bg.get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: background_id,
+                source: src,
+                destination: Rect::new(0, 0, layout.area.width, layout.area.height),
+            });
         }
     }
 }
@@ -68,6 +89,7 @@ impl Default for StoryScene {
                 BUTTON_FONT,
             )),
             text_speed: default_speed,
+            vn: None,
         }
     }
 }
@@ -92,6 +114,45 @@ impl Scene for StoryScene {
             let _ = font_library.ensure(STORY_FONT, asset_loader.as_mut());
             let _ = font_library.ensure(BUTTON_FONT, asset_loader.as_mut());
         }
+
+        // Temporarily create a story scene from scratch
+        let ops = vec![
+            NovelOps::Background(TEXTURE_ID_STORY_BG),
+            NovelOps::Show(
+                Character{
+                    name: "miku".to_owned(),
+                    state: CharacterState::Idle,
+                    texture_id: TEXTURE_ID_PORTRAIT,
+                }, PortraitPosition::Left),
+            NovelOps::NewCharacterState(
+                Character{
+                    name: "miku".to_owned(),
+                    state: CharacterState::Mad,
+                    texture_id: TEXTURE_ID_PORTRAIT,
+                }
+            ),
+            NovelOps::Label("repeat".to_owned()),
+            NovelOps::Say("Finally... it is time.".to_owned()),
+            NovelOps::Show(
+                Character {
+                    name: "rin".to_owned(),
+                    state: CharacterState::Idle,
+                    texture_id: TEXTURE_ID_PORTRAIT,
+                },
+                PortraitPosition::Right,
+            ),
+            NovelOps::Choices(vec![
+                Choice { label: "repeat".to_owned(), text: "What was that?".to_owned() },
+                Choice { label: "next".to_owned(), text: "Indeed, we shall have our revenge!".to_owned() },
+            ]),
+            NovelOps::Label("next".to_owned()),
+            NovelOps::Focus(PortraitPosition::Left),
+            NovelOps::Hide(PortraitPosition::Right),
+            NovelOps::Say("\nIndeed my friend, it is finally time to begin\nour long awaited adventure...\n\nIn tactics!".to_owned()),
+            NovelOps::Hide(PortraitPosition::Left),
+            NovelOps::Background(TEXTURE_ID_TITLE_BG),
+        ];
+        self.vn = Some(ops.into());
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
@@ -161,6 +222,9 @@ impl Scene for StoryScene {
         if let Some(btn) = self.speed_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
+                if let Some(vn) = self.vn.as_mut() {
+                    vn.advance();
+                }
                 self.text_speed = self.text_speed.cycle_speeds();
                 if let Some(text_box) = self.text_box.as_mut() {
                     text_box.set_speed(self.text_speed)
@@ -177,12 +241,9 @@ impl Scene for StoryScene {
             return;
         };
 
-        let src = self.bg.get_rect();
-        renderer.send_command(RenderCommand::DrawRect {
-            texture_id: TEXTURE_ID_STORY_BG,
-            source: src,
-            destination: Rect::new(0, 0, layout.area.width, layout.area.height),
-        });
+        if let Some(vn) = self.vn.as_ref() {
+            self.draw_vn_scene(vn, game_context);
+        }
 
         if let Some(text_box) = self.text_box.as_mut() {
             text_box.draw(game_context);
