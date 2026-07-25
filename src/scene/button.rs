@@ -38,16 +38,9 @@ impl Button {
     }
 
     pub(crate) fn relative_layout(&self, parent_layout: &GridLayout) -> GridLayout {
-        let anchor = parent_layout.cell_rect(self.rect.y as usize, self.rect.x as usize);
-        let width = anchor.width * self.rect.width;
-        let height = anchor.height * self.rect.height;
+        let area = self.rect.relative_rect_to_layout(parent_layout);
         GridLayout {
-            area: Rect {
-                x: anchor.x,
-                y: anchor.y,
-                width,
-                height,
-            },
+            area,
             rows: 1,
             columns: 1,
             cell_gap: 0,
