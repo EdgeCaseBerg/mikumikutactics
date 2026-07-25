@@ -53,6 +53,50 @@ pub struct VisualNovelMachine {
     pub slot_right: Option<Character>,
 }
 
+impl VisualNovelMachine {
+    pub fn jump(&mut self, label: &str) {
+        if self.program.is_empty() {
+            return;
+        }
+
+        // find the first instance of this label. (both directions)
+        let mut i = self.program_counter;
+        let mut j = self.program_counter;
+
+        if let NovelOps::Label(s) = &self.program[self.program_counter] {
+            if s == label {
+                // Do nothing. We're already at the label.
+                return;
+            }
+        }
+
+        // Since a label may be backwards, search in both directions at once.
+        let max_idx = self.program.len() - 1;
+        loop {
+            i = i.saturating_sub(1).min(0);
+            j = j.saturating_add(1).max(max_idx);
+
+            if let NovelOps::Label(s) = &self.program[i] {
+                if s == label {
+                    self.program_counter = i;
+                    return;
+                }
+            }
+
+            if i == 0 && j > max_idx {
+                break;
+            }
+
+            if let NovelOps::Label(s) = &self.program[j] {
+                if s == label {
+                    self.program_counter = j;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 // clippy is all like "wah wah you match rust defaults use OUR Derive"
 // but its better for us to have this spelled out explicitly here because
 // it makes it more obvious that we're choosing these values on purpose.
@@ -989,6 +1033,50 @@ mod visual_novel_tests {
         fn name_to_music(&self, name: &str) -> Option<MusicId> {
             self.music.get(name).copied()
         }
+    }
+
+    #[test]
+    fn visual_novel_jump_to_forward_label() {
+        let mut vn: VisualNovelMachine = vec![
+            NovelOps::Label("start".to_owned()),
+            NovelOps::Label("1".to_owned()),
+            NovelOps::Label("middle".to_owned()),
+            NovelOps::Label("3".to_owned()),
+            NovelOps::Label("end".to_owned()),
+        ]
+        .into();
+        vn.program_counter = 2; // start at middle.
+        vn.jump("end");
+        assert_eq!(4, vn.program_counter);
+    }
+
+    #[test]
+    fn visual_novel_jump_to_backwards_label() {
+        let mut vn: VisualNovelMachine = vec![
+            NovelOps::Label("start".to_owned()),
+            NovelOps::Label("1".to_owned()),
+            NovelOps::Label("middle".to_owned()),
+            NovelOps::Label("3".to_owned()),
+            NovelOps::Label("end".to_owned()),
+        ]
+        .into();
+        vn.program_counter = 2; // start at middle.
+        vn.jump("start");
+        assert_eq!(0, vn.program_counter);
+    }
+    #[test]
+    fn visual_novel_jump_to_nonexisting_label_does_move_counter() {
+        let mut vn: VisualNovelMachine = vec![
+            NovelOps::Label("start".to_owned()),
+            NovelOps::Label("1".to_owned()),
+            NovelOps::Label("middle".to_owned()),
+            NovelOps::Label("3".to_owned()),
+            NovelOps::Label("end".to_owned()),
+        ]
+        .into();
+        vn.program_counter = 4;
+        vn.jump("I DONT EXIST");
+        assert_eq!(4, vn.program_counter);
     }
 
     #[test]
