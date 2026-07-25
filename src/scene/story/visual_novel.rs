@@ -663,7 +663,7 @@ fn parse_say<'a>(
             return ops;
         }
 
-        // otherwise, we're still in the say, so it to the words
+        // otherwise, we're still in the say, so add it to the words
         // and consume the iter.
         words.push(next_line);
         line_iter.next();
