@@ -62,10 +62,16 @@ impl VisualNovelMachine {
         if self.program_counter >= self.program.len() {
             return;
         }
-        match self.program[self.program_counter] {
+        match &self.program[self.program_counter] {
             NovelOps::Background(texture_id) => {
-                self.background = Some(texture_id);
+                self.background = Some(*texture_id);
             }
+            NovelOps::Show(character, pp) => match pp {
+                // Should we Cow<'a, Character> since it's really just a borrow?
+                PortraitPosition::Left => self.slot_left = Some(character.clone()),
+                PortraitPosition::Center => self.slot_center = Some(character.clone()),
+                PortraitPosition::Right => self.slot_right = Some(character.clone()),
+            },
             _ => {}
         }
     }
