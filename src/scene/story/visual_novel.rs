@@ -63,11 +63,9 @@ impl VisualNovelMachine {
         let mut i = self.program_counter;
         let mut j = self.program_counter;
 
-        if let NovelOps::Label(s) = &self.program[self.program_counter] {
-            if s == label {
-                // Do nothing. We're already at the label.
-                return;
-            }
+        if self.program[self.program_counter].is_label(label) {
+            // Do nothing. We're already at the label.
+            return;
         }
 
         // Since a label may be backwards, search in both directions at once.
@@ -76,22 +74,18 @@ impl VisualNovelMachine {
             i = i.saturating_sub(1).min(0);
             j = j.saturating_add(1).max(max_idx);
 
-            if let NovelOps::Label(s) = &self.program[i] {
-                if s == label {
-                    self.program_counter = i;
-                    return;
-                }
+            if self.program[i].is_label(label) {
+                self.program_counter = i;
+                return;
             }
 
             if i == 0 && j > max_idx {
                 break;
             }
 
-            if let NovelOps::Label(s) = &self.program[j] {
-                if s == label {
-                    self.program_counter = j;
-                    return;
-                }
+            if self.program[j].is_label(label) {
+                self.program_counter = j;
+                return;
             }
         }
     }
@@ -220,6 +214,16 @@ pub enum NovelOps {
     PlayMusic(MusicId),
     // later, triggers? like SET FLAG x, IF FLAG x ?
     // LOAD_SCRIPT another_scene to start?
+}
+
+impl NovelOps {
+    pub fn is_label(&self, label: &str) -> bool {
+        if let NovelOps::Label(s) = self {
+            label == s
+        } else {
+            false
+        }
+    }
 }
 
 fn validate_program(
@@ -1077,6 +1081,20 @@ mod visual_novel_tests {
         vn.program_counter = 4;
         vn.jump("I DONT EXIST");
         assert_eq!(4, vn.program_counter);
+    }
+    #[test]
+    fn visual_novel_jump_to_label_already_on_does_nothing() {
+        let mut vn: VisualNovelMachine = vec![
+            NovelOps::Label("start".to_owned()),
+            NovelOps::Label("1".to_owned()),
+            NovelOps::Label("middle".to_owned()),
+            NovelOps::Label("3".to_owned()),
+            NovelOps::Label("end".to_owned()),
+        ]
+        .into();
+        vn.program_counter = 1;
+        vn.jump("1");
+        assert_eq!(1, vn.program_counter);
     }
 
     #[test]
