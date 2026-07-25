@@ -25,6 +25,7 @@ use std::ops::{Add, Div, Sub};
 use crate::backend::init_backend;
 use crate::game::Game;
 use crate::game_options::GameOptions;
+use crate::grid_layout::GridLayout;
 use crate::scene::Scene;
 use crate::scene::title_screen::TitleScene;
 
@@ -111,6 +112,19 @@ pub struct Rect<T: PartialOrd + Copy + Add<Output = T> + Sub<Output = T> + Div<O
     pub y: T,
     pub width: T,
     pub height: T,
+}
+
+impl Rect {
+    pub fn relative_rect_to_layout(&self, layout: &GridLayout) -> Rect {
+        let top_left = layout.cell_rect(self.y as usize, self.x as usize);
+        let (cw, ch) = layout.cell_size();
+        Rect {
+            x: top_left.x,
+            y: top_left.y,
+            width: cw * self.width,
+            height: ch * self.height,
+        }
+    }
 }
 
 impl<T: PartialOrd + Copy + Add<Output = T> + Sub<Output = T> + Div<Output = T>> Rect<T> {
