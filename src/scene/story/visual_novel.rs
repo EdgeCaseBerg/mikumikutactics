@@ -54,6 +54,21 @@ pub struct VisualNovelMachine {
 }
 
 impl VisualNovelMachine {
+    pub fn advance(&mut self) {
+        self.do_current_op()
+        self.program_counter += 1;
+    }
+    pub fn do_current_op(&mut self) {
+        if self.program_counter >= self.program.len() {
+            return;
+        }
+        match self.program[self.program_counter] {
+            NovelOps::Background(texture_id) => {
+                self.background = Some(texture_id);
+            }
+            _ => {}
+        }
+    }
     pub fn jump(&mut self, label: &str) {
         if self.program.is_empty() {
             return;
