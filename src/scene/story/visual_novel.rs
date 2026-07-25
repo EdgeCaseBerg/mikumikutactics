@@ -55,7 +55,7 @@ pub struct VisualNovelMachine {
 
 impl VisualNovelMachine {
     pub fn advance(&mut self) {
-        self.do_current_op()
+        self.do_current_op();
         self.program_counter += 1;
     }
     pub fn do_current_op(&mut self) {
