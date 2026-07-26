@@ -1,5 +1,5 @@
 use crate::constants::{MusicId, SfxId, TextureId};
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::error::Error;
 
 /* Scripts like
@@ -45,12 +45,12 @@ pub struct VisualNovelMachine {
     pub program_counter: usize,
     pub program: Vec<NovelOps>,
     pub music: Option<MusicId>,
-    pub sfx: Option<SfxId>,
     pub focused: Option<PortraitPosition>,
     pub background: Option<TextureId>,
     pub slot_left: Option<Character>,
     pub slot_center: Option<Character>,
     pub slot_right: Option<Character>,
+    pub sfx_queue: VecDeque<SfxId>,
 }
 
 impl VisualNovelMachine {
@@ -78,7 +78,7 @@ impl VisualNovelMachine {
                 PortraitPosition::Right => self.slot_right = None,
             },
             NovelOps::PlaySfx(sfx_id) => {
-                self.sfx = Some(*sfx_id);
+                self.sfx_queue.push_front(*sfx_id);
             }
             NovelOps::PlayMusic(music_id) => {
                 self.music = Some(*music_id);
@@ -125,6 +125,9 @@ impl VisualNovelMachine {
             }
         }
     }
+    pub fn next_sfx(&mut self) -> Option<SfxId> {
+        self.sfx_queue.pop_back()
+    }
 }
 
 // clippy is all like "wah wah you match rust defaults use OUR Derive"
@@ -138,12 +141,12 @@ impl Default for VisualNovelMachine {
             program_counter: 0,
             program: vec![],
             music: None,
-            sfx: None,
             focused: None,
             background: None,
             slot_left: None,
             slot_center: None,
             slot_right: None,
+            sfx_queue: VecDeque::new(),
         }
     }
 }
