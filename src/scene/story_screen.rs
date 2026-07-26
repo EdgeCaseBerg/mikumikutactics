@@ -154,9 +154,6 @@ impl StoryScene {
                     TextBox::new(text_box_bounds, text, loaded_font, self.text_speed)
                 });
             }
-        } else {
-            // There is no more text? hide the box then.
-            self.text_box = None;
         }
     }
 }
@@ -307,9 +304,8 @@ impl Scene for StoryScene {
             };
             self.fade = fade;
         }
-        let layout = StoryScene::layout(game_context);
 
-        self.set_text_box_to_next_say(game_context);
+        let layout = StoryScene::layout(game_context);
 
         if let Some(text_box) = self.text_box.as_mut() {
             text_box.text.update(ticks);
@@ -332,27 +328,7 @@ impl Scene for StoryScene {
                         // If we just advanced but the text is still visible that means
                         // we've hit the end of a Say operation and should request the next one.
                         if b.text.is_visible() {
-                            if let (None, Some(font_library)) =
-                                (&self.text_box, game_context.font_library.as_mut())
-                            {
-                                let text_box_bounds =
-                                    text_box_bounds_on_grid(&layout, &self.placement_text);
-                                let maybe_font: Option<&LoadedFont> = font_library.get(STORY_FONT);
-
-                                if let Some(text) = self.vn.as_mut().and_then(|vn| vn.next_say()) {
-                                    self.text_box = maybe_font.map(|loaded_font| {
-                                        TextBox::new(
-                                            text_box_bounds,
-                                            text,
-                                            loaded_font,
-                                            self.text_speed,
-                                        )
-                                    });
-                                }
-                            } else {
-                                // There is no more text? hide the box then.
-                                self.text_box = None;
-                            }
+                            self.text_box = None;
                         }
                     } else {
                         b.set_speed(LineSpeed::Instant);
@@ -365,10 +341,6 @@ impl Scene for StoryScene {
         if let Some(btn) = self.speed_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
-                // TODO: this is just temporary while we work on the vn
-                if let Some(vn) = self.vn.as_mut() {
-                    vn.advance();
-                }
                 self.text_speed = self.text_speed.cycle_speeds();
                 if let Some(text_box) = self.text_box.as_mut() {
                     text_box.set_speed(self.text_speed)
@@ -378,6 +350,11 @@ impl Scene for StoryScene {
                 game_context.mouse_context.consume_left_click();
             }
         };
+
+        // Ensure that if we should be showing a textbox, we show one.
+        // if there is one already displaying it won't be changed.
+        self.set_text_box_to_next_say(game_context);
+
         // Chaining pattern matches with an && inbetween is gross
         // looking. Kindly go do something more useful plz clippy.
         #[allow(clippy::collapsible_if)]
