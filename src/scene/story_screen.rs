@@ -199,6 +199,7 @@ impl Scene for StoryScene {
                     state: CharacterState::Idle,
                     texture_id: TEXTURE_ID_PORTRAIT,
                 }, PortraitPosition::Left),
+            NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::NewCharacterState(
                 Character{
                     name: "miku".to_owned(),
@@ -208,6 +209,7 @@ impl Scene for StoryScene {
             ),
             NovelOps::Label("repeat".to_owned()),
             NovelOps::Say("Finally... it is time.".to_owned()),
+            NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::Show(
                 Character {
                     name: "rin".to_owned(),
@@ -224,6 +226,7 @@ impl Scene for StoryScene {
             NovelOps::Focus(PortraitPosition::Left),
             NovelOps::Hide(PortraitPosition::Right),
             NovelOps::Say("\nIndeed my friend, it is finally time to begin\nour long awaited adventure...\n\nIn tactics!".to_owned()),
+            NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::Hide(PortraitPosition::Left),
             NovelOps::Background(TEXTURE_ID_TITLE_BG),
         ];
