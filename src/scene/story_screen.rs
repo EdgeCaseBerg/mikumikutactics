@@ -2,8 +2,8 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    FontId, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT, TEXTURE_ID_STORY_BG,
-    TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg, sprite_info_portrait,
+    FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT,
+    TEXTURE_ID_STORY_BG, TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg, sprite_info_portrait,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -180,6 +180,7 @@ impl Scene for StoryScene {
 
         if let Some(ref mut audio) = game_context.audio {
             let _ = audio.load_sfx(SFX_ID_BLIP);
+            let _ = audio.load_music(MUSIC_ID_PACHEBAL);
         }
 
         if let (Some(font_library), Some(asset_loader)) = (
@@ -229,6 +230,7 @@ impl Scene for StoryScene {
             NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::Hide(PortraitPosition::Left),
             NovelOps::Background(TEXTURE_ID_TITLE_BG),
+            NovelOps::PlayMusic(MUSIC_ID_PACHEBAL),
         ];
         self.vn = Some(ops.into());
     }
@@ -320,6 +322,11 @@ impl Scene for StoryScene {
             if let Some(sfx_id) = vn.next_sfx() {
                 if let Some(audio) = game_context.audio.as_mut() {
                     let _ = audio.play_sfx(sfx_id);
+                };
+            }
+            if let Some(music_id) = vn.music.take() {
+                if let Some(audio) = game_context.audio.as_mut() {
+                    let _ = audio.play_music(music_id);
                 };
             }
         }
