@@ -143,6 +143,22 @@ impl StoryScene {
             }
         }
     }
+    fn set_text_box_to_next_say(&mut self, game_context: &mut GameContext) {
+        let layout = StoryScene::layout(game_context);
+        if let (None, Some(font_library)) = (&self.text_box, game_context.font_library.as_mut()) {
+            let text_box_bounds = text_box_bounds_on_grid(&layout, &self.placement_text);
+            let maybe_font: Option<&LoadedFont> = font_library.get(STORY_FONT);
+
+            if let Some(text) = self.vn.as_mut().and_then(|vn| vn.next_say()) {
+                self.text_box = maybe_font.map(|loaded_font| {
+                    TextBox::new(text_box_bounds, text, loaded_font, self.text_speed)
+                });
+            }
+        } else {
+            // There is no more text? hide the box then.
+            self.text_box = None;
+        }
+    }
 }
 
 impl Default for StoryScene {
