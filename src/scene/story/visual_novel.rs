@@ -51,6 +51,8 @@ pub struct VisualNovelMachine {
     pub slot_center: Option<Character>,
     pub slot_right: Option<Character>,
     pub sfx_queue: VecDeque<SfxId>,
+    pub say_queue: VecDeque<String>,
+    pub active_choice: Option<Vec<Choice>>,
 }
 
 impl VisualNovelMachine {
@@ -107,7 +109,12 @@ impl VisualNovelMachine {
             NovelOps::Focus(pp) => {
                 self.focused = Some(pp.clone());
             }
-            _ => {}
+            NovelOps::Say(words) => {
+                self.say_queue.push_front(words.clone());
+            }
+            NovelOps::Choices(choices) => {
+                self.active_choice = Some(choices.clone());
+            }
         }
     }
     pub fn jump(&mut self, label: &str) {
@@ -148,6 +155,9 @@ impl VisualNovelMachine {
     pub fn next_sfx(&mut self) -> Option<SfxId> {
         self.sfx_queue.pop_back()
     }
+    pub fn next_say(&mut self) -> Option<String> {
+        self.say_queue.pop_back()
+    }
 }
 
 // clippy is all like "wah wah you match rust defaults use OUR Derive"
@@ -167,6 +177,8 @@ impl Default for VisualNovelMachine {
             slot_center: None,
             slot_right: None,
             sfx_queue: VecDeque::new(),
+            say_queue: VecDeque::new(),
+            active_choice: None,
         }
     }
 }
