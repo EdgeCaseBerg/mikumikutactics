@@ -313,6 +313,16 @@ impl Scene for StoryScene {
                 game_context.mouse_context.consume_left_click();
             }
         };
+        // Chaining pattern matches with an && inbetween is gross
+        // looking. Kindly go do something more useful plz clippy.
+        #[allow(clippy::collapsible_if)]
+        if let Some(vn) = self.vn.as_mut() {
+            if let Some(sfx_id) = vn.next_sfx() {
+                if let Some(audio) = game_context.audio.as_mut() {
+                    let _ = audio.play_sfx(sfx_id);
+                };
+            }
+        }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
