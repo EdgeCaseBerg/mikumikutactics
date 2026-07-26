@@ -104,6 +104,9 @@ impl VisualNovelMachine {
             NovelOps::Goto(label) => {
                 self.jump(&label.clone());
             }
+            NovelOps::Focus(pp) => {
+                self.focused = Some(pp.clone());
+            }
             _ => {}
         }
     }

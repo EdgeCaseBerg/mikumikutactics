@@ -3,7 +3,8 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
     FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT,
-    TEXTURE_ID_STORY_BG, TEXTURE_ID_TITLE_BG, sprite_info_planning_layout_bg, sprite_info_portrait,
+    TEXTURE_ID_STORY_BG, TEXTURE_ID_TITLE_BG, sprite_info_highlight,
+    sprite_info_planning_layout_bg, sprite_info_portrait,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -81,7 +82,15 @@ impl StoryScene {
                 texture_id: character.texture_id,
                 source: src,
                 destination: dst,
-            })
+            });
+            if let Some(PortraitPosition::Left) = vn.focused {
+                let src = sprite_info_highlight().get_rect();
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: TEXTURE_ID_LEEKSHEET,
+                    source: src,
+                    destination: dst,
+                });
+            }
         }
         if let Some(character) = vn.slot_center.as_ref() {
             let dst = self
@@ -98,7 +107,15 @@ impl StoryScene {
                 texture_id: character.texture_id,
                 source: src,
                 destination: dst,
-            })
+            });
+            if let Some(PortraitPosition::Center) = vn.focused {
+                let src = sprite_info_highlight().get_rect();
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: TEXTURE_ID_LEEKSHEET,
+                    source: src,
+                    destination: dst,
+                });
+            }
         }
         if let Some(character) = vn.slot_right.as_ref() {
             let dst = self
@@ -115,7 +132,15 @@ impl StoryScene {
                 texture_id: character.texture_id,
                 source: src,
                 destination: dst,
-            })
+            });
+            if let Some(PortraitPosition::Right) = vn.focused {
+                let src = sprite_info_highlight().get_rect();
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: TEXTURE_ID_LEEKSHEET,
+                    source: src,
+                    destination: dst,
+                });
+            }
         }
     }
 }
@@ -209,6 +234,7 @@ impl Scene for StoryScene {
                 }
             ),
             NovelOps::Label("repeat".to_owned()),
+            NovelOps::Focus(PortraitPosition::Left),
             NovelOps::Say("Finally... it is time.".to_owned()),
             NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::Show(
@@ -219,13 +245,14 @@ impl Scene for StoryScene {
                 },
                 PortraitPosition::Right,
             ),
+            NovelOps::Focus(PortraitPosition::Right),
             NovelOps::Choices(vec![
                 Choice { label: "repeat".to_owned(), text: "What was that?".to_owned() },
                 Choice { label: "next".to_owned(), text: "Indeed, we shall have our revenge!".to_owned() },
             ]),
             NovelOps::Label("next".to_owned()),
-            NovelOps::Focus(PortraitPosition::Left),
             NovelOps::Hide(PortraitPosition::Right),
+            NovelOps::Focus(PortraitPosition::Left),
             NovelOps::Say("\nIndeed my friend, it is finally time to begin\nour long awaited adventure...\n\nIn tactics!".to_owned()),
             NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::Hide(PortraitPosition::Left),
