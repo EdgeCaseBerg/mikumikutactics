@@ -72,6 +72,23 @@ impl VisualNovelMachine {
                 PortraitPosition::Center => self.slot_center = Some(character.clone()),
                 PortraitPosition::Right => self.slot_right = Some(character.clone()),
             },
+            NovelOps::NewCharacterState(character) => {
+                if let Some(c) = self.slot_left.as_ref() {
+                    if c.name == character.name {
+                        self.slot_left = Some(character.clone())
+                    }
+                }
+                if let Some(c) = self.slot_center.as_ref() {
+                    if c.name == character.name {
+                        self.slot_center = Some(character.clone())
+                    }
+                }
+                if let Some(c) = self.slot_right.as_ref() {
+                    if c.name == character.name {
+                        self.slot_right = Some(character.clone())
+                    }
+                }
+            }
             NovelOps::Hide(pp) => match pp {
                 PortraitPosition::Left => self.slot_left = None,
                 PortraitPosition::Center => self.slot_center = None,
