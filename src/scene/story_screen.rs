@@ -385,13 +385,11 @@ impl Scene for StoryScene {
         // looking. Kindly go do something more useful plz clippy.
         #[allow(clippy::collapsible_if)]
         if let Some(vn) = self.vn.as_mut() {
-            if let Some(sfx_id) = vn.next_sfx() {
-                if let Some(audio) = game_context.audio.as_mut() {
+            if let Some(audio) = game_context.audio.as_mut() {
+                if let Some(sfx_id) = vn.next_sfx() {
                     let _ = audio.play_sfx(sfx_id);
                 };
-            }
-            if let Some(music_id) = vn.music.take() {
-                if let Some(audio) = game_context.audio.as_mut() {
+                if let Some(music_id) = vn.music.take() {
                     let _ = audio.play_music(music_id);
                 };
             }
