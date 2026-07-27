@@ -442,7 +442,6 @@ impl Scene for StoryScene {
         if let Some(vn) = self.vn.as_ref() {
             self.draw_vn_scene(vn, game_context);
         }
-
         if let Some(text_box) = self.text_box.as_mut() {
             text_box.draw(game_context);
         }
