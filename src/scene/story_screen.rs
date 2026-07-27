@@ -29,6 +29,7 @@ pub struct StoryScene {
     next_btn: Option<Button>,
     speed_btn: Option<Button>,
     vn: Option<VisualNovelMachine>,
+    current_choices: Option<Vec<(Choice, Button)>>,
     // Placement locations (Grid unit space, used for converting to screen coordinates )
     placement_text: Rect,
     text_speed: LineSpeed,
@@ -195,6 +196,7 @@ impl Default for StoryScene {
             )),
             text_speed: default_speed,
             vn: None,
+            current_choices: None,
             placement_left_portrait: Rect {
                 x: 2,
                 y: 0,
