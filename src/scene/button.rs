@@ -68,7 +68,7 @@ impl Button {
         }
     }
 
-    pub(crate) fn draw(&mut self, game_context: &mut GameContext, parent_layout: &GridLayout) {
+    pub(crate) fn draw(&self, game_context: &mut GameContext, parent_layout: &GridLayout) {
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
