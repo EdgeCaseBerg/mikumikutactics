@@ -121,7 +121,6 @@ impl VisualNovelMachine {
         if self.program.is_empty() {
             return;
         }
-
         // find the first instance of this label. (both directions)
         let mut i = self.program_counter;
         let mut j = self.program_counter;
@@ -134,23 +133,23 @@ impl VisualNovelMachine {
         // Since a label may be backwards, search in both directions at once.
         let max_idx = self.program.len() - 1;
         loop {
-            i = i.saturating_sub(1).min(0);
-            j = j.saturating_add(1).max(max_idx);
-
+            i = i.saturating_sub(1);
             if self.program[i].is_label(label) {
                 self.program_counter = i;
                 return;
             }
 
-            if i == 0 && j > max_idx {
-                break;
-            }
-
+            j = j.saturating_add(1).min(max_idx);
             if self.program[j].is_label(label) {
                 self.program_counter = j;
                 return;
             }
+
+            if i == 0 && j == max_idx {
+                break;
+            }
         }
+        eprintln!("No program counter jump occurred");
     }
     pub fn next_sfx(&mut self) -> Option<SfxId> {
         self.sfx_queue.pop_back()
