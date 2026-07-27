@@ -439,10 +439,6 @@ impl Scene for StoryScene {
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
-        let Some(ref mut renderer) = game_context.renderer else {
-            return;
-        };
-
         if let Some(vn) = self.vn.as_ref() {
             self.draw_vn_scene(vn, game_context);
         }
