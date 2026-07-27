@@ -49,6 +49,23 @@ impl StoryScene {
         }
     }
 
+    fn choice_btn_layout(buttons: usize, game_context: &GameContext) -> GridLayout {
+        let layout = StoryScene::layout(game_context);
+        let area = Rect {
+            x: 2,
+            y: 6,
+            width: 12,
+            height: 3,
+        }
+        .relative_rect_to_layout(&layout);
+        GridLayout {
+            area,
+            rows: buttons,
+            columns: 1,
+            cell_gap: 0,
+        }
+    }
+
     fn draw_vn_scene(&self, vn: &VisualNovelMachine, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
@@ -141,6 +158,13 @@ impl StoryScene {
                     source: src,
                     destination: dst,
                 });
+            }
+        }
+
+        if let Some(choices) = &self.current_choices {
+            let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
+            for (_, btn) in choices {
+                btn.draw(game_context, &layout);
             }
         }
     }
@@ -370,6 +394,46 @@ impl Scene for StoryScene {
                 if let Some(audio) = game_context.audio.as_mut() {
                     let _ = audio.play_music(music_id);
                 };
+            }
+            if let Some(choices) = vn.active_choice.take() {
+                let new_choices = choices
+                    .into_iter()
+                    .enumerate()
+                    .map(|(idx, choice)| {
+                        let text = choice.text.clone();
+                        let b = Button::new(
+                            text,
+                            Rect {
+                                x: 0,
+                                y: idx as isize,
+                                width: 1,
+                                height: 1,
+                            },
+                            BUTTON_FONT,
+                        );
+                        (choice, b)
+                    })
+                    .collect();
+                self.current_choices = Some(new_choices);
+            }
+        }
+
+        if let Some(choices) = self.current_choices.as_mut() {
+            let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
+            let mut clicked = false;
+            for (choice, btn) in choices {
+                btn.update(ticks, game_context, &layout);
+                if btn.clicked {
+                    if let Some(vn) = self.vn.as_mut() {
+                        clicked = true;
+                        vn.jump(&choice.label);
+                    }
+                    btn.clicked = false;
+                    game_context.mouse_context.consume_left_click();
+                }
+            }
+            if clicked {
+                self.current_choices = None;
             }
         }
     }
