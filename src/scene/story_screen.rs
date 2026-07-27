@@ -168,7 +168,7 @@ impl StoryScene {
             }
         }
     }
-    fn set_text_box_to_next_say(&mut self, game_context: &mut GameContext) {
+    fn set_text_box_to_next_say_if_empty(&mut self, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
         if let (None, Some(font_library)) = (&self.text_box, game_context.font_library.as_mut()) {
             let text_box_bounds = text_box_bounds_on_grid(&layout, &self.placement_text);
@@ -379,7 +379,7 @@ impl Scene for StoryScene {
 
         // Ensure that if we should be showing a textbox, we show one.
         // if there is one already displaying it won't be changed.
-        self.set_text_box_to_next_say(game_context);
+        self.set_text_box_to_next_say_if_empty(game_context);
 
         // Chaining pattern matches with an && inbetween is gross
         // looking. Kindly go do something more useful plz clippy.
