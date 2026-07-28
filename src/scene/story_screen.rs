@@ -354,8 +354,10 @@ impl Scene for StoryScene {
                         // If we just advanced but the text is still visible that means
                         // we've hit the end of a Say operation and should request the next one.
                         if b.text.is_visible() {
-                            // requesting the next say is done automatically below by not longer
-                            // waiting on user input since the text box is now none
+                            // requesting the next say is done automatically below by no longer
+                            // waiting on user input since the text box is now none and the
+                            // call to should_wait_for_user_input will see that we no longer have
+                            // a live text box and will advance the vn to the next say or choice
                             self.text_box = None;
                         }
                     } else {
