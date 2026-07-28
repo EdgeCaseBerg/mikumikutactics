@@ -414,6 +414,9 @@ impl Scene for StoryScene {
                     .collect();
                 self.current_choices = Some(new_choices);
             }
+
+            // TODO: advance the vn until it requests halt or an operation is one we care
+            // about stopping for.
         }
 
         if let Some(choices) = self.current_choices.as_mut() {

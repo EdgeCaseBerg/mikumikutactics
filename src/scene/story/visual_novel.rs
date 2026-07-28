@@ -55,26 +55,16 @@ pub struct VisualNovelMachine {
     pub active_choice: Option<Vec<Choice>>,
 }
 
-// State for the VN to return from advance to indicate if
-// the caller should call advance again immediately to move
-// the program forward, or if it should halt to process the
-// operation that was just dequeued (like say, choices, etc)
-#[derive(Debug)]
-pub enum ProgramState {
-    WaitForInput,
-    Executing,
-    // we could also add support for a WAIT command in the script that could raise ticks or similar via an enum value here
-}
-
 impl VisualNovelMachine {
-    pub fn advance(&mut self) -> ProgramState {
+    pub fn advance(&mut self) {
         self.do_current_op();
         self.program_counter += 1;
-        match &self.program[self.program_counter] {
-            NovelOps::Say(..) => ProgramState::WaitForInput,
-            NovelOps::Choices(..) => ProgramState::WaitForInput,
-            _ => ProgramState::Executing,
+    }
+    pub fn current_op(&self) -> Option<&NovelOps> {
+        if self.program_counter >= self.program.len() {
+            return None;
         }
+        Some(&self.program[self.program_counter])
     }
     pub fn do_current_op(&mut self) {
         if self.program_counter >= self.program.len() {
