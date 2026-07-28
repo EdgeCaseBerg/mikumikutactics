@@ -444,7 +444,16 @@ impl Scene for StoryScene {
         if !self.should_wait_for_user_input()
             && let Some(vn) = self.vn.as_mut()
         {
+            self.next_btn = None;
+            self.speed_btn = None;
             vn.advance();
+        } else {
+            if self.next_btn.is_none() && self.text_box.is_some() {
+                self.next_btn = Some(StoryScene::next_btn());
+            }
+            if self.speed_btn.is_none() && self.text_box.is_some() {
+                self.speed_btn = Some(StoryScene::speed_btn(self.text_speed));
+            }
         }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
