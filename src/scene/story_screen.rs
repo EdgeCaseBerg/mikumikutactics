@@ -40,10 +40,9 @@ pub struct StoryScene {
 
 impl StoryScene {
     fn should_wait_for_user_input(&self) -> bool {
-        let has_choices = self.current_choices.as_ref().is_some_and(|v| v.len() > 0);
+        let has_choices = self.current_choices.as_ref().is_some_and(|v| !v.is_empty());
         let has_text = self.text_box.is_some();
-        let has_active_ops = has_choices || has_text;
-        has_active_ops
+        has_choices || has_text
     }
 
     fn layout(game_context: &GameContext) -> GridLayout {
@@ -440,10 +439,10 @@ impl Scene for StoryScene {
 
         // auto advance the vn program until it populates something for
         // that requires input from the user to dismiss or continue with
-        if !self.should_wait_for_user_input() {
-            if let Some(vn) = self.vn.as_mut() {
-                vn.advance();
-            }
+        if !self.should_wait_for_user_input()
+            && let Some(vn) = self.vn.as_mut()
+        {
+            vn.advance();
         }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
