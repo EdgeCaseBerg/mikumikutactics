@@ -39,12 +39,6 @@ pub struct StoryScene {
 }
 
 impl StoryScene {
-    fn should_wait_for_user_input(&self) -> bool {
-        let has_choices = self.current_choices.as_ref().is_some_and(|v| !v.is_empty());
-        let has_text = self.text_box.is_some();
-        has_choices || has_text
-    }
-
     fn layout(game_context: &GameContext) -> GridLayout {
         let (screen_width, screen_height) = game_context.screen_size;
         GridLayout {
@@ -54,7 +48,6 @@ impl StoryScene {
             cell_gap: 0,
         }
     }
-
     fn choice_btn_layout(buttons: usize, game_context: &GameContext) -> GridLayout {
         let layout = StoryScene::layout(game_context);
         let area = Rect {
@@ -71,7 +64,11 @@ impl StoryScene {
             cell_gap: 0,
         }
     }
-
+    fn should_wait_for_user_input(&self) -> bool {
+        let has_choices = self.current_choices.as_ref().is_some_and(|v| !v.is_empty());
+        let has_text = self.text_box.is_some();
+        has_choices || has_text
+    }
     fn draw_vn_scene(&self, vn: &VisualNovelMachine, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
@@ -166,7 +163,6 @@ impl StoryScene {
                 });
             }
         }
-
         if let Some(choices) = &self.current_choices {
             let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
             for (_, btn) in choices {
