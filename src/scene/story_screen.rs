@@ -183,6 +183,30 @@ impl StoryScene {
             }
         }
     }
+    fn next_btn() -> Button {
+        Button::new(
+            "Next".to_owned(),
+            Rect {
+                x: 14,
+                y: 7,
+                width: 1,
+                height: 1,
+            },
+            BUTTON_FONT,
+        )
+    }
+    fn speed_btn(speed: LineSpeed) -> Button {
+        Button::new(
+            speed.to_string(),
+            Rect {
+                x: 14,
+                y: 6,
+                width: 1,
+                height: 1,
+            },
+            BUTTON_FONT,
+        )
+    }
 }
 
 impl Default for StoryScene {
@@ -198,28 +222,8 @@ impl Default for StoryScene {
                 width: 12,
                 height: 3,
             },
-            next_btn: Some({
-                Button::new(
-                    "Next".to_owned(),
-                    Rect {
-                        x: 14,
-                        y: 7,
-                        width: 1,
-                        height: 1,
-                    },
-                    BUTTON_FONT,
-                )
-            }),
-            speed_btn: Some(Button::new(
-                default_speed.to_string(),
-                Rect {
-                    x: 14,
-                    y: 6,
-                    width: 1,
-                    height: 1,
-                },
-                BUTTON_FONT,
-            )),
+            next_btn: Some(StoryScene::next_btn()),
+            speed_btn: Some(StoryScene::speed_btn(default_speed)),
             text_speed: default_speed,
             vn: None,
             current_choices: None,
