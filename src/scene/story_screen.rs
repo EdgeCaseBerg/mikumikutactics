@@ -39,6 +39,13 @@ pub struct StoryScene {
 }
 
 impl StoryScene {
+    fn should_wait_for_user_input(&self) -> bool {
+        let has_choices = self.current_choices.as_ref().is_some_and(|v| v.len() > 0);
+        let has_text = self.text_box.is_some();
+        let has_active_ops = has_choices || has_text;
+        has_active_ops
+    }
+
     fn layout(game_context: &GameContext) -> GridLayout {
         let (screen_width, screen_height) = game_context.screen_size;
         GridLayout {
@@ -340,12 +347,6 @@ impl Scene for StoryScene {
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
-                // TODO: this is just temporary while we work on the vn
-                // we likely need some sort of indicator on if the operation
-                // is waiting for us to continue or not at some point.
-                if let Some(vn) = self.vn.as_mut() {
-                    vn.advance();
-                }
                 if let Some(b) = self.text_box.as_mut() {
                     if b.text.is_visible() {
                         b.next_page();
@@ -354,6 +355,8 @@ impl Scene for StoryScene {
                         // If we just advanced but the text is still visible that means
                         // we've hit the end of a Say operation and should request the next one.
                         if b.text.is_visible() {
+                            // requesting the next say is done automatically below by not longer
+                            // waiting on user input since the text box is now none
                             self.text_box = None;
                         }
                     } else {
@@ -414,9 +417,6 @@ impl Scene for StoryScene {
                     .collect();
                 self.current_choices = Some(new_choices);
             }
-
-            // TODO: advance the vn until it requests halt or an operation is one we care
-            // about stopping for.
         }
 
         if let Some(choices) = self.current_choices.as_mut() {
@@ -435,6 +435,14 @@ impl Scene for StoryScene {
             }
             if clicked {
                 self.current_choices = None;
+            }
+        }
+
+        // auto advance the vn program until it populates something for
+        // that requires input from the user to dismiss or continue with
+        if !self.should_wait_for_user_input() {
+            if let Some(vn) = self.vn.as_mut() {
+                vn.advance();
             }
         }
     }
