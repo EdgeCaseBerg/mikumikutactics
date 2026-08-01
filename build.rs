@@ -3,7 +3,6 @@ use image::RgbaImage;
 use image::imageops;
 use std::env;
 use std::fs;
-use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -13,19 +12,13 @@ fn main() {
     let out_dir = Path::new(".").join("assets");
     let in_dir = Path::new(".").join("spritesheets");
     let manifest = out_dir.join("manifest");
-    let ase_files = process_dir(in_dir);
+    let ase_files = process_dir(in_dir, out_dir);
     for (ase, relative_path) in ase_files.into_iter() {
-        let mut ase_out = out_dir.join(&relative_path);
-        ase_out.set_extension("png");
-        let ase_out =
-            std::path::absolute(&ase_out).expect("couldnt turn path into an absolute one");
-        // interestingly, width and height is of the SPRITE size when you've saved the .ase after setting it, not the full width of the image itself.
-        write_file_to_sheet(ase, ase_out);
+        // TODO: write out manifest file
     }
-    // TODO: write out manifest file
 }
 
-fn write_file_to_sheet(ase: AsepriteFile, out: PathBuf) {
+fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
     let w = ase.width() as u32;
     let h = ase.height() as u32;
     let mut spritesheet = RgbaImage::new(w * ase.num_frames(), h);
@@ -40,13 +33,12 @@ fn write_file_to_sheet(ase: AsepriteFile, out: PathBuf) {
         .expect(&format!("could not save file {}", out.display()));
 }
 
-// Note if we experience memory pressure from loading every .ase into memory
-// then cry a little and refactor this to write things out as it processes instead.
-fn process_dir(path: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
+// Recursively walk ase_folder, exporting each ase file and creating the png in the assets folder as it goes
+fn process_dir(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
     let mut ase_files = vec![];
-    let entries = fs::read_dir(&path).expect(&format!(
-        "could not read path for read_dir {}",
-        path.display()
+    let entries = fs::read_dir(&ase_folder).expect(&format!(
+        "could not read input directory for read_dir {}",
+        ase_folder.display()
     ));
     for result in entries {
         let Ok(entry) = result else {
@@ -55,16 +47,20 @@ fn process_dir(path: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
         if let Ok(metadata) = entry.metadata()
             && metadata.is_dir()
         {
-            let dir_files = process_dir(entry.path());
-            for (subfile, relative_path) in dir_files.into_iter() {
-                let tuple = (subfile, relative_path);
-                ase_files.push(tuple);
+            let mirrored_path = asset_folder.join(entry.file_name());
+            fs::create_dir_all(&mirrored_path).expect("failed to create directories");
+            let entries = process_dir(entry.path(), mirrored_path);
+            for (ase, path) in entries {
+                ase_files.push((ase, path));
             }
         } else {
             let path = entry.path();
+            let mut ase_out = asset_folder.join(&entry.file_name());
+            ase_out.set_extension("png");
             let ase = AsepriteFile::read_file(&path)
-                .expect(&format!("could not open path {}", path.display()));
-            ase_files.push((ase, path));
+                .expect(&format!("could not open path {}", ase_out.display()));
+            write_file_to_sheet(&ase, ase_out.clone());
+            ase_files.push((ase, ase_out));
         }
     }
     ase_files
