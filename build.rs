@@ -20,26 +20,24 @@ fn main() {
         let ase_out =
             std::path::absolute(&ase_out).expect("couldnt turn path into an absolute one");
         // interestingly, width and height is of the SPRITE size when you've saved the .ase after setting it, not the full width of the image itself.
-        let w = ase.width() as u32;
-        let h = ase.height() as u32;
-        let mut spritesheet = RgbaImage::new(w * ase.num_frames(), h);
-        for frame in 0..ase.num_frames() {
-            let f = ase.frame(frame);
-            let img = f.image();
-            let offset = w * frame;
-            imageops::overlay(&mut spritesheet, &img, offset as i64, 0);
-        }
-        // this doesn't actually work, we need a mkdir -f situation because right now
-        // I have to manually create the folders to avoid an io write err
-        let file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&ase_out.as_path());
-        spritesheet
-            .save(&ase_out.as_path())
-            .expect(&format!("could not save file {}", ase_out.display()));
+        write_file_to_sheet(ase, ase_out);
     }
     // TODO: write out manifest file
+}
+
+fn write_file_to_sheet(ase: AsepriteFile, out: PathBuf) {
+    let w = ase.width() as u32;
+    let h = ase.height() as u32;
+    let mut spritesheet = RgbaImage::new(w * ase.num_frames(), h);
+    for i in 0..ase.num_frames() {
+        let offset = w * i;
+        let frame = ase.frame(i);
+        let img = frame.image();
+        imageops::overlay(&mut spritesheet, &img, offset as i64, 0);
+    }
+    spritesheet
+        .save(&out.as_path())
+        .expect(&format!("could not save file {}", out.display()));
 }
 
 // Note if we experience memory pressure from loading every .ase into memory
