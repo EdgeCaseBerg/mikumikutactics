@@ -160,19 +160,19 @@ impl SpriteFrame {
             duration_ms,
         })
     }
+}
 
-    fn to_sprite_info(&self, num_frames: u32) -> SpriteInfo {
-        SpriteInfo {
-            start_x: self.x,
-            start_y: self.y,
-            width: self.w,
-            height: self.h,
-            frames: num_frames,
-            current_frame: 0,
-            // rough napkin math, 60 ticks per s,
-            framerate_per_second: (60.0 * self.duration_ms as f32 / 1000.0) as u32,
-            delta: 0,
-        }
+fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
+    SpriteInfo {
+        start_x: sprite_frame.x,
+        start_y: sprite_frame.y,
+        width: sprite_frame.w,
+        height: sprite_frame.h,
+        frames: num_frames,
+        current_frame: 0,
+        // rough napkin math, 60 ticks per s,
+        framerate_per_second: (60.0 * sprite_frame.duration_ms as f32 / 1000.0) as u32,
+        delta: 0,
     }
 }
 
@@ -251,7 +251,7 @@ impl AssetCatalog {
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.sprites.get(*idx)?;
-        Some((&sheet.frames[0]).to_sprite_info(1))
+        Some(to_sprite_info(&sheet.frames[0], 1))
     }
     pub fn get_sprite_in_state(&self, name: &str, state: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
@@ -261,7 +261,7 @@ impl AssetCatalog {
             return self.get_sprite(name);
         };
         let num_frames = tag.from - tag.to;
-        Some((&sheet.frames[tag.from as usize]).to_sprite_info(num_frames))
+        Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
         let idx = self.character_to_sprite_id.get(name)?;
