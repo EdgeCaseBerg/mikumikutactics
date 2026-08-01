@@ -1,21 +1,125 @@
 use asefile::AsepriteFile;
 use image::RgbaImage;
 use image::imageops;
-use std::env;
+use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+/* The goal of the build script is to process the .ase files in the spritesheets
+ * folder, as well as any other assets that need to be assigned ids for the catalog
+ * and then create the manifest file that the game will use to resolve those assets
+{
+   spritesheets: [
+       {
+           id: 0,
+           asset_path: "characters/miku.png",
+           frames: [
+               {
+                   x: 0,
+                   y: 0,
+                   w: 320,
+                   h: 480,
+                   duration_ms: 100,
+               },
+               ...
+           ],
+           tags: [
+               {
+                   name: "miku",
+                   from: 0,
+                   to: 2
+               },
+               {
+                   name: "idle",
+                   from: 0,
+                   to: 0
+               }
+           ]
+       }
+   ]
+}
+*/
+
 fn main() {
+    // Rerun build script if the spritesheets change
     println!("cargo::rerun-if-changed=spritesheets/");
-    let out_dir = env::var_os("OUT_DIR").expect("not OUT_DIR environmental variable specified");
+
     let out_dir = Path::new(".").join("assets");
     let in_dir = Path::new(".").join("spritesheets");
-    let manifest = out_dir.join("manifest");
-    let ase_files = process_dir(in_dir, out_dir);
-    for (ase, relative_path) in ase_files.into_iter() {
-        // TODO: write out manifest file
-    }
+    let ase_files = process_dir(in_dir, out_dir.clone());
+    let spritesheets = make_spritesheets(ase_files);
+    let manifest_path = out_dir.join("manifest");
+    let manifest = Manifest { spritesheets };
+    let j = serde_json::to_string(&manifest).expect("failed to convert manifest into json");
+    fs::write(manifest_path, j);
+}
+
+fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet> {
+    ase_files
+        .into_iter()
+        .enumerate()
+        .map(|(id, (ase, relative_path))| {
+            let tags = (0..ase.num_tags())
+                .map(|tag_id| {
+                    let tag = ase.tag(tag_id);
+                    FrameTag {
+                        name: tag.name().to_owned(),
+                        from: tag.from_frame(),
+                        to: tag.to_frame(),
+                    }
+                })
+                .collect();
+            let frames = (0..ase.num_frames())
+                .map(|frame_idx| {
+                    let frame = ase.frame(frame_idx);
+                    SpriteFrame {
+                        x: ase.width() as u32 * frame_idx,
+                        y: ase.height() as u32 * frame_idx,
+                        w: ase.width() as u32,
+                        h: ase.width() as u32,
+                        duration_ms: frame.duration(),
+                    }
+                })
+                .collect();
+            Spritesheet {
+                id,
+                asset_path: relative_path.display().to_string(),
+                frames,
+                tags,
+            }
+        })
+        .collect()
+}
+
+// TODO: add in audio to the manifest as well to refactor those constant ids too (later!)
+#[derive(Debug, Serialize)]
+struct Manifest {
+    spritesheets: Vec<Spritesheet>,
+}
+
+#[derive(Debug, Serialize)]
+struct Spritesheet {
+    id: usize,
+    asset_path: String,
+    frames: Vec<SpriteFrame>,
+    tags: Vec<FrameTag>,
+}
+
+#[derive(Debug, Serialize)]
+struct SpriteFrame {
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
+    duration_ms: u32,
+}
+
+#[derive(Debug, Serialize)]
+struct FrameTag {
+    name: String,
+    from: u32,
+    to: u32,
 }
 
 fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
