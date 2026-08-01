@@ -52,7 +52,7 @@ fn main() {
     let manifest_path = out_dir.join("manifest");
     let manifest = Manifest { spritesheets };
     let j = serde_json::to_string(&manifest).expect("failed to convert manifest into json");
-    fs::write(manifest_path, j);
+    fs::write(manifest_path, j).expect("failed to write manifest file");
 }
 
 fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet> {
@@ -73,6 +73,16 @@ fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet
             let frames = (0..ase.num_frames())
                 .map(|frame_idx| {
                     let frame = ase.frame(frame_idx);
+                    // Technically we could pack things more tightly maybe or use less vram if we use
+                    // the cel's top_left across all the cels in a layer and shrink the sprite down.
+                    // But its a bit easier to work with rectangles we know about rather than different
+                    // sized pieces I think. A future optimization perhaps.
+                    //
+                    // similarly, the x,y coordinates assume only one direction for frames in the sheet
+                    // (which will be horizontal in our case) but if we packed multiple characters together
+                    // in the future or something as a releasing step if it made sense, then we'd tweak those
+                    // things around a bit I think and then be able to shrink the number of textures to load
+                    // down quite a bit.
                     SpriteFrame {
                         x: ase.width() as u32 * frame_idx,
                         y: ase.height() as u32 * frame_idx,
