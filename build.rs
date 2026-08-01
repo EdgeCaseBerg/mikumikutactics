@@ -164,16 +164,18 @@ fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
     }
     spritesheet
         .save(&out.as_path())
-        .expect(&format!("could not save file {}", out.display()));
+        .unwrap_or_else(|_| panic!("could not save file {}", out.display()))
 }
 
 // Recursively walk ase_folder, exporting each ase file and creating the png in the assets folder as it goes
 fn process_dir(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
     let mut ase_files = vec![];
-    let entries = fs::read_dir(&ase_folder).expect(&format!(
-        "could not read input directory for read_dir {}",
-        ase_folder.display()
-    ));
+    let entries = fs::read_dir(&ase_folder).unwrap_or_else(|_| {
+        panic!(
+            "could not read input directory for read_dir {}",
+            ase_folder.display()
+        )
+    });
     for result in entries {
         let Ok(entry) = result else {
             continue;
@@ -189,10 +191,10 @@ fn process_dir(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile,
             }
         } else {
             let path = entry.path();
-            let mut ase_out = asset_folder.join(&entry.file_name());
+            let mut ase_out = asset_folder.join(entry.file_name());
             ase_out.set_extension("png");
             let ase = AsepriteFile::read_file(&path)
-                .expect(&format!("could not open path {}", ase_out.display()));
+                .unwrap_or_else(|_| panic!("could not open path {}", ase_out.display()));
             write_file_to_sheet(&ase, ase_out.clone());
             ase_files.push((ase, ase_out));
         }
