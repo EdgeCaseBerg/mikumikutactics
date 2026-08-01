@@ -13,6 +13,7 @@ use std::path::PathBuf;
    spritesheets: [
        {
            id: 0,
+           name: miku,
            asset_path: "characters/miku.png",
            frames: [
                {
@@ -100,12 +101,18 @@ fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet
                 })
                 .collect();
             let mut asset_path = relative_path;
+            let name = asset_path
+                .file_stem()
+                .expect("could not create name for spritesheet from path")
+                .to_string_lossy()
+                .to_string();
             if let Ok(stripped) = asset_path.strip_prefix("./") {
                 asset_path = stripped.to_path_buf();
             }
             let asset_path = asset_path.display().to_string();
             Spritesheet {
                 id,
+                name,
                 asset_path,
                 frames,
                 tags,
@@ -123,6 +130,7 @@ struct Manifest {
 #[derive(Debug, Serialize)]
 struct Spritesheet {
     id: usize,
+    name: String,
     asset_path: String,
     frames: Vec<SpriteFrame>,
     tags: Vec<FrameTag>,
