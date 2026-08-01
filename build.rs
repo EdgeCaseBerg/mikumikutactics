@@ -173,7 +173,7 @@ fn get_ase_frames(ase: &AsepriteFile) -> Vec<SpriteFrame> {
             // down quite a bit.
             SpriteFrame {
                 x: ase.width() as u32 * frame_idx,
-                y: ase.height() as u32 * frame_idx,
+                y: 0,
                 w: ase.width() as u32,
                 h: ase.height() as u32,
                 duration_ms: frame.duration(),
