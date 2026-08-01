@@ -31,3 +31,10 @@ console_error_panic_hook = "0.1"
 [lints.clippy]
 derivable_impls = "allow"
 manual_range_contains = "allow"
+
+[build-dependencies]
+asefile = "0.3.8"
+image = "0.24.9"
+
+[profile.dev.build-override]
+opt-level = 3
