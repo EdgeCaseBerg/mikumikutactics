@@ -47,7 +47,14 @@ fn main() {
 
     let out_dir = Path::new(".").join("assets");
     let in_dir = Path::new(".").join("spritesheets");
-    let ase_files = process_dir(in_dir, out_dir.clone());
+    let ase_files = process_dir(in_dir, out_dir.clone())
+        .into_iter()
+        .map(|(a, p)| {
+            // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
+            // so leave it out for now and be consistent with how id_to_relative_path was used before
+            (a, p.strip_prefix(&out_dir).unwrap().to_path_buf())
+        })
+        .collect();
     let spritesheets = make_spritesheets(ase_files);
     let manifest_path = out_dir.join("manifest");
     let manifest = Manifest { spritesheets };
@@ -92,9 +99,14 @@ fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet
                     }
                 })
                 .collect();
+            let mut asset_path = relative_path;
+            if let Ok(stripped) = asset_path.strip_prefix("./") {
+                asset_path = stripped.to_path_buf();
+            }
+            let asset_path = asset_path.display().to_string();
             Spritesheet {
                 id,
-                asset_path: relative_path.display().to_string(),
+                asset_path,
                 frames,
                 tags,
             }
