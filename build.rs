@@ -59,8 +59,46 @@ fn main() {
     let spritesheets = make_spritesheets(ase_files);
     let manifest_path = out_dir.join("manifest");
     let manifest = Manifest { spritesheets };
-    let j = serde_json::to_string(&manifest).expect("failed to convert manifest into json");
+    let j = serde_json::to_string_pretty(&manifest).expect("failed to convert manifest into json");
     fs::write(manifest_path, j).expect("failed to write manifest file");
+}
+
+fn get_ase_tags(ase: &AsepriteFile) -> Vec<FrameTag> {
+    (0..ase.num_tags())
+        .map(|tag_id| {
+            let tag = ase.tag(tag_id);
+            FrameTag {
+                name: tag.name().to_owned(),
+                from: tag.from_frame(),
+                to: tag.to_frame(),
+            }
+        })
+        .collect()
+}
+
+fn get_ase_frames(ase: &AsepriteFile) -> Vec<SpriteFrame> {
+    (0..ase.num_frames())
+        .map(|frame_idx| {
+            let frame = ase.frame(frame_idx);
+            // Technically we could pack things more tightly maybe or use less vram if we use
+            // the cel's top_left across all the cels in a layer and shrink the sprite down.
+            // But its a bit easier to work with rectangles we know about rather than different
+            // sized pieces I think. A future optimization perhaps.
+            //
+            // similarly, the x,y coordinates assume only one direction for frames in the sheet
+            // (which will be horizontal in our case) but if we packed multiple characters together
+            // in the future or something as a releasing step if it made sense, then we'd tweak those
+            // things around a bit I think and then be able to shrink the number of textures to load
+            // down quite a bit.
+            SpriteFrame {
+                x: ase.width() as u32 * frame_idx,
+                y: ase.height() as u32 * frame_idx,
+                w: ase.width() as u32,
+                h: ase.height() as u32,
+                duration_ms: frame.duration(),
+            }
+        })
+        .collect()
 }
 
 fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet> {
@@ -68,38 +106,8 @@ fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet
         .into_iter()
         .enumerate()
         .map(|(id, (ase, relative_path))| {
-            let tags = (0..ase.num_tags())
-                .map(|tag_id| {
-                    let tag = ase.tag(tag_id);
-                    FrameTag {
-                        name: tag.name().to_owned(),
-                        from: tag.from_frame(),
-                        to: tag.to_frame(),
-                    }
-                })
-                .collect();
-            let frames = (0..ase.num_frames())
-                .map(|frame_idx| {
-                    let frame = ase.frame(frame_idx);
-                    // Technically we could pack things more tightly maybe or use less vram if we use
-                    // the cel's top_left across all the cels in a layer and shrink the sprite down.
-                    // But its a bit easier to work with rectangles we know about rather than different
-                    // sized pieces I think. A future optimization perhaps.
-                    //
-                    // similarly, the x,y coordinates assume only one direction for frames in the sheet
-                    // (which will be horizontal in our case) but if we packed multiple characters together
-                    // in the future or something as a releasing step if it made sense, then we'd tweak those
-                    // things around a bit I think and then be able to shrink the number of textures to load
-                    // down quite a bit.
-                    SpriteFrame {
-                        x: ase.width() as u32 * frame_idx,
-                        y: ase.height() as u32 * frame_idx,
-                        w: ase.width() as u32,
-                        h: ase.width() as u32,
-                        duration_ms: frame.duration(),
-                    }
-                })
-                .collect();
+            let tags = get_ase_tags(&ase);
+            let frames = get_ase_frames(&ase);
             let mut asset_path = relative_path;
             let name = asset_path
                 .file_stem()
