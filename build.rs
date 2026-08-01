@@ -9,37 +9,37 @@ use std::path::PathBuf;
 /* The goal of the build script is to process the .ase files in the spritesheets
  * folder, as well as any other assets that need to be assigned ids for the catalog
  * and then create the manifest file that the game will use to resolve those assets
-{
-   spritesheets: [
-       {
-           id: 0,
-           name: miku,
-           asset_path: "characters/miku.png",
-           frames: [
-               {
-                   x: 0,
-                   y: 0,
-                   w: 320,
-                   h: 480,
-                   duration_ms: 100,
-               },
-               ...
-           ],
-           tags: [
-               {
-                   name: "miku",
-                   from: 0,
-                   to: 2
-               },
-               {
-                   name: "idle",
-                   from: 0,
-                   to: 0
-               }
-           ]
-       }
-   ]
-}
+ * {
+ *    spritesheets: [
+ *        {
+ *            id: 0,
+ *            name: miku,
+ *            asset_path: "characters/miku.png",
+ *            frames: [
+ *                {
+ *                    x: 0,
+ *                    y: 0,
+ *                    w: 320,
+ *                    h: 480,
+ *                    duration_ms: 100,
+ *                },
+ *                ...
+ *            ],
+ *            tags: [
+ *                {
+ *                    name: "miku",
+ *                    from: 0,
+ *                    to: 2
+ *                },
+ *                {
+ *                    name: "idle",
+ *                    from: 0,
+ *                    to: 0
+ *                }
+ *            ]
+ *        }
+ *    ]
+ * }
 */
 
 fn main() {
