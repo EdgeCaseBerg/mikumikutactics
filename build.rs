@@ -9,7 +9,6 @@ use std::path::PathBuf;
 
 fn main() {
     println!("cargo::rerun-if-changed=spritesheets/");
-    println!("cargo::rerun-if-changed=build.rs");
     let out_dir = env::var_os("OUT_DIR").expect("not OUT_DIR environmental variable specified");
     let out_dir = Path::new(".").join("assets");
     let in_dir = Path::new(".").join("spritesheets");
