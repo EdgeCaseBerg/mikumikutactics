@@ -1,5 +1,5 @@
 use crate::Rect;
-use crate::asset_loader::{AssetCatalog, AssetLoader, AssetResult};
+use crate::asset_loader::{AssetCatalog, AssetLoader};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
 use crate::clock::Clock;
