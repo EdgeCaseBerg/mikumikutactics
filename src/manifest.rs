@@ -50,7 +50,7 @@ pub struct Manifest {
     pub spritesheets: Vec<Spritesheet>,
     pub sounds: Vec<FileAsset>,
     pub music: Vec<FileAsset>,
-    pub fonts: Vec<FileAsset>,
+    pub scenes: Vec<FileAsset>,
 }
 
 #[derive(Debug)]
@@ -92,7 +92,7 @@ impl From<Manifest> for JsonValue {
             spritesheets: val.spritesheets,
             sounds: val.sounds,
             music: val.music,
-            fonts: val.fonts,
+            scenes: val.scenes,
         }
     }
 }
@@ -158,8 +158,10 @@ impl TryFrom<JsonValue> for Manifest {
             );
         };
 
-        let Some(fonts) = root["fonts"].as_array() else {
-            return Err("unexpected shape of manifest file, root object missing fonts list".into());
+        let Some(scenes) = root["scenes"].as_array() else {
+            return Err(
+                "unexpected shape of manifest file, root object missing scenes list".into(),
+            );
         };
 
         let Some(music) = root["music"].as_array() else {
@@ -195,7 +197,7 @@ impl TryFrom<JsonValue> for Manifest {
             })
             .collect();
 
-        let fonts: Vec<FileAsset> = fonts
+        let scenes: Vec<FileAsset> = scenes
             .iter()
             .filter_map(|json_val| {
                 let f: AssetResult<FileAsset> = json_val.try_into();
@@ -236,7 +238,7 @@ impl TryFrom<JsonValue> for Manifest {
             spritesheets,
             sounds,
             music,
-            fonts,
+            scenes,
         })
     }
 }

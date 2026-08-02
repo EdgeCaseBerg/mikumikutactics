@@ -45,14 +45,15 @@ fn main() {
     // Rerun build script if the spritesheets change
     println!("cargo::rerun-if-changed=spritesheets/");
 
-    let out_dir = Path::new(".").join("assets");
-    let spritesheets = spritesheets(&out_dir);
+    let assets_dir = Path::new(".").join("assets");
+    let spritesheets = spritesheets(&assets_dir);
+    let scenes = load_scenes(&assets_dir);
 
     // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
-    let manifest_path = out_dir.join("manifest");
+    let manifest_path = assets_dir.join("manifest");
     let manifest = Manifest {
         spritesheets,
-        fonts: vec![],
+        scenes,
         sounds: vec![],
         music: vec![],
     };
@@ -63,14 +64,63 @@ fn main() {
 
 include!("src/manifest.rs");
 
-fn spritesheets(out_dir: &Path) -> Vec<Spritesheet> {
+fn load_scenes(assets_dir: &PathBuf) -> Vec<FileAsset> {
+    let scenes_path = assets_dir.join("scenes");
+    let mut files = vec![];
+    let entries = fs::read_dir(&scenes_path).unwrap_or_else(|_| {
+        panic!(
+            "could not read input directory for read_dir {}",
+            scenes_path.display()
+        )
+    });
+    for result in entries {
+        let Ok(entry) = result else {
+            continue;
+        };
+        if let Ok(metadata) = entry.metadata()
+            && metadata.is_dir()
+        {
+            let entries = load_scenes(&entry.path());
+            for file in entries {
+                files.push(file);
+            }
+        } else {
+            let mut path = entry.path();
+            let name = entry
+                .path()
+                .file_stem()
+                .expect("could not create name for scene file from path")
+                .to_string_lossy()
+                .to_string();
+            if let Ok(stripped) = path.strip_prefix("./") {
+                path = stripped.to_path_buf();
+            }
+            let path = path.display().to_string();
+            files.push(FileAsset {
+                id: 0,
+                name,
+                asset_path: path,
+            });
+        }
+    }
+    files
+        .into_iter()
+        .enumerate()
+        .map(|(i, mut f)| {
+            f.id = i;
+            f
+        })
+        .collect()
+}
+
+fn spritesheets(assets_dir: &Path) -> Vec<Spritesheet> {
     let in_dir = Path::new(".").join("spritesheets");
-    let ase_files = process_dir_for_ase(in_dir, out_dir.to_path_buf())
+    let ase_files = process_dir_for_ase(in_dir, assets_dir.to_path_buf())
         .into_iter()
         .map(|(a, p)| {
             // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
             // so leave it out for now and be consistent with how id_to_relative_path was used before
-            (a, p.strip_prefix(&out_dir).unwrap().to_path_buf())
+            (a, p.strip_prefix(&assets_dir).unwrap().to_path_buf())
         })
         .collect();
     make_spritesheets(ase_files)

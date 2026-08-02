@@ -129,9 +129,35 @@
           "to": 2
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "BoldPixelst",
+      "asset_path": "fontmaps/BoldPixelst.png",
+      "frames": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 145,
+          "h": 1412,
+          "duration_ms": 100
+        }
+      ],
+      "tags": []
     }
   ],
   "sounds": [],
   "music": [],
-  "fonts": []
+  "scenes": [
+    {
+      "id": 0,
+      "name": "test",
+      "asset_path": "assets/scenes/test.scene"
+    },
+    {
+      "id": 1,
+      "name": "noaudio",
+      "asset_path": "assets/scenes/noaudio.scene"
+    }
+  ]
 }
