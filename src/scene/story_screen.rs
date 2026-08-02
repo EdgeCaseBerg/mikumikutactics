@@ -1,15 +1,16 @@
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
+use crate::asset_loader::AssetCatalog;
 use crate::constants::{
     FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT,
     TEXTURE_ID_STORY_BG, TEXTURE_ID_TITLE_BG, sprite_info_highlight,
-    sprite_info_planning_layout_bg, sprite_info_portrait,
+    sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
-use crate::renderer::RenderCommand;
+use crate::renderer::{RenderCommand, Renderer};
 use crate::scene::button::Button;
 use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
@@ -69,6 +70,55 @@ impl StoryScene {
         let has_text = self.text_box.is_some();
         has_choices || has_text
     }
+    fn draw_slot(
+        slot: Option<&Character>,
+        placement: Rect,
+        renderer: &mut dyn Renderer,
+        catalog: &AssetCatalog,
+    ) {
+        let Some(character) = slot.as_ref() else {
+            return;
+        };
+        let Some(src) = catalog
+            .get_sprite_in_state(&character.name, character.state.as_str())
+            .map(|s| s.get_rect())
+        else {
+            return;
+        };
+        renderer.send_command(RenderCommand::DrawRect {
+            texture_id: character.texture_id,
+            source: src,
+            destination: placement,
+        });
+    }
+    fn draw_focus_outline(
+        &self,
+        at_position: PortraitPosition,
+        renderer: &mut dyn Renderer,
+        layout: &GridLayout,
+    ) {
+        let Some(vn) = self.vn.as_ref() else {
+            return;
+        };
+        if vn.focused.as_ref().is_none_or(|pp| *pp != at_position) {
+            return;
+        }
+        let dst = match at_position {
+            PortraitPosition::Left => self.placement_left_portrait.relative_rect_to_layout(layout),
+            PortraitPosition::Center => self
+                .placement_center_portrait
+                .relative_rect_to_layout(layout),
+            PortraitPosition::Right => self
+                .placement_right_portrait
+                .relative_rect_to_layout(layout),
+        };
+        let src = sprite_info_highlight().get_rect();
+        renderer.send_command(RenderCommand::DrawRect {
+            texture_id: TEXTURE_ID_LEEKSHEET,
+            source: src,
+            destination: dst,
+        });
+    }
     fn draw_vn_scene(&self, vn: &VisualNovelMachine, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
@@ -87,85 +137,30 @@ impl StoryScene {
                 destination: Rect::new(0, 0, layout.area.width, layout.area.height),
             });
         }
-
-        // TODO: Hardcoded sprites are just because of hardcoded
-        // scenes, we need a proper way to convert a Character to
-        // a sprite and all that. Probably need to deal with .aes files
-        // and frame tagging to do something like that. For now, this is
-        // okay because we're just implementing the ops bits and testing
-        if let Some(character) = vn.slot_left.as_ref() {
-            let dst = self
-                .placement_left_portrait
-                .relative_rect_to_layout(&layout);
-            // TODO: don't unwrap
-            let src = catalog
-                .get_sprite_in_state(&character.name, character.state.as_str())
-                .unwrap()
-                .get_rect();
-            renderer.send_command(RenderCommand::DrawRect {
-                texture_id: character.texture_id,
-                source: src,
-                destination: dst,
-            });
-            if let Some(PortraitPosition::Left) = vn.focused {
-                let src = sprite_info_highlight().get_rect();
-                renderer.send_command(RenderCommand::DrawRect {
-                    texture_id: TEXTURE_ID_LEEKSHEET,
-                    source: src,
-                    destination: dst,
-                });
-            }
-        }
-        if let Some(character) = vn.slot_center.as_ref() {
-            let dst = self
-                .placement_center_portrait
-                .relative_rect_to_layout(&layout);
-            let src = SpriteInfo {
-                start_x: 906,
-                width: 1143 - 906,
-                height: 402,
-                ..sprite_info_portrait()
-            }
-            .get_rect();
-            renderer.send_command(RenderCommand::DrawRect {
-                texture_id: character.texture_id,
-                source: src,
-                destination: dst,
-            });
-            if let Some(PortraitPosition::Center) = vn.focused {
-                let src = sprite_info_highlight().get_rect();
-                renderer.send_command(RenderCommand::DrawRect {
-                    texture_id: TEXTURE_ID_LEEKSHEET,
-                    source: src,
-                    destination: dst,
-                });
-            }
-        }
-        if let Some(character) = vn.slot_right.as_ref() {
-            let dst = self
-                .placement_right_portrait
-                .relative_rect_to_layout(&layout);
-            let src = SpriteInfo {
-                start_x: 462,
-                width: 747 - 462,
-                height: 402,
-                ..sprite_info_portrait()
-            }
-            .get_rect();
-            renderer.send_command(RenderCommand::DrawRect {
-                texture_id: character.texture_id,
-                source: src,
-                destination: dst,
-            });
-            if let Some(PortraitPosition::Right) = vn.focused {
-                let src = sprite_info_highlight().get_rect();
-                renderer.send_command(RenderCommand::DrawRect {
-                    texture_id: TEXTURE_ID_LEEKSHEET,
-                    source: src,
-                    destination: dst,
-                });
-            }
-        }
+        Self::draw_slot(
+            vn.slot_left.as_ref(),
+            self.placement_left_portrait
+                .relative_rect_to_layout(&layout),
+            renderer.as_mut(),
+            &catalog,
+        );
+        self.draw_focus_outline(PortraitPosition::Left, renderer.as_mut(), &layout);
+        Self::draw_slot(
+            vn.slot_center.as_ref(),
+            self.placement_center_portrait
+                .relative_rect_to_layout(&layout),
+            renderer.as_mut(),
+            &catalog,
+        );
+        self.draw_focus_outline(PortraitPosition::Center, renderer.as_mut(), &layout);
+        Self::draw_slot(
+            vn.slot_right.as_ref(),
+            self.placement_right_portrait
+                .relative_rect_to_layout(&layout),
+            renderer.as_mut(),
+            &catalog,
+        );
+        self.draw_focus_outline(PortraitPosition::Right, renderer.as_mut(), &layout);
         if let Some(choices) = &self.current_choices {
             let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
             for (_, btn) in choices {
