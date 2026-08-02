@@ -70,7 +70,7 @@ impl StoryScene {
         let has_text = self.text_box.is_some();
         has_choices || has_text
     }
-    fn draw_slot(
+    fn draw_character_slot(
         slot: Option<&Character>,
         placement: Rect,
         renderer: &mut dyn Renderer,
@@ -91,7 +91,7 @@ impl StoryScene {
             destination: placement,
         });
     }
-    fn draw_focus_outline(
+    fn draw_outline_if_focused(
         &self,
         at_position: PortraitPosition,
         renderer: &mut dyn Renderer,
@@ -137,30 +137,30 @@ impl StoryScene {
                 destination: Rect::new(0, 0, layout.area.width, layout.area.height),
             });
         }
-        Self::draw_slot(
+        Self::draw_character_slot(
             vn.slot_left.as_ref(),
             self.placement_left_portrait
                 .relative_rect_to_layout(&layout),
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_focus_outline(PortraitPosition::Left, renderer.as_mut(), &layout);
-        Self::draw_slot(
+        self.draw_outline_if_focused(PortraitPosition::Left, renderer.as_mut(), &layout);
+        Self::draw_character_slot(
             vn.slot_center.as_ref(),
             self.placement_center_portrait
                 .relative_rect_to_layout(&layout),
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_focus_outline(PortraitPosition::Center, renderer.as_mut(), &layout);
-        Self::draw_slot(
+        self.draw_outline_if_focused(PortraitPosition::Center, renderer.as_mut(), &layout);
+        Self::draw_character_slot(
             vn.slot_right.as_ref(),
             self.placement_right_portrait
                 .relative_rect_to_layout(&layout),
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_focus_outline(PortraitPosition::Right, renderer.as_mut(), &layout);
+        self.draw_outline_if_focused(PortraitPosition::Right, renderer.as_mut(), &layout);
         if let Some(choices) = &self.current_choices {
             let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
             for (_, btn) in choices {
@@ -367,7 +367,6 @@ impl Scene for StoryScene {
         if let Some(text_box) = self.text_box.as_mut() {
             text_box.text.update(ticks);
         }
-
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
