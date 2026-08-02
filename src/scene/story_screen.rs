@@ -74,6 +74,10 @@ impl StoryScene {
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
+        let Some(ref asset_loader) = game_context.asset_loader else {
+            return;
+        };
+        let catalog = asset_loader.get_catalog();
 
         if let Some(background_id) = vn.background {
             let src = self.bg.get_rect();
@@ -93,12 +97,11 @@ impl StoryScene {
             let dst = self
                 .placement_left_portrait
                 .relative_rect_to_layout(&layout);
-            let src = SpriteInfo {
-                width: 417,
-                height: 402,
-                ..sprite_info_portrait()
-            }
-            .get_rect();
+            // TODO: don't unwrap
+            let src = catalog
+                .get_sprite_in_state(&character.name, character.state.as_str())
+                .unwrap()
+                .get_rect();
             renderer.send_command(RenderCommand::DrawRect {
                 texture_id: character.texture_id,
                 source: src,
@@ -253,10 +256,20 @@ impl Scene for StoryScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
+        //TODO remove tmp check
+        let mut tmp_id = crate::constants::TextureId(0);
+
         if let Some(ref mut asset_loader) = game_context.asset_loader {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_STORY_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_PORTRAIT);
+
+            // TODO: remove tmp check and load from ops instead
+            let catalog = asset_loader.get_catalog();
+            if let Some(id) = catalog.get_texture_id_for_sprite("miku") {
+                tmp_id = id;
+                asset_loader.ensure_texture_spritesheet_loaded(id);
+            }
         }
 
         if let Some(ref mut audio) = game_context.audio {
@@ -279,14 +292,15 @@ impl Scene for StoryScene {
                 Character{
                     name: "miku".to_owned(),
                     state: CharacterState::Idle,
-                    texture_id: TEXTURE_ID_PORTRAIT,
+                    texture_id: tmp_id,
                 }, PortraitPosition::Left),
+            NovelOps::Say("Almost...".to_owned()),
             NovelOps::PlaySfx(SFX_ID_BLIP),
             NovelOps::NewCharacterState(
                 Character{
                     name: "miku".to_owned(),
                     state: CharacterState::Mad,
-                    texture_id: TEXTURE_ID_PORTRAIT,
+                    texture_id: tmp_id,
                 }
             ),
             NovelOps::Label("repeat".to_owned()),

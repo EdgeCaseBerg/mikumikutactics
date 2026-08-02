@@ -51,7 +51,7 @@
       ]
     },
     {
-      "id": 1,
+      "id": 100,
       "name": "miku",
       "asset_path": "characters/miku.png",
       "frames": [
