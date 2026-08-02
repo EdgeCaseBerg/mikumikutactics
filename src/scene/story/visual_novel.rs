@@ -313,6 +313,16 @@ impl NovelOps {
             false
         }
     }
+
+    pub fn as_texture_id(&self) -> Option<TextureId> {
+        match self {
+            NovelOps::Show(character, _) | NovelOps::NewCharacterState(character) => {
+                Some(character.texture_id)
+            }
+            NovelOps::Background(texture_id) => Some(*texture_id),
+            _ => None,
+        }
+    }
 }
 
 fn validate_program(
