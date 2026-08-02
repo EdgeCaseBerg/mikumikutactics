@@ -1,5 +1,5 @@
 use crate::Rect;
-use crate::asset_loader::AssetLoader;
+use crate::asset_loader::{AssetCatalog, AssetLoader, AssetResult};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
 use crate::clock::Clock;
@@ -57,6 +57,7 @@ pub struct SDL3Context {
     _video: VideoSubsystem,
     audio: AudioSubsystem,
     mixer: Mixer,
+    catalog: Rc<AssetCatalog>,
 }
 
 struct SoundData {
@@ -401,6 +402,11 @@ impl AssetLoader for AssetLoaderSDL3 {
         let asset_path = self.base_path.join(asset_path);
         ctx.textures.load(id, asset_path);
     }
+
+    fn get_catalog(&self) -> Rc<AssetCatalog> {
+        let ctx = &*self.context.borrow_mut();
+        ctx.catalog.clone()
+    }
 }
 
 // Alchemy! we do this to shunt off the lifetime the sdl3 lib sets on the textures.
@@ -451,6 +457,13 @@ impl Backend for BackendSDL3 {
     }
 
     fn create_event_loop(&self, game_options: &GameOptions) -> Box<dyn BackendEventLoop> {
+        // Load the manifest before starting sdl stuff because if we have no manifest everything
+        // will be wonky later.
+        let manifest = fs::read_to_string(game_options.assets_path.join("manifest"))
+            .expect("could not load manifest file for assets");
+        let catalog =
+            AssetCatalog::from_manifest_str(&manifest).expect("corrupt manifest: failed to parse");
+
         let event_pump = self.sdl.event_pump().unwrap();
 
         let video_subsystem = self.sdl.video().expect("failed to get video context");
@@ -482,6 +495,7 @@ impl Backend for BackendSDL3 {
                 textures,
                 audio: audio_subsystem,
                 mixer: mixer_subsystem,
+                catalog: catalog.into(),
             })),
         };
         Box::new(e)

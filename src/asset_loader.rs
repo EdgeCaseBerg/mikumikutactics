@@ -1,28 +1,23 @@
-use crate::GameOptions;
 use crate::SpriteInfo;
 use crate::constants::TextureId;
 use crate::manifest::{Manifest, SpriteFrame, Spritesheet};
 use jzon::parse;
 use std::collections::HashMap;
 use std::error::Error;
+use std::path::PathBuf;
+use std::rc::Rc;
+
+pub type AssetResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait AssetLoader {
     fn ensure_texture_spritesheet_loaded(&mut self, sheet_id: TextureId);
+    fn get_catalog(&self) -> Rc<AssetCatalog>;
 }
-
-/* SCRATCH PAD ZONE BEWARE. ROUGHING OUT IDEAS TO SEE WHAT WILL WORK OR NOT */
-
-type AssetResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
-struct AssetCatalog {
+pub struct AssetCatalog {
     sprites: Vec<Spritesheet>,
     character_to_sprite_id: HashMap<String, usize>,
-}
-
-// This should maybe be over on the Backend or BackendEventLoop
-trait SpriteCatalogLoader {
-    fn load_catalog(&mut self, game_options: &GameOptions) -> AssetCatalog;
 }
 
 fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
@@ -75,6 +70,10 @@ impl AssetCatalog {
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.sprites.get(*idx)?;
         Some(TextureId(sheet.id))
+    }
+    pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
+        let sheet = self.sprites.iter().find(|sprite| sprite.id == id.0)?;
+        Some(PathBuf::from(&sheet.asset_path))
     }
 }
 

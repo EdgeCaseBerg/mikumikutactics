@@ -1,4 +1,4 @@
-use crate::asset_loader::AssetLoader;
+use crate::asset_loader::{AssetCatalog, AssetLoader};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
 use crate::clock::Clock;
@@ -225,15 +225,20 @@ impl WasmContext {
 struct AssetLoaderWasm {
     base_path: PathBuf,
     wasm_context: Rc<RefCell<WasmContext>>,
+    catalog: Rc<AssetCatalog>,
 }
 
 impl AssetLoaderWasm {
     fn new(game_options: &GameOptions, wasm_context: Rc<RefCell<WasmContext>>) -> Self {
         let path = game_options.assets_path.clone();
+        let manifest_str = include_str!("../assets/manifest");
+        let catalog = AssetCatalog::from_manifest_str(&manifest_str)
+            .expect("cannot create asset loader, manifest was not included in application");
 
         Self {
             base_path: path,
             wasm_context: wasm_context.clone(),
+            catalog: catalog.into(),
         }
     }
 }
@@ -278,6 +283,10 @@ impl AssetLoader for AssetLoaderWasm {
                 &format!("error loading texture id {} {:?}", id.0, e.as_string()).into(),
             );
         }
+    }
+
+    fn get_catalog(&self) -> Rc<AssetCatalog> {
+        self.catalog.clone()
     }
 }
 
