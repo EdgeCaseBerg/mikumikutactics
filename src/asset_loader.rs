@@ -1,7 +1,7 @@
 use crate::GameOptions;
 use crate::SpriteInfo;
 use crate::constants::TextureId;
-use crate::manifest::{SpriteFrame, Spritesheet};
+use crate::manifest::{Manifest, SpriteFrame, Spritesheet};
 use jzon::parse;
 use std::collections::HashMap;
 use std::error::Error;
@@ -43,47 +43,17 @@ impl AssetCatalog {
     pub fn from_manifest_str(manifest_json: &str) -> AssetResult<AssetCatalog> {
         let manifest_root = parse(manifest_json)?;
         // see build.rs for shape.
-        let Some(root) = manifest_root.as_object() else {
-            return Err("unexpected shape of manifest file, root object was not an object".into());
-        };
+        let manifest: Manifest = manifest_root.try_into()?;
 
-        let Some(spritesheets) = root["spritesheets"].as_array() else {
-            return Err(
-                "unexpected shape of manifest file, root object missing spritesheets list".into(),
-            );
-        };
-        let mut errors = vec![];
-        let spritesheets: Vec<Spritesheet> = spritesheets
-            .into_iter()
-            .filter_map(|json_val| {
-                let f: AssetResult<Spritesheet> = json_val.try_into();
-                match f {
-                    Ok(s) => Some(s),
-                    Err(e) => {
-                        errors.push(e);
-                        None
-                    }
-                }
-            })
-            .collect();
-
-        if !errors.is_empty() {
-            return Err(errors
-                .into_iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<String>>()
-                .join(" ")
-                .into());
-        }
-
-        let character_to_sprite_id = spritesheets
+        let character_to_sprite_id = manifest
+            .spritesheets
             .iter()
             .enumerate()
             .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
             .collect();
 
         Ok(AssetCatalog {
-            sprites: spritesheets,
+            sprites: manifest.spritesheets,
             character_to_sprite_id,
         })
     }

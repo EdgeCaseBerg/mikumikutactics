@@ -118,6 +118,46 @@ impl Into<JsonValue> for FrameTag {
 
 // Reads are a little more complicated:
 
+impl TryFrom<JsonValue> for Manifest {
+    type Error = Box<dyn Error>;
+    fn try_from(obj: JsonValue) -> AssetResult<Manifest> {
+        let Some(root) = obj.as_object() else {
+            return Err("unexpected shape of manifest file, root object was not an object".into());
+        };
+
+        let Some(spritesheets) = root["spritesheets"].as_array() else {
+            return Err(
+                "unexpected shape of manifest file, root object missing spritesheets list".into(),
+            );
+        };
+        let mut errors = vec![];
+        let spritesheets: Vec<Spritesheet> = spritesheets
+            .into_iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<Spritesheet> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
+
+        if !errors.is_empty() {
+            return Err(errors
+                .into_iter()
+                .map(|e| e.to_string())
+                .collect::<Vec<String>>()
+                .join(" ")
+                .into());
+        }
+
+        Ok(Manifest { spritesheets })
+    }
+}
+
 impl TryFrom<&JsonValue> for Spritesheet {
     type Error = Box<dyn Error>;
 
