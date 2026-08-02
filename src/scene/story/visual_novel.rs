@@ -260,6 +260,13 @@ impl CharacterState {
         };
         Some(pp)
     }
+    pub fn as_str(&self) -> &str {
+        match self {
+            CharacterState::Happy => "happy",
+            CharacterState::Mad => "mad",
+            _ => "idle",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
