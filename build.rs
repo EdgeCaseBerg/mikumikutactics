@@ -47,7 +47,7 @@ fn main() {
 
     let assets_dir = Path::new(".").join("assets");
     let spritesheets = spritesheets(&assets_dir);
-    let scenes = load_scenes(&assets_dir);
+    let scenes = load_file_assets(&assets_dir, "scenes");
 
     // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
     let manifest_path = assets_dir.join("manifest");
@@ -64,8 +64,8 @@ fn main() {
 
 include!("src/manifest.rs");
 
-fn load_scenes(assets_dir: &PathBuf) -> Vec<FileAsset> {
-    let scenes_path = assets_dir.join("scenes");
+fn load_file_assets(assets_dir: &PathBuf, subdirectory: &str) -> Vec<FileAsset> {
+    let scenes_path = assets_dir.join(subdirectory);
     let mut files = vec![];
     let entries = fs::read_dir(&scenes_path).unwrap_or_else(|_| {
         panic!(
@@ -80,7 +80,7 @@ fn load_scenes(assets_dir: &PathBuf) -> Vec<FileAsset> {
         if let Ok(metadata) = entry.metadata()
             && metadata.is_dir()
         {
-            let entries = load_scenes(&entry.path());
+            let entries = load_file_assets(&entry.path(), subdirectory);
             for file in entries {
                 files.push(file);
             }
@@ -89,7 +89,7 @@ fn load_scenes(assets_dir: &PathBuf) -> Vec<FileAsset> {
             let name = entry
                 .path()
                 .file_stem()
-                .expect("could not create name for scene file from path")
+                .expect("could not create name for file asset from path")
                 .to_string_lossy()
                 .to_string();
             if let Ok(stripped) = path.strip_prefix("./") {
