@@ -76,6 +76,16 @@ impl AssetCatalog {
         let sheet = self.sprites.iter().find(|sprite| sprite.id == id.0)?;
         Some(PathBuf::from(&sheet.asset_path))
     }
+    pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
+        None
+    }
+    pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
+        None
+    }
+    // TODO: think about if we want SceneId at all and if that would make any sense.
+    pub fn get_scene_path(&self, name: &str) -> Option<PathBuf> {
+        None
+    }
 }
 
 impl SceneLoadingContext for AssetCatalog {
