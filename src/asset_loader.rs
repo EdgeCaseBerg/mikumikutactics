@@ -1,6 +1,6 @@
 use crate::SpriteInfo;
 use crate::constants::{MusicId, SfxId, TextureId};
-use crate::manifest::{Manifest, SpriteFrame, Spritesheet};
+use crate::manifest::{FileAsset, Manifest, SpriteFrame, Spritesheet};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
@@ -19,6 +19,9 @@ pub trait AssetLoader {
 pub struct AssetCatalog {
     manifest: Manifest,
     character_to_sprite_id: HashMap<String, usize>,
+    music_to_music_idx: HashMap<String, usize>,
+    sound_to_sfx_idx: HashMap<String, usize>,
+    scene_to_scene_idx: HashMap<String, usize>,
 }
 
 fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
@@ -46,10 +49,31 @@ impl AssetCatalog {
             .enumerate()
             .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
             .collect();
+        let music_to_music_idx = manifest
+            .music
+            .iter()
+            .enumerate()
+            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .collect();
+        let sound_to_sfx_idx = manifest
+            .sounds
+            .iter()
+            .enumerate()
+            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .collect();
+        let scene_to_scene_idx = manifest
+            .scenes
+            .iter()
+            .enumerate()
+            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .collect();
 
         Ok(AssetCatalog {
             manifest,
             character_to_sprite_id,
+            music_to_music_idx,
+            sound_to_sfx_idx,
+            scene_to_scene_idx,
         })
     }
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
@@ -81,14 +105,25 @@ impl AssetCatalog {
         Some(PathBuf::from(&sheet.asset_path))
     }
     pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
-        None
+        let music = Self::file_asset_list_to_id(&self.manifest.music, id.0)?;
+        Some(PathBuf::from(&music.asset_path))
     }
     pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
-        None
+        let sound = Self::file_asset_list_to_id(&self.manifest.sounds, id.0)?;
+        Some(PathBuf::from(&sound.asset_path))
     }
     // TODO: think about if we want SceneId at all and if that would make any sense.
     pub fn get_scene_path(&self, name: &str) -> Option<PathBuf> {
-        None
+        let scene = self
+            .manifest
+            .scenes
+            .iter()
+            .find(|scene| scene.name == name)?;
+        Some(PathBuf::from(&scene.asset_path))
+    }
+
+    fn file_asset_list_to_id(v: &Vec<FileAsset>, id: usize) -> Option<&FileAsset> {
+        v.iter().find(|f| f.id == id)
     }
 }
 
