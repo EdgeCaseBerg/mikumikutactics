@@ -337,7 +337,8 @@ impl Scene for StoryScene {
         self.fade = TransitionScene::new_fade_in().into();
 
         if let Some(ref mut asset_loader) = game_context.asset_loader {
-            // leaksheet for buttons and focus glow
+            // TODO: this now breaks since its outside of the asset pipeline
+            // and the leeksheet id belongs to something loaded elsewhere.
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
         }
 
