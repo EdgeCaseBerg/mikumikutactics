@@ -91,7 +91,7 @@ impl StoryScene {
             destination: placement,
         });
     }
-    fn draw_outline_if_focused(
+    fn draw_portrait_outline(
         &self,
         at_position: PortraitPosition,
         renderer: &mut dyn Renderer,
@@ -144,7 +144,9 @@ impl StoryScene {
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_outline_if_focused(PortraitPosition::Left, renderer.as_mut(), &layout);
+        if vn.slot_left.is_some() {
+            self.draw_portrait_outline(PortraitPosition::Left, renderer.as_mut(), &layout);
+        }
         Self::draw_character_slot(
             vn.slot_center.as_ref(),
             self.placement_center_portrait
@@ -152,7 +154,9 @@ impl StoryScene {
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_outline_if_focused(PortraitPosition::Center, renderer.as_mut(), &layout);
+        if vn.slot_center.is_some() {
+            self.draw_portrait_outline(PortraitPosition::Center, renderer.as_mut(), &layout);
+        }
         Self::draw_character_slot(
             vn.slot_right.as_ref(),
             self.placement_right_portrait
@@ -160,7 +164,9 @@ impl StoryScene {
             renderer.as_mut(),
             &catalog,
         );
-        self.draw_outline_if_focused(PortraitPosition::Right, renderer.as_mut(), &layout);
+        if vn.slot_right.is_some() {
+            self.draw_portrait_outline(PortraitPosition::Right, renderer.as_mut(), &layout);
+        }
         if let Some(choices) = &self.current_choices {
             let layout = StoryScene::choice_btn_layout(choices.len(), game_context);
             for (_, btn) in choices {
