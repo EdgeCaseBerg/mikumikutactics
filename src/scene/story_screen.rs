@@ -252,6 +252,28 @@ impl Default for StoryScene {
     }
 }
 
+fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
+    for op in ops {
+        if let Some(id) = op.as_texture_id() {
+            let Some(ref mut asset_loader) = game_context.asset_loader else {
+                return;
+            };
+            asset_loader.ensure_texture_spritesheet_loaded(id);
+        }
+        if let NovelOps::PlaySfx(sfx_id) = op {
+            if let Some(ref mut audio) = game_context.audio {
+                let _ = audio.load_sfx(*sfx_id);
+            }
+        } else if let NovelOps::PlayMusic(music_id) = op {
+            if let Some(ref mut audio) = game_context.audio {
+                let _ = audio.load_music(*music_id);
+            }
+        } else {
+            continue;
+        }
+    }
+}
+
 impl Scene for StoryScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
