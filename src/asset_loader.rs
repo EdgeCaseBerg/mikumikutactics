@@ -1,6 +1,7 @@
 use crate::SpriteInfo;
-use crate::constants::TextureId;
+use crate::constants::{MusicId, SfxId, TextureId};
 use crate::manifest::{Manifest, SpriteFrame, Spritesheet};
+use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
 use std::error::Error;
@@ -74,6 +75,20 @@ impl AssetCatalog {
     pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
         let sheet = self.sprites.iter().find(|sprite| sprite.id == id.0)?;
         Some(PathBuf::from(&sheet.asset_path))
+    }
+}
+
+impl SceneLoadingContext for AssetCatalog {
+    fn name_to_texture(&self, name: &str) -> Option<TextureId> {
+        self.get_texture_id_for_sprite(name)
+    }
+    fn name_to_sfx(&self, name: &str) -> Option<SfxId> {
+        // TODO: implement once manifest loads sfx
+        None
+    }
+    fn name_to_music(&self, name: &str) -> Option<MusicId> {
+        // TODO: implement once manifest loads music
+        None
     }
 }
 
