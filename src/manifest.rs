@@ -1,4 +1,3 @@
-use jzon;
 use jzon::JsonValue;
 use std::error::Error;
 
@@ -77,41 +76,41 @@ pub struct FrameTag {
 }
 
 // Writes are simple:
-impl Into<JsonValue> for Manifest {
-    fn into(self) -> JsonValue {
+impl From<Manifest> for JsonValue {
+    fn from(val: Manifest) -> Self {
         jzon::object! {
-            spritesheets: self.spritesheets
+            spritesheets: val.spritesheets
         }
     }
 }
-impl Into<JsonValue> for Spritesheet {
-    fn into(self) -> JsonValue {
+impl From<Spritesheet> for JsonValue {
+    fn from(val: Spritesheet) -> Self {
         jzon::object! {
-            id: self.id,
-            name: self.name,
-            asset_path: self.asset_path,
-            frames: self.frames,
-            tags: self.tags,
+            id: val.id,
+            name: val.name,
+            asset_path: val.asset_path,
+            frames: val.frames,
+            tags: val.tags,
         }
     }
 }
-impl Into<JsonValue> for SpriteFrame {
-    fn into(self) -> JsonValue {
+impl From<SpriteFrame> for JsonValue {
+    fn from(val: SpriteFrame) -> Self {
         jzon::object! {
-            x: self.x,
-            y: self.y,
-            w: self.w,
-            h: self.h,
-            duration_ms: self.duration_ms,
+            x: val.x,
+            y: val.y,
+            w: val.w,
+            h: val.h,
+            duration_ms: val.duration_ms,
         }
     }
 }
-impl Into<JsonValue> for FrameTag {
-    fn into(self) -> JsonValue {
+impl From<FrameTag> for JsonValue {
+    fn from(val: FrameTag) -> Self {
         jzon::object! {
-            name: self.name,
-            from: self.from,
-            to: self.to,
+            name: val.name,
+            from: val.from,
+            to: val.to,
         }
     }
 }
@@ -132,7 +131,7 @@ impl TryFrom<JsonValue> for Manifest {
         };
         let mut errors = vec![];
         let spritesheets: Vec<Spritesheet> = spritesheets
-            .into_iter()
+            .iter()
             .filter_map(|json_val| {
                 let f: AssetResult<Spritesheet> = json_val.try_into();
                 match f {
@@ -200,7 +199,7 @@ impl TryFrom<&JsonValue> for Spritesheet {
         };
 
         let frames = raw_frames
-            .into_iter()
+            .iter()
             .filter_map(|json_val| {
                 let f: AssetResult<SpriteFrame> = json_val.try_into();
                 match f {
@@ -214,7 +213,7 @@ impl TryFrom<&JsonValue> for Spritesheet {
             .collect();
 
         let tags = raw_tags
-            .into_iter()
+            .iter()
             .filter_map(|json_val| {
                 let t: AssetResult<FrameTag> = json_val.try_into();
                 match t {
