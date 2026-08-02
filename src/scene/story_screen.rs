@@ -274,47 +274,14 @@ fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
     }
 }
 
-impl Scene for StoryScene {
-    fn init(&mut self, game_context: &mut GameContext) {
-        self.fade = TransitionScene::new_fade_in().into();
-
-        //TODO remove tmp check
-        let mut tmp_id = crate::constants::TextureId(0);
-
-        if let Some(ref mut asset_loader) = game_context.asset_loader {
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_STORY_BG);
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_PORTRAIT);
-
-            // TODO: remove tmp check and load from ops instead
-            let catalog = asset_loader.get_catalog();
-            if let Some(id) = catalog.get_texture_id_for_sprite("miku") {
-                tmp_id = id;
-                asset_loader.ensure_texture_spritesheet_loaded(id);
-            }
-        }
-
-        if let Some(ref mut audio) = game_context.audio {
-            let _ = audio.load_sfx(SFX_ID_BLIP);
-            let _ = audio.load_music(MUSIC_ID_PACHEBAL);
-        }
-
-        if let (Some(font_library), Some(asset_loader)) = (
-            game_context.font_library.as_mut(),
-            game_context.asset_loader.as_mut(),
-        ) {
-            let _ = font_library.ensure(STORY_FONT, asset_loader.as_mut());
-            let _ = font_library.ensure(BUTTON_FONT, asset_loader.as_mut());
-        }
-
-        // Temporarily create a story scene from scratch
-        let ops = vec![
+fn test_scene_ops() -> Vec<NovelOps> {
+    vec![
             NovelOps::Background(TEXTURE_ID_STORY_BG),
             NovelOps::Show(
                 Character{
                     name: "miku".to_owned(),
                     state: CharacterState::Idle,
-                    texture_id: tmp_id,
+                    texture_id: TEXTURE_ID_PORTRAIT,
                 }, PortraitPosition::Left),
             NovelOps::Say("Almost...".to_owned()),
             NovelOps::PlaySfx(SFX_ID_BLIP),
@@ -322,7 +289,7 @@ impl Scene for StoryScene {
                 Character{
                     name: "miku".to_owned(),
                     state: CharacterState::Mad,
-                    texture_id: tmp_id,
+                    texture_id: TEXTURE_ID_PORTRAIT,
                 }
             ),
             NovelOps::Label("repeat".to_owned()),
@@ -361,7 +328,33 @@ impl Scene for StoryScene {
                     "... how bothersome I suppose."
                 ).to_string(),
             ),
-        ];
+        ]
+}
+
+impl Scene for StoryScene {
+    fn init(&mut self, game_context: &mut GameContext) {
+        self.fade = TransitionScene::new_fade_in().into();
+
+        if let Some(ref mut asset_loader) = game_context.asset_loader {
+            // leaksheet for buttons and focus glow
+            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
+        }
+
+        if let Some(ref mut audio) = game_context.audio {
+            let _ = audio.load_music(MUSIC_ID_PACHEBAL);
+        }
+
+        if let (Some(font_library), Some(asset_loader)) = (
+            game_context.font_library.as_mut(),
+            game_context.asset_loader.as_mut(),
+        ) {
+            let _ = font_library.ensure(STORY_FONT, asset_loader.as_mut());
+            let _ = font_library.ensure(BUTTON_FONT, asset_loader.as_mut());
+        }
+
+        // Temporarily create a story scene from scratch
+        let ops = test_scene_ops();
+        ensure_ops_loaded(&ops, game_context);
         self.vn = Some(ops.into());
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
