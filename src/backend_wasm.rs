@@ -271,7 +271,10 @@ impl AssetLoader for AssetLoaderWasm {
             .dyn_into::<HtmlImageElement>()
             .expect("could not dyn_into HtmlImageElement");
         img.set_name(&format!("texture-{}", id.0));
-        let path = id_to_relative_path(id);
+        let path = self
+            .catalog
+            .get_asset_path(id)
+            .unwrap_or(id_to_relative_path(id));
         let path = self.base_path.join(path);
         img.set_src(&pathbuf_to_url(&path));
         let result = context.storage.append_child(&img);
