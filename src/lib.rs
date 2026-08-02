@@ -17,6 +17,7 @@ pub mod font;
 pub mod game;
 pub mod game_options;
 pub mod grid_layout;
+pub mod manifest;
 pub mod renderer;
 pub mod scene;
 

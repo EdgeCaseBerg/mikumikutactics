@@ -1,7 +1,7 @@
 use crate::GameOptions;
 use crate::SpriteInfo;
 use crate::constants::TextureId;
-use jzon::JsonValue;
+use crate::manifest::{SpriteFrame, Spritesheet};
 use jzon::parse;
 use std::collections::HashMap;
 use std::error::Error;
@@ -25,143 +25,6 @@ trait SpriteCatalogLoader {
     fn load_catalog(&mut self, game_options: &GameOptions) -> AssetCatalog;
 }
 
-// Note that these are the same (sans Serialize derivation) structs
-// as what's in build.rs. since they're tiny, we won't bother separating
-// them out into a separate crate since I don't think we can derive things
-// for them like that anyway unless we learned how to do features in rust
-// world in order to have the build dependencies use a version with serde
-// and the library one to use one without them.
-#[derive(Debug)]
-struct Manifest {
-    spritesheets: Vec<Spritesheet>,
-}
-
-#[derive(Debug)]
-struct Spritesheet {
-    id: usize,
-    name: String,
-    asset_path: String,
-    frames: Vec<SpriteFrame>,
-    tags: Vec<FrameTag>,
-}
-
-impl Spritesheet {
-    fn lift(obj: &JsonValue) -> AssetResult<Spritesheet> {
-        let mut errors = vec![];
-        let id = match obj["id"].as_usize() {
-            Some(id) => id,
-            None => {
-                errors.push("missing or invalid id field in Spritesheet".into());
-                0
-            }
-        };
-        let name = match obj["name"].as_str() {
-            Some(name) => name,
-            None => {
-                errors.push("missing or invalid name field in Spritesheet".into());
-                ""
-            }
-        };
-        let asset_path = match obj["asset_path"].as_str() {
-            Some(asset_path) => asset_path,
-            None => {
-                errors.push("missing or invalid asset_path field in Spritesheet".into());
-                ""
-            }
-        };
-        let raw_frames = match obj["frames"].as_array() {
-            Some(raw) => raw,
-            None => {
-                errors.push("missing or invalid frames field in Spritesheet".into());
-                &vec![]
-            }
-        };
-        let raw_tags = match obj["tags"].as_array() {
-            Some(raw) => raw,
-            None => {
-                errors.push("missing or invalid tags field in Spritesheet".into());
-                &vec![]
-            }
-        };
-
-        let frames = raw_frames
-            .into_iter()
-            .filter_map(|json_val| match SpriteFrame::lift(&json_val) {
-                Ok(f) => Some(f),
-                Err(e) => {
-                    errors.push(e);
-                    None
-                }
-            })
-            .collect();
-
-        let tags = raw_tags
-            .into_iter()
-            .filter_map(|json_val| match FrameTag::lift(&json_val) {
-                Ok(t) => Some(t),
-                Err(e) => {
-                    errors.push(e);
-                    None
-                }
-            })
-            .collect();
-
-        if !errors.is_empty() {
-            return Err(errors
-                .into_iter()
-                .map(|e| e.to_string())
-                .collect::<Vec<String>>()
-                .join(" ")
-                .into());
-        }
-
-        Ok(Spritesheet {
-            id,
-            name: name.to_owned(),
-            asset_path: asset_path.to_owned(),
-            frames,
-            tags,
-        })
-    }
-}
-
-#[derive(Debug)]
-struct SpriteFrame {
-    x: u32,
-    y: u32,
-    w: u32,
-    h: u32,
-    duration_ms: u32,
-}
-
-impl SpriteFrame {
-    fn lift(obj: &JsonValue) -> AssetResult<SpriteFrame> {
-        let Some(x) = obj["x"].as_u32() else {
-            return Err("missing or invalid x field in sprite frame".into());
-        };
-        let Some(y) = obj["y"].as_u32() else {
-            return Err("missing or invalid y field in sprite frame".into());
-        };
-        let Some(w) = obj["w"].as_u32() else {
-            return Err("missing or invalid w field in sprite frame".into());
-        };
-        let Some(h) = obj["h"].as_u32() else {
-            return Err("missing or invalid h field in sprite frame".into());
-        };
-        let Some(duration_ms) = obj["duration_ms"].as_u32() else {
-            return Err("missing or invalid duration_ms field in sprite frame".into());
-        };
-
-        Ok(SpriteFrame {
-            x,
-            y,
-            w,
-            h,
-            duration_ms,
-        })
-    }
-}
-
 fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
     SpriteInfo {
         start_x: sprite_frame.x,
@@ -176,33 +39,6 @@ fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
     }
 }
 
-#[derive(Debug)]
-struct FrameTag {
-    name: String,
-    from: u32,
-    to: u32,
-}
-
-impl FrameTag {
-    fn lift(obj: &JsonValue) -> AssetResult<FrameTag> {
-        let Some(name) = obj["name"].as_str() else {
-            return Err("missing or invalid name field in frame tag".into());
-        };
-        let Some(from) = obj["from"].as_u32() else {
-            return Err("missing or invalid from field in frame tag".into());
-        };
-        let Some(to) = obj["to"].as_u32() else {
-            return Err("missing or invalid to field in frame tag".into());
-        };
-
-        Ok(FrameTag {
-            name: name.to_owned(),
-            from,
-            to,
-        })
-    }
-}
-
 impl AssetCatalog {
     pub fn from_manifest_str(manifest_json: &str) -> AssetResult<AssetCatalog> {
         let manifest_root = parse(manifest_json)?;
@@ -211,7 +47,7 @@ impl AssetCatalog {
             return Err("unexpected shape of manifest file, root object was not an object".into());
         };
 
-        let Some(spritesheets) = manifest_root["spritesheets"].as_array() else {
+        let Some(spritesheets) = root["spritesheets"].as_array() else {
             return Err(
                 "unexpected shape of manifest file, root object missing spritesheets list".into(),
             );
@@ -219,11 +55,14 @@ impl AssetCatalog {
         let mut errors = vec![];
         let spritesheets: Vec<Spritesheet> = spritesheets
             .into_iter()
-            .filter_map(|spritesheet| match Spritesheet::lift(&spritesheet) {
-                Ok(s) => Some(s),
-                Err(e) => {
-                    errors.push(e);
-                    None
+            .filter_map(|json_val| {
+                let f: AssetResult<Spritesheet> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
                 }
             })
             .collect();
