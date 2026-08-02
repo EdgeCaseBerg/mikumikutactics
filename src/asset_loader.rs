@@ -123,5 +123,6 @@ mod transition_scene_tests {
         let Some(rin) = catalog.get_sprite("rin") else {
             panic!("expected to contain rin but got {:?}", catalog);
         };
+        assert_eq!(0, rin.start_x);
     }
 }
