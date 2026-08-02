@@ -137,6 +137,7 @@ impl Audio for WasmSounds {
             .dyn_into::<HtmlAudioElement>()
             .expect("could not dyn_into HtmlAudioElement");
 
+        // TODO: use asset catalog to load?
         let path = music_id_to_relative_path(id);
         let path = self.base_path.join(path);
         audio.set_src(&pathbuf_to_url(&path));

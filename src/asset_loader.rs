@@ -139,6 +139,7 @@ impl SceneLoadingContext for AssetCatalog {
         // TODO: implement once manifest loads music
         None
     }
+    // TODO: add name_to_scene once we add loading scenes into the DSL
 }
 
 #[cfg(test)]
