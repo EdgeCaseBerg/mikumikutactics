@@ -46,16 +46,9 @@ fn main() {
     println!("cargo::rerun-if-changed=spritesheets/");
 
     let out_dir = Path::new(".").join("assets");
-    let in_dir = Path::new(".").join("spritesheets");
-    let ase_files = process_dir_for_ase(in_dir, out_dir.clone())
-        .into_iter()
-        .map(|(a, p)| {
-            // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
-            // so leave it out for now and be consistent with how id_to_relative_path was used before
-            (a, p.strip_prefix(&out_dir).unwrap().to_path_buf())
-        })
-        .collect();
-    let spritesheets = make_spritesheets(ase_files);
+    let spritesheets = spritesheets(&out_dir);
+
+    // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
     let manifest_path = out_dir.join("manifest");
     let manifest = Manifest {
         spritesheets,
@@ -69,6 +62,19 @@ fn main() {
 }
 
 include!("src/manifest.rs");
+
+fn spritesheets(out_dir: &Path) -> Vec<Spritesheet> {
+    let in_dir = Path::new(".").join("spritesheets");
+    let ase_files = process_dir_for_ase(in_dir, out_dir.to_path_buf())
+        .into_iter()
+        .map(|(a, p)| {
+            // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
+            // so leave it out for now and be consistent with how id_to_relative_path was used before
+            (a, p.strip_prefix(&out_dir).unwrap().to_path_buf())
+        })
+        .collect();
+    make_spritesheets(ase_files)
+}
 
 fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
     let w = ase.width() as u32;
