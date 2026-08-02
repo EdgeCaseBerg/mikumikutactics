@@ -17,7 +17,7 @@ pub trait AssetLoader {
 
 #[derive(Debug)]
 pub struct AssetCatalog {
-    sprites: Vec<Spritesheet>,
+    manifest: Manifest,
     character_to_sprite_id: HashMap<String, usize>,
 }
 
@@ -48,18 +48,18 @@ impl AssetCatalog {
             .collect();
 
         Ok(AssetCatalog {
-            sprites: manifest.spritesheets,
+            manifest,
             character_to_sprite_id,
         })
     }
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.sprites.get(*idx)?;
+        let sheet = self.manifest.spritesheets.get(*idx)?;
         Some(to_sprite_info(&sheet.frames[0], 1))
     }
     pub fn get_sprite_in_state(&self, name: &str, state: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.sprites.get(*idx)?;
+        let sheet = self.manifest.spritesheets.get(*idx)?;
         let Some(tag) = sheet.tags.iter().find(|t| t.name == state) else {
             // if no state found, fallback to idle (1st sprite of name by convention)
             return self.get_sprite(name);
@@ -69,11 +69,15 @@ impl AssetCatalog {
     }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
         let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.sprites.get(*idx)?;
+        let sheet = self.manifest.spritesheets.get(*idx)?;
         Some(TextureId(sheet.id))
     }
     pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
-        let sheet = self.sprites.iter().find(|sprite| sprite.id == id.0)?;
+        let sheet = self
+            .manifest
+            .spritesheets
+            .iter()
+            .find(|sprite| sprite.id == id.0)?;
         Some(PathBuf::from(&sheet.asset_path))
     }
     pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
