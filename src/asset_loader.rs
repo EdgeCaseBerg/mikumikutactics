@@ -33,7 +33,7 @@ fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
         height: sprite_frame.h,
         frames: num_frames,
         current_frame: 0,
-        // rough napkin math, 60 ticks per s,
+        // rough napkin math, 60 ticks per s, (we should move this to constants)
         framerate_per_second: (60.0 * sprite_frame.duration_ms as f32 / 1000.0) as u32,
         delta: 0,
     }
