@@ -48,14 +48,16 @@ fn main() {
     let assets_dir = Path::new(".").join("assets");
     let spritesheets = spritesheets(&assets_dir);
     let scenes = load_file_assets(&assets_dir, "scenes");
+    let sounds = load_file_assets(&assets_dir, "sounds");
+    let music = load_file_assets(&assets_dir, "music");
 
     // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
     let manifest_path = assets_dir.join("manifest");
     let manifest = Manifest {
         spritesheets,
         scenes,
-        sounds: vec![],
-        music: vec![],
+        sounds,
+        music,
     };
     let j: jzon::JsonValue = manifest.into();
     let string = j.pretty(2);
