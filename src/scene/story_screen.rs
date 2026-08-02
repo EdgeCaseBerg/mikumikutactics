@@ -16,7 +16,7 @@ use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::story::text::text_box_bounds_on_grid;
 use crate::scene::story::visual_novel::{
-    Character, CharacterState, Choice, NovelOps, PortraitPosition, VisualNovelMachine,
+    Character, CharacterState, Choice, NovelOps, PortraitPosition, VisualNovelMachine, parse_scene,
 };
 use crate::scene::transitions::{Transition, TransitionScene};
 
@@ -275,61 +275,9 @@ fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
     }
 }
 
-fn test_scene_ops() -> Vec<NovelOps> {
-    vec![
-            NovelOps::Background(TEXTURE_ID_STORY_BG),
-            NovelOps::Show(
-                Character{
-                    name: "miku".to_owned(),
-                    state: CharacterState::Idle,
-                    texture_id: TEXTURE_ID_PORTRAIT,
-                }, PortraitPosition::Left),
-            NovelOps::Say("Almost...".to_owned()),
-            NovelOps::PlaySfx(SFX_ID_BLIP),
-            NovelOps::NewCharacterState(
-                Character{
-                    name: "miku".to_owned(),
-                    state: CharacterState::Mad,
-                    texture_id: TEXTURE_ID_PORTRAIT,
-                }
-            ),
-            NovelOps::Label("repeat".to_owned()),
-            NovelOps::Focus(PortraitPosition::Left),
-            NovelOps::Say("Finally... it is time.".to_owned()),
-            NovelOps::PlaySfx(SFX_ID_BLIP),
-            NovelOps::Show(
-                Character {
-                    name: "rin".to_owned(),
-                    state: CharacterState::Idle,
-                    texture_id: TEXTURE_ID_PORTRAIT,
-                },
-                PortraitPosition::Right,
-            ),
-            NovelOps::Focus(PortraitPosition::Right),
-            NovelOps::Choices(vec![
-                Choice { label: "repeat".to_owned(), text: "What was that?".to_owned() },
-                Choice { label: "next".to_owned(), text: "Indeed, we shall have our revenge!".to_owned() },
-            ]),
-            NovelOps::Label("next".to_owned()),
-            NovelOps::Hide(PortraitPosition::Right),
-            NovelOps::Focus(PortraitPosition::Left),
-            NovelOps::Say("Indeed my friend, it is finally time to begin our long awaited adventure...".to_owned()),
-            NovelOps::Say("In tactics!".to_owned()),
-            NovelOps::PlaySfx(SFX_ID_BLIP),
-            NovelOps::Hide(PortraitPosition::Left),
-            NovelOps::Background(TEXTURE_ID_TITLE_BG),
-            NovelOps::PlayMusic(MUSIC_ID_PACHEBAL),
-            NovelOps::Say(
-                concat!(
-                    "Hello there this is a very long string of text I'm hoping will be long enough to be interesting ",
-                    "or something I guess though who knows lalalalalal yay this is so fun. ",
-                    "There are no line breaks in the text at all, so you could load this from a file or similar and then ",
-                    "it would happily display on the screen with no issues at all. Isn't that just lovely. Thought this ",
-                    "also means that if you want a newline that's explicit, I suppose you'd need to start a new page or something",
-                    "... how bothersome I suppose."
-                ).to_string(),
-            ),
-        ]
+fn test_scene_ops(catalog: &AssetCatalog) -> Vec<NovelOps> {
+    let vn = parse_scene(&include_str!("../../assets/scenes/noaudio.scene"), catalog);
+    vn.unwrap().program
 }
 
 impl Scene for StoryScene {
@@ -355,9 +303,11 @@ impl Scene for StoryScene {
         }
 
         // Temporarily create a story scene from scratch
-        let ops = test_scene_ops();
-        ensure_ops_loaded(&ops, game_context);
-        self.vn = Some(ops.into());
+        if let Some(ref mut asset_loader) = game_context.asset_loader {
+            let ops = test_scene_ops(&asset_loader.get_catalog());
+            ensure_ops_loaded(&ops, game_context);
+            self.vn = Some(ops.into());
+        };
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
