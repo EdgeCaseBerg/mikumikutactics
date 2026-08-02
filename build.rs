@@ -1,7 +1,6 @@
 use asefile::AsepriteFile;
 use image::RgbaImage;
 use image::imageops;
-use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -59,40 +58,12 @@ fn main() {
     let spritesheets = make_spritesheets(ase_files);
     let manifest_path = out_dir.join("manifest");
     let manifest = Manifest { spritesheets };
-    let j = serde_json::to_string_pretty(&manifest).expect("failed to convert manifest into json");
-    fs::write(manifest_path, j).expect("failed to write manifest file");
+    let j: jzon::JsonValue = manifest.into();
+    let string = j.pretty(2);
+    fs::write(manifest_path, string).expect("failed to write manifest file");
 }
 
-// TODO: add in audio to the manifest as well to refactor those constant ids too (later!)
-#[derive(Debug, Serialize)]
-struct Manifest {
-    spritesheets: Vec<Spritesheet>,
-}
-
-#[derive(Debug, Serialize)]
-struct Spritesheet {
-    id: usize,
-    name: String,
-    asset_path: String,
-    frames: Vec<SpriteFrame>,
-    tags: Vec<FrameTag>,
-}
-
-#[derive(Debug, Serialize)]
-struct SpriteFrame {
-    x: u32,
-    y: u32,
-    w: u32,
-    h: u32,
-    duration_ms: u32,
-}
-
-#[derive(Debug, Serialize)]
-struct FrameTag {
-    name: String,
-    from: u32,
-    to: u32,
-}
+include!("src/manifest.rs");
 
 fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
     let w = ase.width() as u32;
