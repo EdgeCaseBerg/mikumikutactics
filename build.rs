@@ -47,7 +47,7 @@ fn main() {
 
     let out_dir = Path::new(".").join("assets");
     let in_dir = Path::new(".").join("spritesheets");
-    let ase_files = process_dir(in_dir, out_dir.clone())
+    let ase_files = process_dir_for_ase(in_dir, out_dir.clone())
         .into_iter()
         .map(|(a, p)| {
             // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
@@ -86,7 +86,7 @@ fn write_file_to_sheet(ase: &AsepriteFile, out: PathBuf) {
 }
 
 // Recursively walk ase_folder, exporting each ase file and creating the png in the assets folder as it goes
-fn process_dir(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
+fn process_dir_for_ase(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile, PathBuf)> {
     let mut ase_files = vec![];
     let entries = fs::read_dir(&ase_folder).unwrap_or_else(|_| {
         panic!(
@@ -103,7 +103,7 @@ fn process_dir(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(AsepriteFile,
         {
             let mirrored_path = asset_folder.join(entry.file_name());
             fs::create_dir_all(&mirrored_path).expect("failed to create directories");
-            let entries = process_dir(entry.path(), mirrored_path);
+            let entries = process_dir_for_ase(entry.path(), mirrored_path);
             for (ase, path) in entries {
                 ase_files.push((ase, path));
             }
