@@ -42,7 +42,6 @@ fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
 impl AssetCatalog {
     pub fn from_manifest_str(manifest_json: &str) -> AssetResult<AssetCatalog> {
         let manifest_root = parse(manifest_json)?;
-        // see build.rs for shape.
         let manifest: Manifest = manifest_root.try_into()?;
 
         let character_to_sprite_id = manifest
