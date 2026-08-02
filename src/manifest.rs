@@ -48,6 +48,9 @@ type AssetResult<T> = Result<T, Box<dyn Error>>;
 #[derive(Debug)]
 pub struct Manifest {
     pub spritesheets: Vec<Spritesheet>,
+    pub sounds: Vec<FileAsset>,
+    pub music: Vec<FileAsset>,
+    pub fonts: Vec<FileAsset>,
 }
 
 #[derive(Debug)]
@@ -75,11 +78,21 @@ pub struct FrameTag {
     pub to: u32,
 }
 
+#[derive(Debug)]
+pub struct FileAsset {
+    pub id: usize,
+    pub name: String,
+    pub asset_path: String,
+}
+
 // Writes are simple:
 impl From<Manifest> for JsonValue {
     fn from(val: Manifest) -> Self {
         jzon::object! {
-            spritesheets: val.spritesheets
+            spritesheets: val.spritesheets,
+            sounds: val.sounds,
+            music: val.music,
+            fonts: val.fonts,
         }
     }
 }
@@ -114,6 +127,15 @@ impl From<FrameTag> for JsonValue {
         }
     }
 }
+impl From<FileAsset> for JsonValue {
+    fn from(val: FileAsset) -> Self {
+        jzon::object! {
+            id: val.id,
+            name: val.name,
+            asset_path: val.asset_path,
+        }
+    }
+}
 
 // Reads are a little more complicated:
 
@@ -129,11 +151,68 @@ impl TryFrom<JsonValue> for Manifest {
                 "unexpected shape of manifest file, root object missing spritesheets list".into(),
             );
         };
+
+        let Some(sounds) = root["sounds"].as_array() else {
+            return Err(
+                "unexpected shape of manifest file, root object missing sounds list".into(),
+            );
+        };
+
+        let Some(fonts) = root["fonts"].as_array() else {
+            return Err("unexpected shape of manifest file, root object missing fonts list".into());
+        };
+
+        let Some(music) = root["music"].as_array() else {
+            return Err("unexpected shape of manifest file, root object missing music list".into());
+        };
+
         let mut errors = vec![];
         let spritesheets: Vec<Spritesheet> = spritesheets
             .iter()
             .filter_map(|json_val| {
                 let f: AssetResult<Spritesheet> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
+
+        let sounds: Vec<FileAsset> = sounds
+            .iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<FileAsset> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
+
+        let fonts: Vec<FileAsset> = fonts
+            .iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<FileAsset> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
+
+        let music: Vec<FileAsset> = music
+            .iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<FileAsset> = json_val.try_into();
                 match f {
                     Ok(s) => Some(s),
                     Err(e) => {
@@ -153,7 +232,12 @@ impl TryFrom<JsonValue> for Manifest {
                 .into());
         }
 
-        Ok(Manifest { spritesheets })
+        Ok(Manifest {
+            spritesheets,
+            sounds,
+            music,
+            fonts,
+        })
     }
 }
 
@@ -291,6 +375,27 @@ impl TryFrom<&JsonValue> for FrameTag {
             name: name.to_owned(),
             from,
             to,
+        })
+    }
+}
+
+impl TryFrom<&JsonValue> for FileAsset {
+    type Error = Box<dyn Error>;
+    fn try_from(obj: &JsonValue) -> AssetResult<FileAsset> {
+        let Some(name) = obj["name"].as_str() else {
+            return Err("missing or invalid name field in file asset".into());
+        };
+        let Some(id) = obj["id"].as_usize() else {
+            return Err("missing or invalid id field in file asset".into());
+        };
+        let Some(asset_path) = obj["asset_path"].as_str() else {
+            return Err("missing or invalid asset_path field in file asset".into());
+        };
+
+        Ok(FileAsset {
+            name: name.to_owned(),
+            asset_path: asset_path.to_owned(),
+            id,
         })
     }
 }

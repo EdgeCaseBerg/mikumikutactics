@@ -57,7 +57,12 @@ fn main() {
         .collect();
     let spritesheets = make_spritesheets(ase_files);
     let manifest_path = out_dir.join("manifest");
-    let manifest = Manifest { spritesheets };
+    let manifest = Manifest {
+        spritesheets,
+        fonts: vec![],
+        sounds: vec![],
+        music: vec![],
+    };
     let j: jzon::JsonValue = manifest.into();
     let string = j.pretty(2);
     fs::write(manifest_path, string).expect("failed to write manifest file");
