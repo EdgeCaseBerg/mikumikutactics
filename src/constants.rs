@@ -43,9 +43,6 @@ pub const SFX_BLIP: &str = "blipSelect";
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
 pub const MUSIC_ID_PACHEBAL: MusicId = MusicId(0);
-pub const MUSIC_ID_MOON: MusicId = MusicId(1000);
-pub const MUSIC_ID_QUIT: MusicId = MusicId(1001);
-pub const MUSIC_ID_TETO: MusicId = MusicId(1002);
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub enum FontId {
