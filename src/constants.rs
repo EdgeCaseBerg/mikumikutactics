@@ -36,8 +36,6 @@ pub fn id_to_relative_path(id: TextureId) -> PathBuf {
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct SfxId(pub usize);
 
-pub const SFX_ID_BLIP: SfxId = SfxId(0);
-
 // These match the manifest file's texture names
 pub const SFX_MEME: &str = "meme";
 pub const SFX_BLIP: &str = "blipSelect";

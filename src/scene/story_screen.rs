@@ -3,7 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
+    FontId, MUSIC_ID_PACHEBAL, SFX_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
     sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
@@ -36,6 +36,14 @@ pub struct StoryScene {
     placement_left_portrait: Rect,
     placement_right_portrait: Rect,
     placement_center_portrait: Rect,
+    // Cached asset ids
+    ids: Option<StorySceneIds>,
+}
+
+// allow "dead" code because really this is loading the sfx for the buttons to use
+#[allow(dead_code)]
+struct StorySceneIds {
+    btn_sfx_id: SfxId,
 }
 
 impl StoryScene {
@@ -248,6 +256,7 @@ impl Default for StoryScene {
                 width: 4,
                 height: 6,
             },
+            ids: None,
         }
     }
 }
@@ -292,6 +301,18 @@ impl Scene for StoryScene {
         if let Some(ref mut audio) = game_context.audio {
             let _ = audio.load_music(MUSIC_ID_PACHEBAL);
         }
+
+        if let (Some(audio), Some(asset_loader)) = (
+            game_context.audio.as_mut(),
+            game_context.asset_loader.as_mut(),
+        ) {
+            let catalog = asset_loader.get_catalog();
+            if let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) {
+                let _ = audio.load_sfx(blip);
+                let ids = StorySceneIds { btn_sfx_id: blip };
+                self.ids = ids.into();
+            }
+        };
 
         if let (Some(font_library), Some(asset_loader)) = (
             game_context.font_library.as_mut(),
