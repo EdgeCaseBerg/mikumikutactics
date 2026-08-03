@@ -1100,7 +1100,7 @@ fn parse_show_character(
 #[cfg(test)]
 mod visual_novel_tests {
     use super::*;
-    use crate::constants::{MusicId, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_STORY_BG, TextureId};
+    use crate::constants::{MusicId, SfxId, TextureId};
     use std::collections::HashMap;
 
     struct TmpSceneLoadingContext {
@@ -1113,9 +1113,9 @@ mod visual_novel_tests {
         fn default() -> TmpSceneLoadingContext {
             TmpSceneLoadingContext {
                 textures: HashMap::from([
-                    ("battlefield".to_owned(), TEXTURE_ID_STORY_BG),
-                    ("miku".to_owned(), TEXTURE_ID_LEEKSHEET),
-                    ("rin".to_owned(), TEXTURE_ID_LEEKSHEET),
+                    ("battlefield".to_owned(), TextureId(0)),
+                    ("miku".to_owned(), TextureId(1)),
+                    ("rin".to_owned(), TextureId(1)),
                 ]),
                 sounds: HashMap::from([("blip".to_owned(), SfxId(0))]),
                 music: HashMap::from([("pachebal".to_owned(), MusicId(0))]),

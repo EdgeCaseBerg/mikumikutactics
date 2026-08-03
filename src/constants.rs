@@ -6,7 +6,6 @@ pub struct TextureId(pub usize);
 
 pub const TEXTURE_ID_LEEKSHEET: TextureId = TextureId(4);
 pub const TEXTURE_ID_TITLE_BG: TextureId = TextureId(1);
-pub const TEXTURE_ID_STORY_BG: TextureId = TextureId(0);
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct SfxId(pub usize);
