@@ -2,7 +2,7 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    FontId, SFX_ID_BLIP, SFX_ID_MEME, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
+    FontId, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -17,6 +17,12 @@ pub struct TitleScene {
     quit_btn: Button,
     played_intro: ReadyState,
     fade: Option<TransitionScene>,
+    ids: Option<TitleSceneIds>,
+}
+
+struct TitleSceneIds {
+    btn_sfx_id: SfxId,
+    meme_id: SfxId,
 }
 
 impl TitleScene {
@@ -48,6 +54,7 @@ impl Default for TitleScene {
             ),
             played_intro: ReadyState::Ready,
             fade: None,
+            ids: None,
         }
     }
 }
@@ -56,14 +63,25 @@ impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
-        if let Some(ref mut asset_loader) = game_context.asset_loader {
+        if let (Some(audio), Some(asset_loader)) = (
+            game_context.audio.as_mut(),
+            game_context.asset_loader.as_mut(),
+        ) {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-        };
-
-        if let Some(ref mut audio) = game_context.audio {
-            let _ = audio.load_sfx(SFX_ID_MEME);
-            let _ = audio.load_sfx(SFX_ID_BLIP);
+            let catalog = asset_loader.get_catalog();
+            if let (Some(meme), Some(blip)) = (
+                catalog.get_sfx_id_for_name("meme"),
+                catalog.get_sfx_id_for_name("blipSelect"),
+            ) {
+                let _ = audio.load_sfx(meme);
+                let _ = audio.load_sfx(blip);
+                let ids = TitleSceneIds {
+                    meme_id: meme,
+                    btn_sfx_id: blip,
+                };
+                self.ids = ids.into();
+            }
         };
 
         if let (Some(font_library), Some(asset_loader)) = (
@@ -100,7 +118,9 @@ impl Scene for TitleScene {
                 ticks_waited: 0,
             };
             if let Some(audio) = game_context.audio.as_mut() {
-                let _ = audio.play_sfx(SFX_ID_MEME);
+                if let Some(id) = self.ids.as_ref().map(|ids| ids.meme_id) {
+                    let _ = audio.play_sfx(id);
+                }
             };
         }
 
@@ -108,7 +128,9 @@ impl Scene for TitleScene {
 
         if self.quit_btn.clicked && game_context.next_scene.is_none() {
             if let Some(audio) = game_context.audio.as_mut() {
-                let _ = audio.play_sfx(SFX_ID_BLIP);
+                if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
+                    let _ = audio.play_sfx(id);
+                }
             }
             // TODO restore shut down once we have another scene to swap to
             // game_context.shutdown();

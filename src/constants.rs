@@ -37,7 +37,6 @@ pub fn id_to_relative_path(id: TextureId) -> PathBuf {
 pub struct SfxId(pub usize);
 
 pub const SFX_ID_BLIP: SfxId = SfxId(0);
-pub const SFX_ID_MEME: SfxId = SfxId(1);
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
