@@ -166,6 +166,9 @@ fn process_dir_for_ase(ase_folder: PathBuf, asset_folder: PathBuf) -> Vec<(Asepr
                 ase_files.push((ase, path));
             }
         } else {
+            if !entry.file_name().to_string_lossy().ends_with("ase") {
+                continue;
+            }
             let path = entry.path();
             let mut ase_out = asset_folder.join(entry.file_name());
             ase_out.set_extension("png");
