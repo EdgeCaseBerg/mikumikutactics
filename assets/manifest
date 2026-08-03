@@ -132,8 +132,8 @@
     },
     {
       "id": 4,
-      "name": "BoldPixelst",
-      "asset_path": "fontmaps/BoldPixelst.png",
+      "name": "BoldPixels",
+      "asset_path": "fontmaps/BoldPixels.png",
       "frames": [
         {
           "x": 0,
