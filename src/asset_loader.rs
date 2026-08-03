@@ -15,6 +15,19 @@ pub trait AssetLoader {
     fn get_catalog(&self) -> Rc<AssetCatalog>;
 }
 
+// TODO: use this to help refactor away the TEXTURE_ID_XXX id constants to named constants instead.
+pub fn ensure_texture_by_name(
+    name: &str,
+    asset_loader: &mut dyn AssetLoader,
+) -> AssetResult<TextureId> {
+    let catalog = asset_loader.get_catalog();
+    let Some(id) = catalog.get_texture_id_for_sprite(name) else {
+        return Err(format!("could not load texture for name {}", name).into());
+    };
+    asset_loader.ensure_texture_spritesheet_loaded(id);
+    Ok(id)
+}
+
 #[derive(Debug)]
 pub struct AssetCatalog {
     manifest: Manifest,
