@@ -3,8 +3,8 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, SFX_BLIP, SfxId, TEXTURE_UI, TextureId, sprite_info_highlight,
-    sprite_info_planning_layout_bg,
+    FontId, SFX_BLIP, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI, TextureId,
+    sprite_info_highlight,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -23,7 +23,7 @@ const STORY_FONT: FontId = FontId::BoldPixelScaled { pixel_size: 24 };
 const BUTTON_FONT: FontId = FontId::BoldPixels;
 
 pub struct StoryScene {
-    bg: SpriteInfo,
+    bg: Option<SpriteInfo>,
     fade: Option<TransitionScene>,
     text_box: Option<TextBox>,
     next_btn: Option<Button>,
@@ -138,8 +138,8 @@ impl StoryScene {
         };
         let catalog = asset_loader.get_catalog();
 
-        if let Some(background_id) = vn.background {
-            let src = self.bg.get_rect();
+        if let (Some(background_id), Some(sprite_info)) = (vn.background, self.bg.as_ref()) {
+            let src = sprite_info.get_rect();
             renderer.send_command(RenderCommand::DrawRect {
                 texture_id: background_id,
                 source: src,
@@ -237,7 +237,7 @@ impl Default for StoryScene {
     fn default() -> StoryScene {
         let default_speed = LineSpeed::Normal;
         StoryScene {
-            bg: sprite_info_planning_layout_bg(),
+            bg: None,
             fade: None,
             text_box: None,
             placement_text: Rect {
@@ -310,6 +310,7 @@ impl Scene for StoryScene {
             game_context.asset_loader.as_mut(),
         ) {
             let catalog = asset_loader.get_catalog();
+            self.bg = catalog.get_sprite(TEXTURE_PLANNING_LAYOUT_BG);
             if let (Some(blip), Some(ui_textures_id)) = (
                 catalog.get_sfx_id_for_name(SFX_BLIP),
                 catalog.get_texture_id_for_sprite(TEXTURE_UI),
