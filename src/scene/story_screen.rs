@@ -3,7 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, SFX_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
+    FontId, SFX_BLIP, SfxId, TEXTURE_UI, TextureId, sprite_info_highlight,
     sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
@@ -42,6 +42,7 @@ pub struct StoryScene {
 
 struct StorySceneIds {
     btn_sfx_id: SfxId,
+    ui_textures_id: TextureId,
 }
 
 impl StoryScene {
@@ -105,6 +106,9 @@ impl StoryScene {
         let Some(vn) = self.vn.as_ref() else {
             return;
         };
+        let Some(ids) = self.ids.as_ref() else {
+            return;
+        };
         if vn.focused.as_ref().is_none_or(|pp| *pp != at_position) {
             return;
         }
@@ -119,7 +123,7 @@ impl StoryScene {
         };
         let src = sprite_info_highlight().get_rect();
         renderer.send_command(RenderCommand::DrawRect {
-            texture_id: TEXTURE_ID_LEEKSHEET,
+            texture_id: ids.ui_textures_id,
             source: src,
             destination: dst,
         });
@@ -192,8 +196,12 @@ impl StoryScene {
             }
         }
     }
-    fn next_btn() -> Button {
-        Button::new(
+    fn next_btn(&self) -> Option<Button> {
+        let Some(ids) = self.ids.as_ref() else {
+            return None;
+        };
+        // when we need to grab the sprite info: catalog.get_sprite_in_state(TEXTURE_UI, "button")
+        let b = Button::new(
             "Next".to_owned(),
             Rect {
                 x: 14,
@@ -202,11 +210,16 @@ impl StoryScene {
                 height: 1,
             },
             BUTTON_FONT,
-        )
+            ids.ui_textures_id,
+        );
+        Some(b)
     }
-    fn speed_btn(speed: LineSpeed) -> Button {
-        Button::new(
-            speed.to_string(),
+    fn speed_btn(&self) -> Option<Button> {
+        let Some(ids) = self.ids.as_ref() else {
+            return None;
+        };
+        let b = Button::new(
+            self.text_speed.to_string(),
             Rect {
                 x: 14,
                 y: 6,
@@ -214,7 +227,9 @@ impl StoryScene {
                 height: 1,
             },
             BUTTON_FONT,
-        )
+            ids.ui_textures_id,
+        );
+        Some(b)
     }
 }
 
@@ -231,8 +246,8 @@ impl Default for StoryScene {
                 width: 12,
                 height: 3,
             },
-            next_btn: Some(StoryScene::next_btn()),
-            speed_btn: Some(StoryScene::speed_btn(default_speed)),
+            next_btn: None,
+            speed_btn: None,
             text_speed: default_speed,
             vn: None,
             current_choices: None,
@@ -290,20 +305,21 @@ impl Scene for StoryScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
-        if let Some(ref mut asset_loader) = game_context.asset_loader {
-            // TODO: this now breaks since its outside of the asset pipeline
-            // and the leeksheet id belongs to something loaded elsewhere.
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-        }
-
         if let (Some(audio), Some(asset_loader)) = (
             game_context.audio.as_mut(),
             game_context.asset_loader.as_mut(),
         ) {
             let catalog = asset_loader.get_catalog();
-            if let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) {
+            if let (Some(blip), Some(ui_textures_id)) = (
+                catalog.get_sfx_id_for_name(SFX_BLIP),
+                catalog.get_texture_id_for_sprite(TEXTURE_UI),
+            ) {
                 let _ = audio.load_sfx(blip);
-                let ids = StorySceneIds { btn_sfx_id: blip };
+                asset_loader.ensure_texture_spritesheet_loaded(ui_textures_id);
+                let ids = StorySceneIds {
+                    btn_sfx_id: blip,
+                    ui_textures_id,
+                };
                 self.ids = ids.into();
             }
         };
@@ -401,8 +417,11 @@ impl Scene for StoryScene {
                 let new_choices = choices
                     .into_iter()
                     .enumerate()
-                    .map(|(idx, choice)| {
+                    .filter_map(|(idx, choice)| {
                         let text = choice.text.clone();
+                        let Some(ids) = self.ids.as_ref() else {
+                            return None;
+                        };
                         let b = Button::new(
                             text,
                             Rect {
@@ -412,8 +431,9 @@ impl Scene for StoryScene {
                                 height: 1,
                             },
                             BUTTON_FONT,
+                            ids.ui_textures_id,
                         );
-                        (choice, b)
+                        Some((choice, b))
                     })
                     .collect();
                 self.current_choices = Some(new_choices);
@@ -449,10 +469,10 @@ impl Scene for StoryScene {
             vn.advance();
         } else {
             if self.next_btn.is_none() && self.text_box.is_some() {
-                self.next_btn = Some(StoryScene::next_btn());
+                self.next_btn = self.next_btn();
             }
             if self.speed_btn.is_none() && self.text_box.is_some() {
-                self.speed_btn = Some(StoryScene::speed_btn(self.text_speed));
+                self.speed_btn = self.speed_btn();
             }
         }
     }

@@ -3,8 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_TITLE_BG, TextureId,
-    sprite_info_title,
+    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId, sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -16,7 +15,7 @@ use crate::{ReadyState, advance_ready_state};
 
 pub struct TitleScene {
     bg: SpriteInfo,
-    quit_btn: Button,
+    quit_btn: Option<Button>,
     played_intro: ReadyState,
     fade: Option<TransitionScene>,
     ids: Option<TitleSceneIds>,
@@ -26,6 +25,7 @@ struct TitleSceneIds {
     btn_sfx_id: SfxId,
     meme_id: SfxId,
     bg_id: TextureId,
+    ui_id: TextureId,
 }
 
 impl TitleScene {
@@ -38,6 +38,19 @@ impl TitleScene {
             cell_gap: 0,
         }
     }
+    fn quit_btn(font_id: FontId, ui_texture_id: TextureId) -> Button {
+        Button::new(
+            "Start Game".to_string(),
+            Rect {
+                x: 32,
+                y: 18,
+                width: 10,
+                height: 2,
+            },
+            font_id,
+            ui_texture_id,
+        )
+    }
 }
 
 impl Default for TitleScene {
@@ -45,16 +58,7 @@ impl Default for TitleScene {
         TitleScene {
             bg: sprite_info_title(),
             //320, 150
-            quit_btn: Button::new(
-                "Test".to_string(),
-                Rect {
-                    x: 32,
-                    y: 18,
-                    width: 10,
-                    height: 2,
-                },
-                FontId::BoldPixelScaled { pixel_size: 24 },
-            ),
+            quit_btn: None,
             played_intro: ReadyState::Ready,
             fade: None,
             ids: None,
@@ -66,12 +70,15 @@ impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
-        if let (Some(audio), Some(ref mut asset_loader)) = (
+        if let (Some(audio), Some(ref mut asset_loader), Some(font_library)) = (
             game_context.audio.as_mut(),
             game_context.asset_loader.as_mut(),
+            game_context.font_library.as_mut(),
         ) {
-            let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut()).expect("failed to load title background");
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
+            let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut())
+                .expect("failed to load title background");
+            let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())
+                .expect("failed to load ui textures");
             let catalog = asset_loader.get_catalog();
             if let (Some(meme), Some(blip)) = (
                 catalog.get_sfx_id_for_name(SFX_MEME),
@@ -83,18 +90,17 @@ impl Scene for TitleScene {
                     meme_id: meme,
                     btn_sfx_id: blip,
                     bg_id,
+                    ui_id,
                 };
                 self.ids = ids.into();
+
+                let quit_btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
+                self.quit_btn = Some(Self::quit_btn(quit_btn_font_id, ui_id));
+
+                let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
+                let _ = font_library.ensure(quit_btn_font_id, asset_loader.as_mut());
             }
         };
-
-        if let (Some(font_library), Some(asset_loader)) = (
-            game_context.font_library.as_mut(),
-            game_context.asset_loader.as_mut(),
-        ) {
-            let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
-            let _ = font_library.ensure(self.quit_btn.font_id, asset_loader.as_mut());
-        }
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {
@@ -114,7 +120,21 @@ impl Scene for TitleScene {
         }
 
         let layout = TitleScene::layout(game_context);
-        self.quit_btn.update(ticks, game_context, &layout);
+        if let Some(btn) = self.quit_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked && game_context.next_scene.is_none() {
+                if let Some(audio) = game_context.audio.as_mut() {
+                    if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
+                        let _ = audio.play_sfx(id);
+                    }
+                }
+                // TODO restore shut down once we have another scene to swap to
+                // game_context.shutdown();
+                btn.clicked = false;
+                game_context.mouse_context.consume_left_click();
+                self.fade = Some(TransitionScene::new_fade_out());
+            }
+        }
 
         if let ReadyState::Ready = self.played_intro {
             self.played_intro = ReadyState::Cooldown {
@@ -129,19 +149,6 @@ impl Scene for TitleScene {
         }
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
-
-        if self.quit_btn.clicked && game_context.next_scene.is_none() {
-            if let Some(audio) = game_context.audio.as_mut() {
-                if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
-                    let _ = audio.play_sfx(id);
-                }
-            }
-            // TODO restore shut down once we have another scene to swap to
-            // game_context.shutdown();
-            self.quit_btn.clicked = false;
-            game_context.mouse_context.consume_left_click();
-            self.fade = Some(TransitionScene::new_fade_out());
-        }
     }
     fn draw(&mut self, game_context: &mut GameContext) {
         let layout = TitleScene::layout(game_context);
@@ -158,8 +165,9 @@ impl Scene for TitleScene {
             source: src,
             destination: Rect::new(0, 0, layout.area.width, layout.area.height),
         });
-
-        self.quit_btn.draw(game_context, &layout);
+        if let Some(btn) = self.quit_btn.as_ref() {
+            btn.draw(game_context, &layout);
+        }
         if let Some(fade) = self.fade.as_mut() {
             fade.draw(game_context);
         }
@@ -179,9 +187,12 @@ mod transition_scene_tests {
         let mut scene = TitleScene::default();
         scene.ids = Some(TitleSceneIds {
             bg_id: TextureId(0),
+            ui_id: TextureId(1),
             btn_sfx_id: SfxId(1),
             meme_id: SfxId(2),
         });
+
+        scene.quit_btn = Some(TitleScene::quit_btn(FontId::BoldPixels, TextureId(1)));
 
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(renderer));
@@ -189,7 +200,7 @@ mod transition_scene_tests {
         let layout = TitleScene::layout(&game_context);
 
         scene.init(&mut game_context);
-        click_button_with_left_mouse(&scene.quit_btn, &mut game_context, &layout);
+        click_button_with_left_mouse(scene.quit_btn.as_ref().unwrap(), &mut game_context, &layout);
         let game_ticks = 60;
         for _ in 0..game_ticks {
             scene.update(1, &mut game_context);

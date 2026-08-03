@@ -1,8 +1,6 @@
 use crate::Rect;
 use crate::SpriteInfo;
-use crate::constants::{
-    FontId, TEXTURE_ID_LEEKSHEET, sprite_info_highlight, sprite_info_topbar_bg,
-};
+use crate::constants::{FontId, TextureId, sprite_info_highlight, sprite_info_topbar_bg};
 use crate::font::FontAlign;
 use crate::font::FontMetrics;
 use crate::font::LoadedFont;
@@ -19,13 +17,14 @@ pub struct Button {
     pub(crate) bg: SpriteInfo,
     pub(crate) highlight: SpriteInfo,
     pub(crate) font_id: FontId,
+    pub(crate) texture_id: TextureId,
 }
 
 impl Button {
     /// Define buttons in terms of their parent layout's grid unit space.
     /// When update and draw are called the parent layout will convert the
     /// button unit space into screen coordinates for interaction purposes
-    pub(crate) fn new(text: String, rect: Rect, font_id: FontId) -> Self {
+    pub(crate) fn new(text: String, rect: Rect, font_id: FontId, texture_id: TextureId) -> Self {
         Self {
             text,
             rect,
@@ -34,6 +33,7 @@ impl Button {
             bg: sprite_info_topbar_bg(),
             highlight: sprite_info_highlight(),
             font_id,
+            texture_id,
         }
     }
 
@@ -78,7 +78,7 @@ impl Button {
         // TODO: we probably want to move the background and highlight stuff to some sort of
         // composable "chrome" to apply to the button without having to hardcode it like this.
         renderer.send_command(RenderCommand::DrawRect {
-            texture_id: TEXTURE_ID_LEEKSHEET,
+            texture_id: self.texture_id,
             source: src,
             destination: anchor,
         });
@@ -86,7 +86,7 @@ impl Button {
         if self.hovered {
             let src = self.highlight.get_rect();
             renderer.send_command(RenderCommand::DrawRect {
-                texture_id: TEXTURE_ID_LEEKSHEET,
+                texture_id: self.texture_id,
                 source: src,
                 destination: anchor,
             });

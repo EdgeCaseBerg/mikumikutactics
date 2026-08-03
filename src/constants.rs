@@ -4,7 +4,11 @@ use std::path::PathBuf;
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct TextureId(pub usize);
 
-pub const TEXTURE_ID_LEEKSHEET: TextureId = TextureId(4);
+// These match manifest file texture names, stored in one place
+// so that we don't have to deal with magic string sprawl. We
+// only need these for non-dynamically loaded scenes where a
+// scene script can't handle things for us.
+pub const TEXTURE_UI: &str = "ui";
 pub const TEXTURE_TITLE_BG: &str = "titlescreen";
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
