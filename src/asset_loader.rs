@@ -53,19 +53,19 @@ impl AssetCatalog {
             .music
             .iter()
             .enumerate()
-            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .map(|(idx, music)| (music.name.to_owned(), idx))
             .collect();
         let sound_to_sfx_idx = manifest
             .sounds
             .iter()
             .enumerate()
-            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .map(|(idx, sound)| (sound.name.to_owned(), idx))
             .collect();
         let scene_to_scene_idx = manifest
             .scenes
             .iter()
             .enumerate()
-            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .map(|(idx, scene)| (scene.name.to_owned(), idx))
             .collect();
 
         Ok(AssetCatalog {
