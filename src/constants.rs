@@ -38,6 +38,10 @@ pub struct SfxId(pub usize);
 
 pub const SFX_ID_BLIP: SfxId = SfxId(0);
 
+// These match the manifest file's texture names
+pub const SFX_MEME: &str = "meme";
+pub const SFX_BLIP: &str = "blipSelect";
+
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
 pub const MUSIC_ID_PACHEBAL: MusicId = MusicId(0);

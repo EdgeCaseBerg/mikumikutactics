@@ -2,7 +2,7 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::constants::{
-    FontId, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
+    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -71,8 +71,8 @@ impl Scene for TitleScene {
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
             let catalog = asset_loader.get_catalog();
             if let (Some(meme), Some(blip)) = (
-                catalog.get_sfx_id_for_name("meme"),
-                catalog.get_sfx_id_for_name("blipSelect"),
+                catalog.get_sfx_id_for_name(SFX_MEME),
+                catalog.get_sfx_id_for_name(SFX_BLIP),
             ) {
                 let _ = audio.load_sfx(meme);
                 let _ = audio.load_sfx(blip);
