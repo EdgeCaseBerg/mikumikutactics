@@ -44,6 +44,7 @@ use std::path::PathBuf;
 fn main() {
     // Rerun build script if the spritesheets change
     println!("cargo::rerun-if-changed=spritesheets/");
+    println!("cargo::rerun-if-changed=assets/");
 
     let assets_dir = Path::new(".").join("assets");
     let spritesheets = spritesheets(&assets_dir);
