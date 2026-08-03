@@ -282,7 +282,7 @@ fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
 }
 
 fn test_scene_ops(catalog: &AssetCatalog) -> Vec<NovelOps> {
-    let vn = parse_scene(&include_str!("../../assets/scenes/noaudio.scene"), catalog);
+    let vn = parse_scene(&include_str!("../../assets/scenes/test.scene"), catalog);
     vn.unwrap().program
 }
 
