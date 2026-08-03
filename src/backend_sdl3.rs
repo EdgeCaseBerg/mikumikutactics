@@ -174,10 +174,9 @@ impl Audio for SDL3Sounds {
         }
 
         let ctx = self.context.borrow();
-        let Some(relative_path) = ctx.catalog.get_sfx_path(sound_id) else {
+        let Some(path) = ctx.catalog.get_sfx_path(sound_id) else {
             return Err(format!("cannot load sfx {}, not found in catalog", sound_id.0).into());
         };
-        let path = relative_path;
         let spec = AudioSpecWAV::load_wav(path)?;
         let data = SoundData {
             duration: spec_duration(&spec),
@@ -203,8 +202,10 @@ impl Audio for SDL3Sounds {
         if self.music_by_id.contains_key(&id) {
             return Ok(());
         }
-        let path = self.base_path.join(music_id_to_relative_path(id));
         let ctx = &mut *self.context.borrow_mut();
+        let Some(path) = ctx.catalog.get_music_path(id) else {
+            return Err(format!("cannot load sfx {}, not found in catalog", id.0).into());
+        };
         let audio = ctx.mixer.load_audio(path, true)?;
         self.music_by_id.insert(id, audio);
         Ok(())

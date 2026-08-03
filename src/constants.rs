@@ -47,19 +47,6 @@ pub const MUSIC_ID_MOON: MusicId = MusicId(1000);
 pub const MUSIC_ID_QUIT: MusicId = MusicId(1001);
 pub const MUSIC_ID_TETO: MusicId = MusicId(1002);
 
-// Enable loading arbitrary songs via ids above 1 (wav only)
-pub fn music_id_to_relative_path(id: MusicId) -> PathBuf {
-    let base = PathBuf::new().join("audio");
-    let wavs = PathBuf::new().join("audio").join("cc-vocaloid");
-    match id {
-        MUSIC_ID_PACHEBAL => base.join("Miku Pachebal.wav"),
-        MUSIC_ID_MOON => base.join("miku fly to moon.wav"),
-        MUSIC_ID_QUIT => base.join("selectedQuit.wav"),
-        MUSIC_ID_TETO => base.join("tetowins.wav"),
-        _ => wavs.join(format!("{}.wav", id.0)),
-    }
-}
-
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub enum FontId {
     BoldPixels, // 16px monospace.

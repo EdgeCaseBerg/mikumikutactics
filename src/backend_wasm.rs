@@ -143,8 +143,11 @@ impl Audio for WasmSounds {
             .dyn_into::<HtmlAudioElement>()
             .expect("could not dyn_into HtmlAudioElement");
 
-        // TODO: use asset catalog to load?
-        let path = music_id_to_relative_path(id);
+        let context = &mut *self.context.borrow_mut();
+        let path = context
+            .catalog
+            .get_music_path(id)
+            .expect("could not load sfx path from catalog"); // TODO: consider not expecting here.
         let path = self.base_path.join(path);
         audio.set_src(&pathbuf_to_url(&path));
 
