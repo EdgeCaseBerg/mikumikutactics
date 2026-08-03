@@ -1,6 +1,6 @@
 use crate::Rect;
 use crate::asset_loader::AssetLoader;
-use crate::constants::{FontId, TEXTURE_ID_FONTSHEET, TextureId};
+use crate::constants::{FontId, TextureId};
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
@@ -79,13 +79,16 @@ impl Default for BitmapFontLibrary {
     }
 }
 
+const FONT_NAME: &str = "BoldPixels";
 impl FontLibrary for BitmapFontLibrary {
     fn ensure(&mut self, id: FontId, asset_loader: &mut dyn AssetLoader) -> FontResult<()> {
-        let (texture_id, scale) = match id {
-            FontId::BoldPixels => (TEXTURE_ID_FONTSHEET, 1.0),
-            FontId::BoldPixelScaled { pixel_size } => {
-                (TEXTURE_ID_FONTSHEET, pixel_size as f32 / 16.0)
-            }
+        let scale = match id {
+            FontId::BoldPixels => 1.0,
+            FontId::BoldPixelScaled { pixel_size } => pixel_size as f32 / 16.0,
+        };
+        let catalog = asset_loader.get_catalog();
+        let Some(texture_id) = catalog.get_texture_id_for_sprite(FONT_NAME) else {
+            return Err("could not find texture id for bitmap font texture".into());
         };
         asset_loader.ensure_texture_spritesheet_loaded(texture_id);
         // NOT unsafe, we literally make the bytes here.
