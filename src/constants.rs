@@ -1,5 +1,4 @@
 use crate::SpriteInfo;
-use std::path::PathBuf;
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct TextureId(pub usize);
@@ -8,8 +7,14 @@ pub struct TextureId(pub usize);
 // so that we don't have to deal with magic string sprawl. We
 // only need these for non-dynamically loaded scenes where a
 // scene script can't handle things for us.
+// Though perhaps we should consider re-using the scenes as a way to state the textures we need.
+// maybe a bit of a hack, but having a txt file with BACKGROUND ui\nBACKGROUND titlescreen listed in it
+// and just not using it as a vn machine program would be a little bit simpler in the world and we could
+// just bake them into the binary or something via include_str in the init + ensure_ops works and a test that
+// validates that it passes so we don't hit runtime problems from tweaks.
 pub const TEXTURE_UI: &str = "ui";
 pub const TEXTURE_TITLE_BG: &str = "titlescreen";
+pub const TEXTURE_PLANNING_LAYOUT_BG: &str = "planning-layout";
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct SfxId(pub usize);
