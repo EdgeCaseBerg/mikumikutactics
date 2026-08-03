@@ -1,8 +1,10 @@
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
+use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_TITLE_BG, sprite_info_title,
+    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_ID_LEEKSHEET, TEXTURE_TITLE_BG, TextureId,
+    sprite_info_title,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -23,6 +25,7 @@ pub struct TitleScene {
 struct TitleSceneIds {
     btn_sfx_id: SfxId,
     meme_id: SfxId,
+    bg_id: TextureId,
 }
 
 impl TitleScene {
@@ -63,11 +66,11 @@ impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) {
         self.fade = TransitionScene::new_fade_in().into();
 
-        if let (Some(audio), Some(asset_loader)) = (
+        if let (Some(audio), Some(ref mut asset_loader)) = (
             game_context.audio.as_mut(),
             game_context.asset_loader.as_mut(),
         ) {
-            asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_TITLE_BG);
+            let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut()).expect("failed to load title background");
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
             let catalog = asset_loader.get_catalog();
             if let (Some(meme), Some(blip)) = (
@@ -79,6 +82,7 @@ impl Scene for TitleScene {
                 let ids = TitleSceneIds {
                     meme_id: meme,
                     btn_sfx_id: blip,
+                    bg_id,
                 };
                 self.ids = ids.into();
             }
@@ -144,10 +148,13 @@ impl Scene for TitleScene {
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
+        let Some(ids) = self.ids.as_ref() else {
+            return;
+        };
 
         let src = self.bg.get_rect();
         renderer.send_command(RenderCommand::DrawRect {
-            texture_id: TEXTURE_ID_TITLE_BG,
+            texture_id: ids.bg_id,
             source: src,
             destination: Rect::new(0, 0, layout.area.width, layout.area.height),
         });
@@ -164,11 +171,17 @@ mod transition_scene_tests {
     use super::*;
     use crate::backend_dummy::FakeRenderer;
     use crate::backend_dummy::click_button_with_left_mouse;
+    use crate::constants::{SfxId, TextureId};
 
     #[test]
     fn clicking_quit_triggers_fade_out_then_next_scene_set() {
         let (renderer, actions) = FakeRenderer::new();
         let mut scene = TitleScene::default();
+        scene.ids = Some(TitleSceneIds {
+            bg_id: TextureId(0),
+            btn_sfx_id: SfxId(1),
+            meme_id: SfxId(2),
+        });
 
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(renderer));
