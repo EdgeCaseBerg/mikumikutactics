@@ -40,8 +40,6 @@ pub struct StoryScene {
     ids: Option<StorySceneIds>,
 }
 
-// allow "dead" code because really this is loading the sfx for the buttons to use
-#[allow(dead_code)]
 struct StorySceneIds {
     btn_sfx_id: SfxId,
 }
@@ -347,6 +345,11 @@ impl Scene for StoryScene {
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
+                if let Some(audio) = game_context.audio.as_mut() {
+                    if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
+                        let _ = audio.play_sfx(id);
+                    }
+                }
                 if let Some(b) = self.text_box.as_mut() {
                     if b.text.is_visible() {
                         b.next_page();
