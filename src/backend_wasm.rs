@@ -88,7 +88,7 @@ impl Audio for WasmSounds {
         let path = context
             .catalog
             .get_sfx_path(sound_id)
-            .expect("could not load sfx path from catalog");
+            .expect("could not load sfx path from catalog"); // TODO: consider not expecting here.
         let path = self.base_path.join(path);
         audio.set_src(&pathbuf_to_url(&path));
 

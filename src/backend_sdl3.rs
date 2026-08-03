@@ -173,7 +173,11 @@ impl Audio for SDL3Sounds {
             return Ok(());
         }
 
-        let path = self.base_path.join(sfx_id_to_relative_path(sound_id));
+        let ctx = self.context.borrow();
+        let Some(relative_path) = ctx.catalog.get_sfx_path(sound_id) else {
+            return Err(format!("cannot load sfx {}, not found in catalog", sound_id.0).into());
+        };
+        let path = relative_path;
         let spec = AudioSpecWAV::load_wav(path)?;
         let data = SoundData {
             duration: spec_duration(&spec),
