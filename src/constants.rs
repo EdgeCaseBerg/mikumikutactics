@@ -38,12 +38,6 @@ pub struct SfxId(pub usize);
 
 pub const SFX_ID_BLIP: SfxId = SfxId(0);
 pub const SFX_ID_MEME: SfxId = SfxId(1);
-pub const SFX_ID_DESELECT: SfxId = SfxId(2);
-pub const SFX_ID_ENEMY_HIT: SfxId = SfxId(3);
-pub const SFX_ID_BASE_HIT: SfxId = SfxId(4);
-pub const SFX_ID_TURRET_HEAVY: SfxId = SfxId(5);
-pub const SFX_ID_TURRET_LIGHT: SfxId = SfxId(6);
-pub const SFX_ID_TURRET_MEDIUM: SfxId = SfxId(7);
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
