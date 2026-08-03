@@ -3,7 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId, sprite_info_title,
+    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -14,7 +14,7 @@ use crate::scene::transitions::{Transition, TransitionScene};
 use crate::{ReadyState, advance_ready_state};
 
 pub struct TitleScene {
-    bg: SpriteInfo,
+    bg: Option<SpriteInfo>,
     quit_btn: Option<Button>,
     played_intro: ReadyState,
     fade: Option<TransitionScene>,
@@ -56,7 +56,7 @@ impl TitleScene {
 impl Default for TitleScene {
     fn default() -> TitleScene {
         TitleScene {
-            bg: sprite_info_title(),
+            bg: None,
             //320, 150
             quit_btn: None,
             played_intro: ReadyState::Ready,
@@ -79,7 +79,10 @@ impl Scene for TitleScene {
                 .expect("failed to load title background");
             let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())
                 .expect("failed to load ui textures");
+
             let catalog = asset_loader.get_catalog();
+            self.bg = catalog.get_sprite(TEXTURE_TITLE_BG);
+
             if let (Some(meme), Some(blip)) = (
                 catalog.get_sfx_id_for_name(SFX_MEME),
                 catalog.get_sfx_id_for_name(SFX_BLIP),
@@ -159,12 +162,13 @@ impl Scene for TitleScene {
             return;
         };
 
-        let src = self.bg.get_rect();
-        renderer.send_command(RenderCommand::DrawRect {
-            texture_id: ids.bg_id,
-            source: src,
-            destination: Rect::new(0, 0, layout.area.width, layout.area.height),
-        });
+        if let Some(src) = self.bg.as_ref().map(|s| s.get_rect()) {
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: ids.bg_id,
+                source: src,
+                destination: Rect::new(0, 0, layout.area.width, layout.area.height),
+            });
+        }
         if let Some(btn) = self.quit_btn.as_ref() {
             btn.draw(game_context, &layout);
         }
