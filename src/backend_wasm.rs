@@ -277,7 +277,7 @@ impl AssetLoader for AssetLoaderWasm {
         let path = context
             .catalog
             .get_asset_path(id)
-            .unwrap_or(id_to_relative_path(id));
+            .expect(&format!("could not get asset path for id {:?}", id.0));
         let path = self.base_path.join(path);
         img.set_src(&pathbuf_to_url(&path));
         let result = context.storage.append_child(&img);
