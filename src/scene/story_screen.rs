@@ -3,7 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, MUSIC_ID_PACHEBAL, SFX_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
+    FontId, SFX_BLIP, SfxId, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
     sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
@@ -294,10 +294,6 @@ impl Scene for StoryScene {
             // TODO: this now breaks since its outside of the asset pipeline
             // and the leeksheet id belongs to something loaded elsewhere.
             asset_loader.ensure_texture_spritesheet_loaded(TEXTURE_ID_LEEKSHEET);
-        }
-
-        if let Some(ref mut audio) = game_context.audio {
-            let _ = audio.load_music(MUSIC_ID_PACHEBAL);
         }
 
         if let (Some(audio), Some(asset_loader)) = (

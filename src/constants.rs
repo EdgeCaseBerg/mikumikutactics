@@ -42,7 +42,9 @@ pub const SFX_BLIP: &str = "blipSelect";
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
-pub const MUSIC_ID_PACHEBAL: MusicId = MusicId(0);
+
+// This must match a manifest name in sounds array
+pub const MUSIC_PACHEBAL: &str = "pachebal";
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub enum FontId {
