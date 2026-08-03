@@ -29,10 +29,11 @@ pub struct WasmSounds {
     music_by_id: HashMap<MusicId, HtmlAudioElement>,
     base_path: PathBuf,
     storage: HtmlDivElement,
+    context: Rc<RefCell<WasmContext>>,
 }
 
 impl WasmSounds {
-    fn new(game_options: &GameOptions) -> Self {
+    fn new(game_options: &GameOptions, wasm_context: Rc<RefCell<WasmContext>>) -> Self {
         let path = game_options.assets_path.clone();
         let storage = document()
             .create_element("div")
@@ -52,6 +53,7 @@ impl WasmSounds {
             sound_by_id: HashMap::new(),
             music_by_id: HashMap::new(),
             storage,
+            context: wasm_context,
         }
     }
 }
@@ -82,7 +84,11 @@ impl Audio for WasmSounds {
             .dyn_into::<HtmlAudioElement>()
             .expect("could not dyn_into HtmlAudioElement");
 
-        let path = sfx_id_to_relative_path(sound_id);
+        let context = &mut *self.context.borrow_mut();
+        let path = context
+            .catalog
+            .get_sfx_path(sound_id)
+            .expect("could not load sfx path from catalog");
         let path = self.base_path.join(path);
         audio.set_src(&pathbuf_to_url(&path));
 
@@ -209,6 +215,7 @@ struct WasmContext {
     canvas: Rc<HtmlCanvasElement>,
     document: Rc<Document>,
     texture_id_to_image: HashMap<TextureId, HtmlImageElement>,
+    catalog: Rc<AssetCatalog>,
 }
 
 impl WasmContext {
@@ -226,20 +233,14 @@ impl WasmContext {
 struct AssetLoaderWasm {
     base_path: PathBuf,
     wasm_context: Rc<RefCell<WasmContext>>,
-    catalog: Rc<AssetCatalog>,
 }
 
 impl AssetLoaderWasm {
     fn new(game_options: &GameOptions, wasm_context: Rc<RefCell<WasmContext>>) -> Self {
         let path = game_options.assets_path.clone();
-        let manifest_str = include_str!("../assets/manifest");
-        let catalog = AssetCatalog::from_manifest_str(&manifest_str)
-            .expect("cannot create asset loader, manifest was not included in application");
-
         Self {
             base_path: path,
             wasm_context: wasm_context.clone(),
-            catalog: catalog.into(),
         }
     }
 }
@@ -272,7 +273,7 @@ impl AssetLoader for AssetLoaderWasm {
             .dyn_into::<HtmlImageElement>()
             .expect("could not dyn_into HtmlImageElement");
         img.set_name(&format!("texture-{}", id.0));
-        let path = self
+        let path = context
             .catalog
             .get_asset_path(id)
             .unwrap_or(id_to_relative_path(id));
@@ -290,7 +291,8 @@ impl AssetLoader for AssetLoaderWasm {
     }
 
     fn get_catalog(&self) -> Rc<AssetCatalog> {
-        self.catalog.clone()
+        let context = &*self.wasm_context.borrow();
+        context.catalog.clone()
     }
 }
 
@@ -467,12 +469,16 @@ impl Backend for BackendWasm {
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .expect("could not dyn_into element into CanvasRenderingContext2d");
 
+        let manifest_str = include_str!("../assets/manifest");
+        let catalog = AssetCatalog::from_manifest_str(&manifest_str)
+            .expect("cannot create asset loader, manifest was not included in application");
         let wasm_context = Rc::new(RefCell::new(WasmContext {
             context: context.into(),
             canvas: self.canvas.clone(),
             document: document.into(),
             storage: div.into(),
             texture_id_to_image: HashMap::new(),
+            catalog: catalog.into(),
         }));
         let e = EventLoopWasm {
             canvas: self.canvas.clone(),
@@ -648,7 +654,7 @@ impl BackendEventLoop for EventLoopWasm {
     }
 
     fn create_audio(&self, game_options: &GameOptions) -> Box<dyn Audio> {
-        let s = WasmSounds::new(game_options);
+        let s = WasmSounds::new(game_options, self.wasm_context.clone());
         Box::new(s)
     }
 
