@@ -1,6 +1,6 @@
 use crate::SpriteInfo;
 use crate::constants::{MusicId, SfxId, TextureId};
-use crate::manifest::{FileAsset, Manifest, SpriteFrame, Spritesheet};
+use crate::manifest::{FileAsset, Manifest, SpriteFrame};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
@@ -108,9 +108,19 @@ impl AssetCatalog {
         let music = Self::file_asset_list_to_id(&self.manifest.music, id.0)?;
         Some(PathBuf::from(&music.asset_path))
     }
+    pub fn get_music_id_for_name(&self, name: &str) -> Option<MusicId> {
+        let idx = self.character_to_sprite_id.get(name)?;
+        let sheet = self.manifest.music.get(*idx)?;
+        Some(MusicId(sheet.id))
+    }
     pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
         let sound = Self::file_asset_list_to_id(&self.manifest.sounds, id.0)?;
         Some(PathBuf::from(&sound.asset_path))
+    }
+    pub fn get_sfx_id_for_name(&self, name: &str) -> Option<SfxId> {
+        let idx = self.character_to_sprite_id.get(name)?;
+        let sheet = self.manifest.sounds.get(*idx)?;
+        Some(SfxId(sheet.id))
     }
     // TODO: think about if we want SceneId at all and if that would make any sense.
     pub fn get_scene_path(&self, name: &str) -> Option<PathBuf> {
@@ -132,12 +142,10 @@ impl SceneLoadingContext for AssetCatalog {
         self.get_texture_id_for_sprite(name)
     }
     fn name_to_sfx(&self, name: &str) -> Option<SfxId> {
-        // TODO: implement once manifest loads sfx
-        None
+        self.get_sfx_id_for_name(name)
     }
     fn name_to_music(&self, name: &str) -> Option<MusicId> {
-        // TODO: implement once manifest loads music
-        None
+        self.get_music_id_for_name(name)
     }
     // TODO: add name_to_scene once we add loading scenes into the DSL
 }
