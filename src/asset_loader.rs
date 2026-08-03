@@ -109,7 +109,7 @@ impl AssetCatalog {
         Some(PathBuf::from(&music.asset_path))
     }
     pub fn get_music_id_for_name(&self, name: &str) -> Option<MusicId> {
-        let idx = self.character_to_sprite_id.get(name)?;
+        let idx = self.music_to_music_idx.get(name)?;
         let sheet = self.manifest.music.get(*idx)?;
         Some(MusicId(sheet.id))
     }
@@ -118,7 +118,7 @@ impl AssetCatalog {
         Some(PathBuf::from(&sound.asset_path))
     }
     pub fn get_sfx_id_for_name(&self, name: &str) -> Option<SfxId> {
-        let idx = self.character_to_sprite_id.get(name)?;
+        let idx = self.sound_to_sfx_idx.get(name)?;
         let sheet = self.manifest.sounds.get(*idx)?;
         Some(SfxId(sheet.id))
     }
