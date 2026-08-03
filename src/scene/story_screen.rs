@@ -3,8 +3,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, TEXTURE_ID_PORTRAIT,
-    TEXTURE_ID_STORY_BG, TEXTURE_ID_TITLE_BG, sprite_info_highlight,
+    FontId, MUSIC_ID_PACHEBAL, SFX_ID_BLIP, TEXTURE_ID_LEEKSHEET, sprite_info_highlight,
     sprite_info_planning_layout_bg,
 };
 use crate::font::LoadedFont;
@@ -16,7 +15,7 @@ use crate::scene::story::text::LineSpeed;
 use crate::scene::story::text::TextBox;
 use crate::scene::story::text::text_box_bounds_on_grid;
 use crate::scene::story::visual_novel::{
-    Character, CharacterState, Choice, NovelOps, PortraitPosition, VisualNovelMachine, parse_scene,
+    Character, Choice, NovelOps, PortraitPosition, VisualNovelMachine, parse_scene,
 };
 use crate::scene::transitions::{Transition, TransitionScene};
 

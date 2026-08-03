@@ -45,21 +45,6 @@ pub const SFX_ID_TURRET_HEAVY: SfxId = SfxId(5);
 pub const SFX_ID_TURRET_LIGHT: SfxId = SfxId(6);
 pub const SFX_ID_TURRET_MEDIUM: SfxId = SfxId(7);
 
-pub fn sfx_id_to_relative_path(id: SfxId) -> PathBuf {
-    let base = PathBuf::new().join("audio");
-    match id {
-        SFX_ID_BLIP => base.join("blipSelect.wav"),
-        SFX_ID_DESELECT => base.join("blipDeSelect.wav"),
-        SFX_ID_MEME => base.join("Hatsune Miku - SEGA.wav"),
-        SFX_ID_ENEMY_HIT => base.join("hitHurt.wav"),
-        SFX_ID_BASE_HIT => base.join("hitHurt2.wav"),
-        SFX_ID_TURRET_HEAVY => base.join("explosion.wav"),
-        SFX_ID_TURRET_LIGHT => base.join("laserShoot.wav"),
-        SFX_ID_TURRET_MEDIUM => base.join("laserShoot2.wav"),
-        _ => PathBuf::new(), // could panic or could maybe make a default sound guy
-    }
-}
-
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct MusicId(pub usize);
 pub const MUSIC_ID_PACHEBAL: MusicId = MusicId(0);
