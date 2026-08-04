@@ -21,6 +21,14 @@ pub struct Button {
     pub(crate) texture_id: TextureId,
 }
 
+// TODO idea:
+//
+// what if Button { text, rect, hovered, clicked } -> as_drawable(game_content) -> DrawableButton { b: Button, bg, highlight, font, texture }
+//
+// I suppose font could still be set today since they're somewhat special as far as Ids go, but texture could be loaded durign conversion.
+// or I suppose rather than as_drawable, something like .as_large() .as_small() could set different fonts or textures if we want different
+// style buttons and all that
+
 impl Button {
     /// Define buttons in terms of their parent layout's grid unit space.
     /// When update and draw are called the parent layout will convert the
