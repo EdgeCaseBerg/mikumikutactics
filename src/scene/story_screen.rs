@@ -200,9 +200,7 @@ impl StoryScene {
         }
     }
     fn next_btn(&self) -> Option<Button> {
-        let Some(ids) = self.ids.as_ref() else {
-            return None;
-        };
+        let ids = self.ids.as_ref()?;
         // when we need to grab the sprite info: catalog.get_sprite_in_state(TEXTURE_UI, "button")
         let b = Button::new(
             "Next".to_owned(),
@@ -218,9 +216,7 @@ impl StoryScene {
         Some(b)
     }
     fn speed_btn(&self) -> Option<Button> {
-        let Some(ids) = self.ids.as_ref() else {
-            return None;
-        };
+        let ids = self.ids.as_ref()?;
         let b = Button::new(
             self.text_speed.to_string(),
             Rect {
@@ -425,9 +421,7 @@ impl Scene for StoryScene {
                     .enumerate()
                     .filter_map(|(idx, choice)| {
                         let text = choice.text.clone();
-                        let Some(ids) = self.ids.as_ref() else {
-                            return None;
-                        };
+                        let ids = self.ids.as_ref()?;
                         let mut b = Button::new(
                             text,
                             Rect {
