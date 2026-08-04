@@ -423,7 +423,7 @@ impl Scene for StoryScene {
                         let Some(ids) = self.ids.as_ref() else {
                             return None;
                         };
-                        let b = Button::new(
+                        let mut b = Button::new(
                             text,
                             Rect {
                                 x: 0,
@@ -434,6 +434,7 @@ impl Scene for StoryScene {
                             BUTTON_FONT,
                             ids.ui_textures_id,
                         );
+                        let _ = b.init(game_context);
                         Some((choice, b))
                     })
                     .collect();
@@ -471,9 +472,11 @@ impl Scene for StoryScene {
         } else {
             if self.next_btn.is_none() && self.text_box.is_some() {
                 self.next_btn = self.next_btn();
+                let _ = self.next_btn.as_mut().map(|b| b.init(game_context));
             }
             if self.speed_btn.is_none() && self.text_box.is_some() {
                 self.speed_btn = self.speed_btn();
+                let _ = self.speed_btn.as_mut().map(|b| b.init(game_context));
             }
         }
     }

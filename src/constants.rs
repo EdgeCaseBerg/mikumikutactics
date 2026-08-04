@@ -51,16 +51,3 @@ pub const fn sprite_info_highlight() -> SpriteInfo {
         delta: 0,
     }
 }
-
-pub const fn sprite_info_topbar_bg() -> SpriteInfo {
-    SpriteInfo {
-        start_x: 32 * 17,
-        start_y: 0,
-        width: 32,
-        height: 32,
-        frames: 1,
-        current_frame: 0,
-        framerate_per_second: 60,
-        delta: 0,
-    }
-}

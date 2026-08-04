@@ -1,6 +1,9 @@
+use crate::GameResult;
 use crate::Rect;
 use crate::SpriteInfo;
-use crate::constants::{FontId, TextureId, sprite_info_highlight, sprite_info_topbar_bg};
+use crate::constants::{
+    FontId, TEXTURE_UI, TEXTURE_UI_BTN_TAG, TEXTURE_UI_FOCUS_TAG, TextureId, sprite_info_highlight,
+};
 use crate::font::FontAlign;
 use crate::font::FontMetrics;
 use crate::font::LoadedFont;
@@ -14,8 +17,8 @@ pub struct Button {
     pub(crate) rect: Rect,
     pub(crate) hovered: bool,
     pub(crate) clicked: bool,
-    pub(crate) bg: SpriteInfo,
-    pub(crate) highlight: SpriteInfo,
+    pub(crate) bg: Option<SpriteInfo>,
+    pub(crate) highlight: Option<SpriteInfo>,
     pub(crate) font_id: FontId,
     pub(crate) texture_id: TextureId,
 }
@@ -30,11 +33,31 @@ impl Button {
             rect,
             hovered: false,
             clicked: false,
-            bg: sprite_info_topbar_bg(),
-            highlight: sprite_info_highlight(),
+            bg: None,
+            highlight: None,
             font_id,
             texture_id,
         }
+    }
+
+    pub(crate) fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
+        let Some(asset_loader) = game_context.asset_loader.as_mut() else {
+            return Err("cannot init button if asset_loader is not present in game_context".into());
+        };
+        let catalog = asset_loader.get_catalog();
+        let Some(bg) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_BTN_TAG) else {
+            let msg =
+                "cannot init button if catalog is missing button tag in ui texture sprite info";
+            return Err(msg.into());
+        };
+        let Some(highlight) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG) else {
+            let msg =
+                "cannot init button if catalog is missing focus tag in ui texture sprite info";
+            return Err(msg.into());
+        };
+        self.bg = Some(bg);
+        self.highlight = Some(highlight);
+        Ok(())
     }
 
     pub(crate) fn relative_layout(&self, parent_layout: &GridLayout) -> GridLayout {
@@ -61,7 +84,12 @@ impl Button {
         };
 
         self.hovered = true;
-        self.highlight.advance(ticks);
+        if let Some(sprite_info) = self.highlight.as_mut() {
+            sprite_info.advance(ticks);
+        }
+        if let Some(sprite_info) = self.bg.as_mut() {
+            sprite_info.advance(ticks);
+        }
 
         if game_context.mouse_context.left_clicked {
             self.clicked = true;
@@ -73,23 +101,25 @@ impl Button {
             return;
         };
         let layout = self.relative_layout(parent_layout);
-        let src = self.bg.get_rect();
         let anchor = layout.cell_rect(0, 0);
-        // TODO: we probably want to move the background and highlight stuff to some sort of
-        // composable "chrome" to apply to the button without having to hardcode it like this.
-        renderer.send_command(RenderCommand::DrawRect {
-            texture_id: self.texture_id,
-            source: src,
-            destination: anchor,
-        });
-
-        if self.hovered {
-            let src = self.highlight.get_rect();
+        if let Some(bg) = self.bg.as_ref() {
+            let src = bg.get_rect();
             renderer.send_command(RenderCommand::DrawRect {
                 texture_id: self.texture_id,
                 source: src,
                 destination: anchor,
             });
+        }
+
+        if self.hovered {
+            if let Some(highlight) = self.highlight.as_ref() {
+                let src = highlight.get_rect();
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: self.texture_id,
+                    source: src,
+                    destination: anchor,
+                });
+            }
         }
 
         if let Some(font_library) = game_context.font_library.as_mut() {

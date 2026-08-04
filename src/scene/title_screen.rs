@@ -103,6 +103,9 @@ impl Scene for TitleScene {
                 let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
                 let _ = font_library.ensure(quit_btn_font_id, asset_loader.as_mut());
             }
+            if let Some(btn) = self.quit_btn.as_mut() {
+                let _ = btn.init(game_context);
+            }
         };
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
