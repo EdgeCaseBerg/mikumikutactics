@@ -13,6 +13,8 @@ pub struct TextureId(pub usize);
 // just bake them into the binary or something via include_str in the init + ensure_ops works and a test that
 // validates that it passes so we don't hit runtime problems from tweaks.
 pub const TEXTURE_UI: &str = "ui";
+pub const TEXTURE_UI_BTN_TAG: &str = "button";
+pub const TEXTURE_UI_FOCUS_TAG: &str = "focus";
 pub const TEXTURE_TITLE_BG: &str = "titlescreen";
 pub const TEXTURE_PLANNING_LAYOUT_BG: &str = "planning-layout";
 
