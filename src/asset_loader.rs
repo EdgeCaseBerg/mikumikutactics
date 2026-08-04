@@ -101,7 +101,7 @@ impl AssetCatalog {
             // if no state found, fallback to idle (1st sprite of name by convention)
             return self.get_sprite(name);
         };
-        let num_frames = tag.from - tag.to;
+        let num_frames = tag.to - tag.from;
         Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
