@@ -1,5 +1,3 @@
-use crate::SpriteInfo;
-
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct TextureId(pub usize);
 
