@@ -3,8 +3,8 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{
-    FontId, SFX_BLIP, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI, TextureId,
-    sprite_info_highlight,
+    FontId, SFX_BLIP, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI, TEXTURE_UI_FOCUS_TAG,
+    TextureId,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -24,6 +24,7 @@ const BUTTON_FONT: FontId = FontId::BoldPixels;
 
 pub struct StoryScene {
     bg: Option<SpriteInfo>,
+    highlight: Option<SpriteInfo>,
     fade: Option<TransitionScene>,
     text_box: Option<TextBox>,
     next_btn: Option<Button>,
@@ -121,12 +122,14 @@ impl StoryScene {
                 .placement_right_portrait
                 .relative_rect_to_layout(layout),
         };
-        let src = sprite_info_highlight().get_rect();
-        renderer.send_command(RenderCommand::DrawRect {
-            texture_id: ids.ui_textures_id,
-            source: src,
-            destination: dst,
-        });
+        if let Some(sprite_info) = self.highlight.as_ref() {
+            let src = sprite_info.get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: ids.ui_textures_id,
+                source: src,
+                destination: dst,
+            });
+        }
     }
     fn draw_vn_scene(&self, vn: &VisualNovelMachine, game_context: &mut GameContext) {
         let layout = StoryScene::layout(game_context);
@@ -238,6 +241,7 @@ impl Default for StoryScene {
         let default_speed = LineSpeed::Normal;
         StoryScene {
             bg: None,
+            highlight: None,
             fade: None,
             text_box: None,
             placement_text: Rect {
@@ -311,6 +315,7 @@ impl Scene for StoryScene {
         ) {
             let catalog = asset_loader.get_catalog();
             self.bg = catalog.get_sprite(TEXTURE_PLANNING_LAYOUT_BG);
+            self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
             if let (Some(blip), Some(ui_textures_id)) = (
                 catalog.get_sfx_id_for_name(SFX_BLIP),
                 catalog.get_texture_id_for_sprite(TEXTURE_UI),

@@ -1,9 +1,7 @@
 use crate::GameResult;
 use crate::Rect;
 use crate::SpriteInfo;
-use crate::constants::{
-    FontId, TEXTURE_UI, TEXTURE_UI_BTN_TAG, TEXTURE_UI_FOCUS_TAG, TextureId, sprite_info_highlight,
-};
+use crate::constants::{FontId, TEXTURE_UI, TEXTURE_UI_BTN_TAG, TEXTURE_UI_FOCUS_TAG, TextureId};
 use crate::font::FontAlign;
 use crate::font::FontMetrics;
 use crate::font::LoadedFont;

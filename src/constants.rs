@@ -38,16 +38,3 @@ pub enum FontId {
     // it'd be nice to do this, but PathBuf does not implement Copy
     // Dynamic { path: PathBuf, pixel_size: u32 },
 }
-
-pub const fn sprite_info_highlight() -> SpriteInfo {
-    SpriteInfo {
-        start_x: 96,
-        start_y: 0,
-        width: 32,
-        height: 32,
-        frames: 4,
-        current_frame: 0,
-        framerate_per_second: 4,
-        delta: 0,
-    }
-}
