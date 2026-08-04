@@ -297,7 +297,7 @@ fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
 }
 
 fn test_scene_ops(catalog: &AssetCatalog) -> Vec<NovelOps> {
-    let vn = parse_scene(&include_str!("../../assets/scenes/test.scene"), catalog);
+    let vn = parse_scene(include_str!("../../assets/scenes/test.scene"), catalog);
     vn.unwrap().program
 }
 
@@ -359,11 +359,10 @@ impl Scene for StoryScene {
         if let Some(btn) = self.next_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
-                if let Some(audio) = game_context.audio.as_mut() {
-                    if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
+                if let Some(audio) = game_context.audio.as_mut()
+                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
                         let _ = audio.play_sfx(id);
                     }
-                }
                 if let Some(b) = self.text_box.as_mut() {
                     if b.text.is_visible() {
                         b.next_page();

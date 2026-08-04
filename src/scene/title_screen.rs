@@ -129,11 +129,10 @@ impl Scene for TitleScene {
         if let Some(btn) = self.quit_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
             if btn.clicked && game_context.next_scene.is_none() {
-                if let Some(audio) = game_context.audio.as_mut() {
-                    if let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
+                if let Some(audio) = game_context.audio.as_mut()
+                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
                         let _ = audio.play_sfx(id);
                     }
-                }
                 // TODO restore shut down once we have another scene to swap to
                 // game_context.shutdown();
                 btn.clicked = false;
@@ -147,11 +146,10 @@ impl Scene for TitleScene {
                 wait_for: u32::MAX,
                 ticks_waited: 0,
             };
-            if let Some(audio) = game_context.audio.as_mut() {
-                if let Some(id) = self.ids.as_ref().map(|ids| ids.meme_id) {
+            if let Some(audio) = game_context.audio.as_mut()
+                && let Some(id) = self.ids.as_ref().map(|ids| ids.meme_id) {
                     let _ = audio.play_sfx(id);
-                }
-            };
+                };
         }
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);

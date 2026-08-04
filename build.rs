@@ -123,7 +123,7 @@ fn spritesheets(assets_dir: &Path) -> Vec<Spritesheet> {
         .map(|(a, p)| {
             // remove assets/ from the path. GameOptions has assets in it for joining against the cur directory
             // so leave it out for now and be consistent with how id_to_relative_path was used before
-            (a, p.strip_prefix(&assets_dir).unwrap().to_path_buf())
+            (a, p.strip_prefix(assets_dir).unwrap().to_path_buf())
         })
         .collect();
     make_spritesheets(ase_files)

@@ -117,8 +117,8 @@ impl Button {
             });
         }
 
-        if self.hovered {
-            if let Some(highlight) = self.highlight.as_ref() {
+        if self.hovered
+            && let Some(highlight) = self.highlight.as_ref() {
                 let src = highlight.get_rect();
                 renderer.send_command(RenderCommand::DrawRect {
                     texture_id: self.texture_id,
@@ -126,7 +126,6 @@ impl Button {
                     destination: anchor,
                 });
             }
-        }
 
         if let Some(font_library) = game_context.font_library.as_mut() {
             let maybe_font: Option<&LoadedFont> = font_library.get(self.font_id);
