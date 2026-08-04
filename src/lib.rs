@@ -21,6 +21,7 @@ pub mod manifest;
 pub mod renderer;
 pub mod scene;
 
+use std::error::Error;
 use std::ops::{Add, Div, Sub};
 
 use crate::backend::init_backend;
@@ -32,6 +33,8 @@ use crate::scene::title_screen::TitleScene;
 
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate sdl3;
+
+pub type GameResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ReadyState {
