@@ -70,44 +70,51 @@ impl Default for TitleScene {
 impl Scene for TitleScene {
     fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         self.fade = TransitionScene::new_fade_in().into();
-
-        if let (Some(audio), Some(ref mut asset_loader), Some(font_library)) = (
-            game_context.audio.as_mut(),
-            game_context.asset_loader.as_mut(),
-            game_context.font_library.as_mut(),
-        ) {
-            let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut())
-                .expect("failed to load title background");
-            let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())
-                .expect("failed to load ui textures");
-
-            let catalog = asset_loader.get_catalog();
-            self.bg = catalog.get_sprite(TEXTURE_TITLE_BG);
-
-            if let (Some(meme), Some(blip)) = (
-                catalog.get_sfx_id_for_name(SFX_MEME),
-                catalog.get_sfx_id_for_name(SFX_BLIP),
-            ) {
-                let _ = audio.load_sfx(meme);
-                let _ = audio.load_sfx(blip);
-                let ids = TitleSceneIds {
-                    meme_id: meme,
-                    btn_sfx_id: blip,
-                    bg_id,
-                    ui_id,
-                };
-                self.ids = ids.into();
-
-                let quit_btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
-                self.quit_btn = Some(Self::quit_btn(quit_btn_font_id, ui_id));
-
-                let _ = font_library.ensure(FontId::BoldPixels, asset_loader.as_mut());
-                let _ = font_library.ensure(quit_btn_font_id, asset_loader.as_mut());
-            }
-            if let Some(btn) = self.quit_btn.as_mut() {
-                let _ = btn.init(game_context);
-            }
+        let Some(asset_loader) = game_context.asset_loader.as_mut() else {
+            return Err("cannot init scene if asset_loader is not set".into());
         };
+
+        let catalog = asset_loader.get_catalog();
+        self.bg = catalog.get_sprite(TEXTURE_TITLE_BG);
+
+        // TODO: consider returning a result rather than an option so we can dynamically create
+        // the error string to perfectly match the manifest instead since blip != blipSelect from
+        // a power users eye perhaps.
+        let Some(meme) = catalog.get_sfx_id_for_name(SFX_MEME) else {
+            return Err("cannot init scene if sound effect not available: meme".into());
+        };
+        let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) else {
+            return Err("cannot init scene if sound effect not available: blip".into());
+        };
+
+        let Some(audio) = game_context.audio.as_mut() else {
+            return Err("cannot init scene if audio context is not set".into());
+        };
+        audio.load_sfx(meme)?;
+        audio.load_sfx(blip)?;
+
+        let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut())?;
+        let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
+        let ids = TitleSceneIds {
+            meme_id: meme,
+            btn_sfx_id: blip,
+            bg_id,
+            ui_id,
+        };
+        self.ids = ids.into();
+
+        let Some(font_library) = game_context.font_library.as_mut() else {
+            return Err("cannot init scene if font_library is not set".into());
+        };
+        let quit_btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
+        self.quit_btn = Some(Self::quit_btn(quit_btn_font_id, ui_id));
+
+        font_library.ensure(FontId::BoldPixels, asset_loader.as_mut())?;
+        font_library.ensure(quit_btn_font_id, asset_loader.as_mut())?;
+
+        if let Some(btn) = self.quit_btn.as_mut() {
+            btn.init(game_context)?;
+        }
         Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
@@ -132,9 +139,10 @@ impl Scene for TitleScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked && game_context.next_scene.is_none() {
                 if let Some(audio) = game_context.audio.as_mut()
-                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
-                        let _ = audio.play_sfx(id);
-                    }
+                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id)
+                {
+                    let _ = audio.play_sfx(id);
+                }
                 // TODO restore shut down once we have another scene to swap to
                 // game_context.shutdown();
                 btn.clicked = false;
@@ -149,9 +157,10 @@ impl Scene for TitleScene {
                 ticks_waited: 0,
             };
             if let Some(audio) = game_context.audio.as_mut()
-                && let Some(id) = self.ids.as_ref().map(|ids| ids.meme_id) {
-                    let _ = audio.play_sfx(id);
-                };
+                && let Some(id) = self.ids.as_ref().map(|ids| ids.meme_id)
+            {
+                let _ = audio.play_sfx(id);
+            };
         }
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
@@ -206,7 +215,7 @@ mod transition_scene_tests {
 
         let layout = TitleScene::layout(&game_context);
 
-        scene.init(&mut game_context);
+        let _ = scene.init(&mut game_context);
         click_button_with_left_mouse(scene.quit_btn.as_ref().unwrap(), &mut game_context, &layout);
         let game_ticks = 60;
         for _ in 0..game_ticks {
