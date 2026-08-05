@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
@@ -67,7 +68,7 @@ impl Default for TitleScene {
 }
 
 impl Scene for TitleScene {
-    fn init(&mut self, game_context: &mut GameContext) {
+    fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         self.fade = TransitionScene::new_fade_in().into();
 
         if let (Some(audio), Some(ref mut asset_loader), Some(font_library)) = (
@@ -107,6 +108,7 @@ impl Scene for TitleScene {
                 let _ = btn.init(game_context);
             }
         };
+        Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {

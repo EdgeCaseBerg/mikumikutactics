@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
@@ -302,7 +303,7 @@ fn test_scene_ops(catalog: &AssetCatalog) -> Vec<NovelOps> {
 }
 
 impl Scene for StoryScene {
-    fn init(&mut self, game_context: &mut GameContext) {
+    fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         self.fade = TransitionScene::new_fade_in().into();
 
         if let (Some(audio), Some(asset_loader)) = (
@@ -340,6 +341,7 @@ impl Scene for StoryScene {
             ensure_ops_loaded(&ops, game_context);
             self.vn = Some(ops.into());
         };
+        Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
         if let Some(mut fade) = self.fade.take() {

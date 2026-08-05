@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::ReadyState;
 use crate::Rect;
 use crate::game::GameContext;
@@ -56,8 +57,9 @@ impl TransitionScene {
 }
 
 impl Scene for TransitionScene {
-    fn init(&mut self, _game_context: &mut GameContext) {
+    fn init(&mut self, _game_context: &mut GameContext) -> GameResult<()> {
         self.timer = (&self.transition).into();
+        Ok(())
     }
     fn update(&mut self, ticks: u32, _game_context: &mut GameContext) {
         self.timer = self.timer.advance(ticks);
