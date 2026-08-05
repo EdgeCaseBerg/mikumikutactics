@@ -15,7 +15,6 @@ pub trait AssetLoader {
     fn get_catalog(&self) -> Rc<AssetCatalog>;
 }
 
-// TODO: use this to help refactor away the TEXTURE_ID_XXX id constants to named constants instead.
 pub fn ensure_texture_by_name(
     name: &str,
     asset_loader: &mut dyn AssetLoader,
