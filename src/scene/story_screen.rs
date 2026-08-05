@@ -362,9 +362,10 @@ impl Scene for StoryScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
                 if let Some(audio) = game_context.audio.as_mut()
-                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id) {
-                        let _ = audio.play_sfx(id);
-                    }
+                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id)
+                {
+                    let _ = audio.play_sfx(id);
+                }
                 if let Some(b) = self.text_box.as_mut() {
                     if b.text.is_visible() {
                         b.next_page();
