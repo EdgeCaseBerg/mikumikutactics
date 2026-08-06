@@ -26,7 +26,6 @@ struct TitleSceneIds {
     btn_sfx_id: SfxId,
     meme_id: SfxId,
     bg_id: TextureId,
-    ui_id: TextureId,
 }
 
 impl TitleScene {
@@ -94,18 +93,17 @@ impl Scene for TitleScene {
         audio.load_sfx(blip)?;
 
         let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut())?;
-        let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
         let ids = TitleSceneIds {
             meme_id: meme,
             btn_sfx_id: blip,
             bg_id,
-            ui_id,
         };
         self.ids = ids.into();
 
         let Some(font_library) = game_context.font_library.as_mut() else {
             return Err("cannot init scene if font_library is not set".into());
         };
+        let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
         let quit_btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
         self.quit_btn = Some(Self::quit_btn(quit_btn_font_id, ui_id));
 
@@ -203,7 +201,6 @@ mod transition_scene_tests {
         let mut scene = TitleScene::default();
         scene.ids = Some(TitleSceneIds {
             bg_id: TextureId(0),
-            ui_id: TextureId(1),
             btn_sfx_id: SfxId(1),
             meme_id: SfxId(2),
         });

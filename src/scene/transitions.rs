@@ -106,7 +106,7 @@ mod transition_scene_tests {
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(renderer));
 
-        scene.init(&mut game_context);
+        let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
             scene.update(1, &mut game_context);
             scene.draw(&mut game_context);
@@ -135,7 +135,7 @@ mod transition_scene_tests {
         let mut game_context = GameContext::default();
         game_context.renderer = Some(Box::new(renderer));
 
-        scene.init(&mut game_context);
+        let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
             scene.update(1, &mut game_context);
             scene.draw(&mut game_context);
