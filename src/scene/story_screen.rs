@@ -3,6 +3,7 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
+use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
     FontId, SFX_BLIP, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI, TEXTURE_UI_FOCUS_TAG,
     TextureId,
@@ -305,42 +306,42 @@ fn test_scene_ops(catalog: &AssetCatalog) -> Vec<NovelOps> {
 impl Scene for StoryScene {
     fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         self.fade = TransitionScene::new_fade_in().into();
-
-        if let (Some(audio), Some(asset_loader)) = (
-            game_context.audio.as_mut(),
-            game_context.asset_loader.as_mut(),
-        ) {
-            let catalog = asset_loader.get_catalog();
-            self.bg = catalog.get_sprite(TEXTURE_PLANNING_LAYOUT_BG);
-            self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
-            if let (Some(blip), Some(ui_textures_id)) = (
-                catalog.get_sfx_id_for_name(SFX_BLIP),
-                catalog.get_texture_id_for_sprite(TEXTURE_UI),
-            ) {
-                let _ = audio.load_sfx(blip);
-                asset_loader.ensure_texture_spritesheet_loaded(ui_textures_id);
-                let ids = StorySceneIds {
-                    btn_sfx_id: blip,
-                    ui_textures_id,
-                };
-                self.ids = ids.into();
-            }
+        let Some(audio) = game_context.audio.as_mut() else {
+            return Err("could not init scene, audio not configured".into());
         };
+        let Some(asset_loader) = game_context.asset_loader.as_mut() else {
+            return Err("could not init scene, asset loader not set".into());
+        };
+        let catalog = asset_loader.get_catalog();
 
-        if let (Some(font_library), Some(asset_loader)) = (
-            game_context.font_library.as_mut(),
-            game_context.asset_loader.as_mut(),
-        ) {
-            let _ = font_library.ensure(STORY_FONT, asset_loader.as_mut());
-            let _ = font_library.ensure(BUTTON_FONT, asset_loader.as_mut());
-        }
+        let _ = ensure_texture_by_name(TEXTURE_PLANNING_LAYOUT_BG, asset_loader.as_mut())?;
+        self.bg = catalog.get_sprite(TEXTURE_PLANNING_LAYOUT_BG);
+
+        let ui_textures_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
+        self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
+
+        let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) else {
+            return Err("cannot init scene if sound effect not available: blip".into());
+        };
+        let _ = audio.load_sfx(blip);
+
+        let ids = StorySceneIds {
+            btn_sfx_id: blip,
+            ui_textures_id,
+        };
+        self.ids = ids.into();
+
+        let Some(font_library) = game_context.font_library.as_mut() else {
+            return Err("could not init scene, font library not set".into());
+        };
+        font_library.ensure(STORY_FONT, asset_loader.as_mut())?;
+        font_library.ensure(BUTTON_FONT, asset_loader.as_mut())?;
 
         // Temporarily create a story scene from scratch
-        if let Some(ref mut asset_loader) = game_context.asset_loader {
-            let ops = test_scene_ops(&asset_loader.get_catalog());
-            ensure_ops_loaded(&ops, game_context);
-            self.vn = Some(ops.into());
-        };
+        // TODO: load a scene from a game context label or similar
+        let ops = test_scene_ops(&asset_loader.get_catalog());
+        ensure_ops_loaded(&ops, game_context);
+        self.vn = Some(ops.into());
         Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
