@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::Rect;
 use crate::asset_loader::{AssetCatalog, AssetLoader};
 use crate::audio::{Audio, AudioResult};
@@ -516,7 +517,7 @@ pub struct EventLoopSDL3 {
 }
 
 impl BackendEventLoop for EventLoopSDL3 {
-    fn run(&mut self, mut game: Game, mut game_context: GameContext) {
+    fn run(&mut self, mut game: Game, mut game_context: GameContext) -> GameResult<()> {
         let scene = game.scene.as_mut();
         if let Some(scene) = scene {
             scene.init(&mut game_context);
@@ -578,6 +579,7 @@ impl BackendEventLoop for EventLoopSDL3 {
                 break;
             }
         }
+        Ok(())
     }
 
     fn new_renderer(&self, _game_options: &GameOptions) -> Box<dyn Renderer> {

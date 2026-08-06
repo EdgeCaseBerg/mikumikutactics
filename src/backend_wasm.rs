@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::asset_loader::{AssetCatalog, AssetLoader};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
@@ -519,7 +520,7 @@ pub struct EventLoopWasm {
 }
 
 impl BackendEventLoop for EventLoopWasm {
-    fn run(&mut self, mut game: Game, mut game_context: GameContext) {
+    fn run(&mut self, mut game: Game, mut game_context: GameContext) -> GameResult<()> {
         web_sys::console::log_1(&"starting game loop".into());
 
         // First time load setup
@@ -639,6 +640,7 @@ impl BackendEventLoop for EventLoopWasm {
         );
 
         web_sys::console::log_1(&"goodbye wasm".into());
+        Ok(())
     }
 
     fn new_renderer(&self, _game_options: &GameOptions) -> Box<dyn Renderer> {
