@@ -144,7 +144,7 @@ impl AssetCatalog {
         Some(PathBuf::from(&scene.asset_path))
     }
 
-    fn file_asset_list_to_id(v: &Vec<FileAsset>, id: usize) -> Option<&FileAsset> {
+    fn file_asset_list_to_id(v: &[FileAsset], id: usize) -> Option<&FileAsset> {
         v.iter().find(|f| f.id == id)
     }
 }
