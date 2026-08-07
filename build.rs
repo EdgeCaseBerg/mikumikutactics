@@ -67,7 +67,7 @@ fn main() {
 
 include!("src/manifest.rs");
 
-fn load_file_assets(assets_dir: &PathBuf, subdirectory: &str) -> Vec<FileAsset> {
+fn load_file_assets(assets_dir: &Path, subdirectory: &str) -> Vec<FileAsset> {
     let scenes_path = assets_dir.join(subdirectory);
     let mut files = vec![];
     let entries = fs::read_dir(&scenes_path).unwrap_or_else(|_| {
