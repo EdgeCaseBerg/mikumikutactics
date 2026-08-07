@@ -163,13 +163,13 @@ impl Scene for TitleScene {
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
     }
-    fn draw(&mut self, game_context: &mut GameContext) {
+    fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let layout = TitleScene::layout(game_context);
         let Some(ref mut renderer) = game_context.renderer else {
-            return;
+            return Err("no renderer defined in game context, not drawing scene.".into());
         };
         let Some(ids) = self.ids.as_ref() else {
-            return;
+            return Err("cannot draw scene if asset ids are not initialized".into());
         };
 
         if let Some(src) = self.bg.as_ref().map(|s| s.get_rect()) {
@@ -183,8 +183,9 @@ impl Scene for TitleScene {
             btn.draw(game_context, &layout);
         }
         if let Some(fade) = self.fade.as_mut() {
-            fade.draw(game_context);
+            fade.draw(game_context)?;
         }
+        Ok(())
     }
 }
 
@@ -219,7 +220,7 @@ mod transition_scene_tests {
             scene.update(1, &mut game_context);
             // The first update should consume the click
             assert_eq!(false, game_context.mouse_context.left_clicked);
-            scene.draw(&mut game_context);
+            scene.draw(&mut game_context).unwrap();
         }
 
         // Then after the fade finishes up, the next_scene will be set

@@ -574,7 +574,7 @@ impl BackendEventLoop for EventLoopSDL3 {
                     audio.prepare();
                 }
             }
-            game.draw(&mut game_context);
+            game.draw(&mut game_context)?;
             if game_context.shutdown_flag {
                 break;
             }

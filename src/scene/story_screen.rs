@@ -482,7 +482,7 @@ impl Scene for StoryScene {
             }
         }
     }
-    fn draw(&mut self, game_context: &mut GameContext) {
+    fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let layout = StoryScene::layout(game_context);
         if let Some(vn) = self.vn.as_ref() {
             self.draw_vn_scene(vn, game_context);
@@ -497,8 +497,9 @@ impl Scene for StoryScene {
             btn.draw(game_context, &layout);
         };
         if let Some(fade) = self.fade.as_mut() {
-            fade.draw(game_context);
+            fade.draw(game_context)?;
         };
+        Ok(())
     }
 }
 

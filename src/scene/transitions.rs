@@ -64,10 +64,10 @@ impl Scene for TransitionScene {
     fn update(&mut self, ticks: u32, _game_context: &mut GameContext) {
         self.timer = self.timer.advance(ticks);
     }
-    fn draw(&mut self, game_context: &mut GameContext) {
+    fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let (screen_width, screen_height) = game_context.screen_size;
         let Some(ref mut renderer) = game_context.renderer else {
-            return;
+            return Err("no renderer defined in game context, not drawing fade transition.".into());
         };
         let rectangle = Rect::new(0, 0, screen_width as isize, screen_height as isize);
 
@@ -91,6 +91,7 @@ impl Scene for TransitionScene {
             color,
             destination: rectangle,
         });
+        Ok(())
     }
 }
 
@@ -109,7 +110,7 @@ mod transition_scene_tests {
         let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
             scene.update(1, &mut game_context);
-            scene.draw(&mut game_context);
+            scene.draw(&mut game_context).unwrap();
         }
 
         let actions = actions.borrow();
@@ -138,7 +139,7 @@ mod transition_scene_tests {
         let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
             scene.update(1, &mut game_context);
-            scene.draw(&mut game_context);
+            scene.draw(&mut game_context).unwrap();
         }
 
         let actions = actions.borrow();

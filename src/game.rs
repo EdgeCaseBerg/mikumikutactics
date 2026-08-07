@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::asset_loader::AssetLoader;
 use crate::audio::Audio;
 use crate::clock::Clock;
@@ -142,7 +143,7 @@ impl Game {
         }
     }
 
-    pub fn draw(&mut self, game_context: &mut GameContext) {
+    pub fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         self.should_draw = false;
         // Since game update ticks are independent from render ticks
         // we need to compute the proper amount of lag time for what
@@ -170,7 +171,7 @@ impl Game {
 
         if !self.should_draw {
             clock.sleep();
-            return;
+            return Ok(());
         }
 
         // This seems very silly and annoying to have to do this twice
@@ -183,7 +184,7 @@ impl Game {
 
         let scene = self.scene.as_mut();
         if let Some(scene) = scene {
-            scene.draw(game_context);
+            scene.draw(game_context)?;
         }
 
         {
@@ -192,5 +193,6 @@ impl Game {
                 renderer.present();
             }
         }
+        Ok(())
     }
 }
