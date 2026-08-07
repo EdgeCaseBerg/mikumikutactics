@@ -109,16 +109,15 @@ impl Game {
         self.next_draw_tick = 0;
     }
 
-    pub fn update(&mut self, game_context: &mut GameContext) {
+    pub fn update(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         // For now let's just do 60hz, we can swap this to vsync mode later on in life.
         // https://gameprogrammingpatterns.com/game-loop.html#stuck-in-the-middle
         let ns_per_update = 1_000_000_000 / 60;
         // completely arbitrary but would control how much lag is acceptable
         let max_loops_per_update = 10;
-        let clock = game_context
-            .clock
-            .as_ref()
-            .expect("a clock must be initialized to update");
+        let Some(clock) = game_context.clock.as_ref() else {
+            return Err("a clock must be initialized to update".into());
+        };
 
         let current = clock.elapsed_since_start();
         let elapsed = current - self.prev_tick;
@@ -139,8 +138,9 @@ impl Game {
 
         let scene = self.scene.as_mut();
         if let Some(scene) = scene {
-            scene.update(self.tick_loops, game_context);
+            scene.update(self.tick_loops, game_context)?;
         }
+        Ok(())
     }
 
     pub fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {

@@ -218,7 +218,7 @@ mod transition_scene_tests {
         click_button_with_left_mouse(scene.quit_btn.as_ref().unwrap(), &mut game_context, &layout);
         let game_ticks = 60;
         for _ in 0..game_ticks {
-            scene.update(1, &mut game_context);
+            scene.update(1, &mut game_context).unwrap();
             // The first update should consume the click
             assert_eq!(false, game_context.mouse_context.left_clicked);
             scene.draw(&mut game_context).unwrap();
