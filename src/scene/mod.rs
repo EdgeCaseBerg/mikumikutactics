@@ -9,6 +9,6 @@ pub mod transitions;
 
 pub trait Scene {
     fn init(&mut self, game_context: &mut GameContext) -> GameResult<()>;
-    fn update(&mut self, ticks: u32, game_context: &mut GameContext);
+    fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()>;
     fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()>;
 }

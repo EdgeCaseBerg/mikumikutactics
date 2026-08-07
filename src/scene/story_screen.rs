@@ -344,9 +344,9 @@ impl Scene for StoryScene {
         self.vn = Some(ops.into());
         Ok(())
     }
-    fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
+    fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
         if let Some(mut fade) = self.fade.take() {
-            fade.update(ticks, game_context);
+            fade.update(ticks, game_context)?;
             let fade = match (fade.is_done(), &fade.transition) {
                 (true, Transition::FadeIn { .. }) => None,
                 _ => Some(fade), // When we do a scene transition out, update here
@@ -481,6 +481,7 @@ impl Scene for StoryScene {
                 let _ = self.speed_btn.as_mut().map(|b| b.init(game_context));
             }
         }
+        Ok(())
     }
     fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let layout = StoryScene::layout(game_context);

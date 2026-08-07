@@ -61,8 +61,9 @@ impl Scene for TransitionScene {
         self.timer = (&self.transition).into();
         Ok(())
     }
-    fn update(&mut self, ticks: u32, _game_context: &mut GameContext) {
+    fn update(&mut self, ticks: u32, _game_context: &mut GameContext) -> GameResult<()> {
         self.timer = self.timer.advance(ticks);
+        Ok(())
     }
     fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let (screen_width, screen_height) = game_context.screen_size;
@@ -109,7 +110,7 @@ mod transition_scene_tests {
 
         let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
-            scene.update(1, &mut game_context);
+            scene.update(1, &mut game_context).unwrap();
             scene.draw(&mut game_context).unwrap();
         }
 
@@ -138,7 +139,7 @@ mod transition_scene_tests {
 
         let _ = scene.init(&mut game_context);
         for _ in 0..scene.transition.length() + 1 {
-            scene.update(1, &mut game_context);
+            scene.update(1, &mut game_context).unwrap();
             scene.draw(&mut game_context).unwrap();
         }
 

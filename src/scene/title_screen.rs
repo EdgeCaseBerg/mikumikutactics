@@ -115,9 +115,9 @@ impl Scene for TitleScene {
         }
         Ok(())
     }
-    fn update(&mut self, ticks: u32, game_context: &mut GameContext) {
+    fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
         if let Some(mut fade) = self.fade.take() {
-            fade.update(ticks, game_context);
+            fade.update(ticks, game_context)?;
             let fade = match (fade.is_done(), &fade.transition) {
                 (true, Transition::FadeIn { .. }) => None,
                 (true, Transition::FadeOut { .. }) => {
@@ -162,6 +162,7 @@ impl Scene for TitleScene {
         }
 
         self.played_intro = advance_ready_state(self.played_intro, ticks);
+        Ok(())
     }
     fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let layout = TitleScene::layout(game_context);
