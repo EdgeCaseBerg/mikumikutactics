@@ -520,7 +520,7 @@ impl BackendEventLoop for EventLoopSDL3 {
     fn run(&mut self, mut game: Game, mut game_context: GameContext) -> GameResult<()> {
         let scene = game.scene.as_mut();
         if let Some(scene) = scene {
-            let _ = scene.init(&mut game_context)?;
+            scene.init(&mut game_context)?;
         }
 
         // initialize the audio pool if the scene has queued things up
