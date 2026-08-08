@@ -36,3 +36,9 @@ pub enum FontId {
     // it'd be nice to do this, but PathBuf does not implement Copy
     // Dynamic { path: PathBuf, pixel_size: u32 },
 }
+
+#[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
+pub struct SceneId(pub usize);
+
+#[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
+pub struct ProgramCounter(pub usize);
