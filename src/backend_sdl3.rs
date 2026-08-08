@@ -564,7 +564,12 @@ impl BackendEventLoop for EventLoopSDL3 {
                     _ => {}
                 }
             }
-            game.update(&mut game_context);
+            // TODO: If we were to use an enum to indicate a recoverable err vs an unrecoverable
+            //       one then we could potentially catch that here and display it in some sort of
+            //       debug scene and show it to the user without exiting the game. For now though,
+            //       we'll just ?; away and let everything fall faster than my heart when a random
+            //       cashier or clerk compliments my niche-interest shirt.
+            game.update(&mut game_context)?;
             if let Some(mut next_scene) = game_context.next_scene.take() {
                 next_scene.init(&mut game_context)?;
                 game.scene = Some(next_scene);

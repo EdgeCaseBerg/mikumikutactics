@@ -610,7 +610,10 @@ impl BackendEventLoop for EventLoopWasm {
                 }
 
                 // Run updates.
-                game.update(&mut game_context);
+                if let Err(game_error) = game.update(&mut game_context) {
+                    window().alert_with_message(&game_error.to_string());
+                    panic!("A game error occurred: {:?}", game_error);
+                }
                 if let Some(mut next_scene) = game_context.next_scene.take() {
                     next_scene
                         .init(&mut game_context)
