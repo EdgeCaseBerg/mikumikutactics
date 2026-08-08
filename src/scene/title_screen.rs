@@ -4,7 +4,7 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SFX_MEME, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId,
+    FontId, SFX_BLIP, SFX_MEME, SceneId, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -17,6 +17,7 @@ use crate::{ReadyState, advance_ready_state};
 pub struct TitleScene {
     bg: Option<SpriteInfo>,
     quit_btn: Option<Button>,
+    start_btn: Option<Button>,
     played_intro: ReadyState,
     fade: Option<TransitionScene>,
     ids: Option<TitleSceneIds>,
@@ -38,12 +39,25 @@ impl TitleScene {
             cell_gap: 0,
         }
     }
-    fn quit_btn(font_id: FontId, ui_texture_id: TextureId) -> Button {
+    fn start_btn(font_id: FontId, ui_texture_id: TextureId) -> Button {
         Button::new(
             "Start Game".to_string(),
             Rect {
                 x: 32,
                 y: 18,
+                width: 10,
+                height: 2,
+            },
+            font_id,
+            ui_texture_id,
+        )
+    }
+    fn quit_btn(font_id: FontId, ui_texture_id: TextureId) -> Button {
+        Button::new(
+            "Quit".to_string(),
+            Rect {
+                x: 32,
+                y: 21,
                 width: 10,
                 height: 2,
             },
@@ -58,6 +72,7 @@ impl Default for TitleScene {
         TitleScene {
             bg: None,
             //320, 150
+            start_btn: None,
             quit_btn: None,
             played_intro: ReadyState::Ready,
             fade: None,
@@ -104,13 +119,17 @@ impl Scene for TitleScene {
             return Err("cannot init scene if font_library is not set".into());
         };
         let ui_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
-        let quit_btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
-        self.quit_btn = Some(Self::quit_btn(quit_btn_font_id, ui_id));
+        let btn_font_id = FontId::BoldPixelScaled { pixel_size: 24 };
+        self.quit_btn = Some(Self::quit_btn(btn_font_id, ui_id));
+        self.start_btn = Some(Self::start_btn(btn_font_id, ui_id));
 
         font_library.ensure(FontId::BoldPixels, asset_loader.as_mut())?;
-        font_library.ensure(quit_btn_font_id, asset_loader.as_mut())?;
+        font_library.ensure(btn_font_id, asset_loader.as_mut())?;
 
         if let Some(btn) = self.quit_btn.as_mut() {
+            btn.init(game_context)?;
+        }
+        if let Some(btn) = self.start_btn.as_mut() {
             btn.init(game_context)?;
         }
         Ok(())
@@ -141,8 +160,23 @@ impl Scene for TitleScene {
                 {
                     let _ = audio.play_sfx(id);
                 }
-                // TODO restore shut down once we have another scene to swap to
-                // game_context.shutdown();
+                game_context.shutdown();
+                btn.clicked = false;
+                game_context.mouse_context.consume_left_click();
+                self.fade = Some(TransitionScene::new_fade_out());
+            }
+        }
+
+        if let Some(btn) = self.start_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked && game_context.next_scene.is_none() {
+                if let Some(audio) = game_context.audio.as_mut()
+                    && let Some(id) = self.ids.as_ref().map(|ids| ids.btn_sfx_id)
+                {
+                    let _ = audio.play_sfx(id);
+                }
+                // TODO swap to real id
+                game_context.queue_story_scene(SceneId(0));
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
                 self.fade = Some(TransitionScene::new_fade_out());
@@ -181,6 +215,9 @@ impl Scene for TitleScene {
             });
         }
         if let Some(btn) = self.quit_btn.as_ref() {
+            btn.draw(game_context, &layout);
+        }
+        if let Some(btn) = self.start_btn.as_ref() {
             btn.draw(game_context, &layout);
         }
         if let Some(fade) = self.fade.as_mut() {

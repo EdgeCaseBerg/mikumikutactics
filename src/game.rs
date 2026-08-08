@@ -90,6 +90,10 @@ impl GameContext {
     }
 
     pub fn queue_game_over(&mut self) {}
+
+    pub fn queue_story_scene(&mut self, scene_id: SceneId) {
+        self.story_scene = Some((scene_id, ProgramCounter(0)));
+    }
 }
 
 impl Default for Game {
