@@ -1,5 +1,5 @@
 use crate::SpriteInfo;
-use crate::constants::{MusicId, SfxId, TextureId};
+use crate::constants::{MusicId, SceneId, SfxId, TextureId};
 use crate::manifest::{FileAsset, Manifest, SpriteFrame};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
@@ -134,14 +134,23 @@ impl AssetCatalog {
         let sheet = self.manifest.sounds.get(*idx)?;
         Some(SfxId(sheet.id))
     }
-    // TODO: think about if we want SceneId at all and if that would make any sense.
-    pub fn get_scene_path(&self, name: &str) -> Option<PathBuf> {
-        let scene = self
-            .manifest
-            .scenes
-            .iter()
-            .find(|scene| scene.name == name)?;
-        Some(PathBuf::from(&scene.asset_path))
+    pub fn get_scene_path(&self, id: SceneId) -> AssetResult<PathBuf> {
+        let Some(scene) = Self::file_asset_list_to_id(&self.manifest.scenes, id.0) else {
+            return Err(format!("could not find scene asset path for id {}", id.0).into());
+        };
+        Ok(PathBuf::from(&scene.asset_path))
+    }
+    pub fn get_scene_id_for_name(&self, name: &str) -> AssetResult<SceneId> {
+        let Some(idx) = self.scene_to_scene_idx.get(name) else {
+            return Err(format!("could not find scene with name {name}").into());
+        };
+        let Some(scene_file_asset) = self.manifest.scenes.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no scene for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        Ok(SceneId(scene_file_asset.id))
     }
 
     fn file_asset_list_to_id(v: &[FileAsset], id: usize) -> Option<&FileAsset> {
