@@ -168,6 +168,10 @@ impl SceneLoadingContext for AssetCatalog {
     fn name_to_music(&self, name: &str) -> Option<MusicId> {
         self.get_music_id_for_name(name)
     }
+    fn name_to_scene(&self, name: &str) -> Option<SceneId> {
+        self.get_scene_id_for_name(name)
+            .map_or_else(|_| None, |id| Some(id))
+    }
     // TODO: add name_to_scene once we add loading scenes into the DSL
 }
 

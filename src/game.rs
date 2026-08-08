@@ -2,6 +2,7 @@ use crate::GameResult;
 use crate::asset_loader::AssetLoader;
 use crate::audio::Audio;
 use crate::clock::Clock;
+use crate::constants::{ProgramCounter, SceneId};
 use crate::font::FontLibrary;
 use crate::renderer::Color;
 use crate::renderer::Renderer;
@@ -56,6 +57,7 @@ pub struct GameContext {
     pub mouse_context: MouseContext,
     pub screen_size: (u32, u32),
     pub next_scene: Option<Box<dyn Scene>>,
+    pub story_scene: Option<(SceneId, ProgramCounter)>,
     pub asset_loader: Option<Box<dyn AssetLoader>>,
     pub audio: Option<Box<dyn Audio>>,
     pub font_library: Option<Box<dyn FontLibrary>>,
@@ -75,6 +77,7 @@ impl Default for GameContext {
             font_library: None,
             shutdown_flag: false,
             clock: None,
+            story_scene: None,
         }
     }
 }

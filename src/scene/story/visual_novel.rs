@@ -1,4 +1,4 @@
-use crate::constants::{MusicId, SfxId, TextureId};
+use crate::constants::{MusicId, SceneId, SfxId, TextureId};
 use std::collections::{HashSet, VecDeque};
 use std::error::Error;
 
@@ -208,6 +208,7 @@ pub trait SceneLoadingContext {
     fn name_to_texture(&self, name: &str) -> Option<TextureId>;
     fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
     fn name_to_music(&self, name: &str) -> Option<MusicId>;
+    fn name_to_scene(&self, name: &str) -> Option<SceneId>;
 }
 
 // Unresolved novel ops are loaded from the file, but have not been validated against
@@ -1107,6 +1108,7 @@ mod visual_novel_tests {
         textures: HashMap<String, TextureId>,
         sounds: HashMap<String, SfxId>,
         music: HashMap<String, MusicId>,
+        scenes: HashMap<String, SceneId>,
     }
 
     impl Default for TmpSceneLoadingContext {
@@ -1119,6 +1121,7 @@ mod visual_novel_tests {
                 ]),
                 sounds: HashMap::from([("blip".to_owned(), SfxId(0))]),
                 music: HashMap::from([("pachebal".to_owned(), MusicId(0))]),
+                scenes: HashMap::from([("test".to_owned(), SceneId(0))]),
             }
         }
     }
@@ -1132,6 +1135,9 @@ mod visual_novel_tests {
         }
         fn name_to_music(&self, name: &str) -> Option<MusicId> {
             self.music.get(name).copied()
+        }
+        fn name_to_scene(&self, name: &str) -> Option<SceneId> {
+            self.scenes.get(name).copied()
         }
     }
 
