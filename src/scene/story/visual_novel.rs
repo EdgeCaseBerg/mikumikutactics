@@ -16,6 +16,7 @@ use std::error::Error;
  * LABEL a
  * ENTER rin FROM right
  * FOCUS right
+ * FLAG SET bad end
  * CHARACTER rin IS happy
  * SAY bla bla bla bla
  * GOTO d
@@ -23,7 +24,8 @@ use std::error::Error;
  * SAY bla bla bla bla
  * GOTO d
  * LABEL c
- * SAY bla bla bla bla
+ * SAY bla bla bla bla good ending woo
+ * FLAG CLEAR bad end
  * GOTO d
  * LABEL d
  * CHARACTER miku IS mad
@@ -36,6 +38,10 @@ use std::error::Error;
  * but as long as thigns like LABEL, ENTER, CHARACTER, SAY, CHOICE, FOCUS, HIDE
  * and all that other business like GOTO or similar aren't the first word it should
  * be fiiiine.
+ * IF FLAG bad end GOTO die
+ * TO SCENE chapter 2
+ * LABEL die
+ * TO SCENE bad end
  */
 
 type VnResult<T> = Result<T, Box<dyn Error>>;
@@ -53,6 +59,8 @@ pub struct VisualNovelMachine {
     pub sfx_queue: VecDeque<SfxId>,
     pub say_queue: VecDeque<String>,
     pub active_choice: Option<Vec<Choice>>,
+    pub flags: HashSet<String>,
+    pub to_scene: Option<SceneId>,
 }
 
 impl VisualNovelMachine {
@@ -71,6 +79,20 @@ impl VisualNovelMachine {
             return;
         }
         match &self.program[self.program_counter] {
+            NovelOps::SetFlag(flag) => {
+                self.flags.insert(flag.clone());
+            }
+            NovelOps::ClearFlag(flag) => {
+                self.flags.remove(flag);
+            }
+            NovelOps::IfFlagGoto { flag_name, label } => {
+                if self.flags.contains(flag_name) {
+                    self.jump(&label.clone());
+                }
+            }
+            NovelOps::ToScene(scene_id) => {
+                self.to_scene = Some(*scene_id);
+            }
             NovelOps::Background(texture_id) => {
                 self.background = Some(*texture_id);
             }
@@ -190,6 +212,8 @@ impl Default for VisualNovelMachine {
             sfx_queue: VecDeque::new(),
             say_queue: VecDeque::new(),
             active_choice: None,
+            flags: HashSet::new(),
+            to_scene: None,
         }
     }
 }
@@ -227,8 +251,10 @@ pub enum UnvalidatedNovelOps {
     Background(String),
     PlaySfx(String),
     PlayMusic(String),
-    // later, triggers? like SET FLAG x, IF FLAG x ?
-    // LOAD_SCRIPT another_scene to start?
+    ToScene(String),
+    SetFlag(String),
+    ClearFlag(String),
+    IfFlagGoto(String, String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -302,8 +328,10 @@ pub enum NovelOps {
     Background(TextureId),
     PlaySfx(SfxId),
     PlayMusic(MusicId),
-    // later, triggers? like SET FLAG x, IF FLAG x ?
-    // LOAD_SCRIPT another_scene to start?
+    IfFlagGoto { flag_name: String, label: String },
+    SetFlag(String),
+    ClearFlag(String),
+    ToScene(SceneId),
 }
 
 impl NovelOps {
@@ -397,6 +425,28 @@ fn validate_program(
             }
             UnvalidatedNovelOps::NewCharacterState(..) => {
                 if let Some(op) = validate_new_character_state(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::ToScene(..) => {
+                if let Some(op) = validate_to_scene(unvalidated, context, &mut errors) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::SetFlag(..) => {
+                if let Some(op) = validate_set_flag(unvalidated) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::ClearFlag(..) => {
+                if let Some(op) = validate_clear_flag(unvalidated) {
+                    valid_ops.push(op);
+                }
+            }
+            UnvalidatedNovelOps::IfFlagGoto(..) => {
+                if let Some(op) =
+                    validate_if_flag_goto(unvalidated, &set_of_all_labels, &mut errors)
+                {
                     valid_ops.push(op);
                 }
             }
@@ -610,6 +660,57 @@ fn validate_new_character_state(
     Some(NovelOps::NewCharacterState(character))
 }
 
+fn validate_to_scene(
+    unvalidated: UnvalidatedNovelOps,
+    context: &impl SceneLoadingContext,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::ToScene(scene_name) = unvalidated else {
+        return None;
+    };
+    let Some(scene_id) = context.name_to_scene(&scene_name) else {
+        errors.push(format!(
+            "cannot load unknown scene with name {:?}",
+            scene_name
+        ));
+        return None;
+    };
+    Some(NovelOps::ToScene(scene_id))
+}
+
+fn validate_set_flag(unvalidated: UnvalidatedNovelOps) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::SetFlag(flag_name) = unvalidated else {
+        return None;
+    };
+    Some(NovelOps::SetFlag(flag_name))
+}
+
+fn validate_clear_flag(unvalidated: UnvalidatedNovelOps) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::ClearFlag(flag_name) = unvalidated else {
+        return None;
+    };
+    Some(NovelOps::ClearFlag(flag_name))
+}
+
+fn validate_if_flag_goto(
+    unvalidated: UnvalidatedNovelOps,
+    set_of_all_labels: &HashSet<String>,
+    errors: &mut Vec<String>,
+) -> Option<NovelOps> {
+    let UnvalidatedNovelOps::IfFlagGoto(flag_name, label) = unvalidated else {
+        return None;
+    };
+    if !set_of_all_labels.contains(&label) {
+        errors.push(format!(
+            "cannot create IF {0} GOTO ({1}) because label {1} does not exist",
+            flag_name, label
+        ));
+        None
+    } else {
+        return Some(NovelOps::IfFlagGoto { flag_name, label });
+    }
+}
+
 pub fn parse_scene(
     raw_scene: &str,
     context: &impl SceneLoadingContext,
@@ -679,6 +780,7 @@ fn parse_single_line_ops(
     if let Some(op) = parse_music(line, errors, line_number) {
         return Some(op);
     }
+    // TODO parse flags,scene load
     if parse_choice_option(line, errors, line_number).is_some() {
         errors.push(format!(
             "line {} invalid state, trying to add choice option when no choice has been started",
