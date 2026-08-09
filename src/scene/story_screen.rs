@@ -425,6 +425,14 @@ impl Scene for StoryScene {
         // looking. Kindly go do something more useful plz clippy.
         #[allow(clippy::collapsible_if)]
         if let Some(vn) = self.vn.as_mut() {
+            // TODO: move quit to constants
+            if vn.is_flag_set("quit") {
+                game_context.shutdown();
+                self.fade = Some(TransitionScene::new_fade_out());
+            }
+            if let Some(next_scene) = vn.to_scene.take() {
+                game_context.queue_story_scene(next_scene);
+            }
             if let Some(audio) = game_context.audio.as_mut() {
                 if let Some(sfx_id) = vn.next_sfx() {
                     let _ = audio.play_sfx(sfx_id);
@@ -495,6 +503,9 @@ impl Scene for StoryScene {
                 self.speed_btn = self.speed_btn();
                 let _ = self.speed_btn.as_mut().map(|b| b.init(game_context));
             }
+        }
+        if let Some((scene_id, pc)) = game_context.story_scene.take() {
+            self.load_story_scene_contents(scene_id, pc, game_context)?
         }
         Ok(())
     }
