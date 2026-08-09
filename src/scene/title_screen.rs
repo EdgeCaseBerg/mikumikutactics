@@ -4,7 +4,8 @@ use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SFX_MEME, SceneId, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI, TextureId,
+    FontId, SCENE_START_NAME, SFX_BLIP, SFX_MEME, SceneId, SfxId, TEXTURE_TITLE_BG, TEXTURE_UI,
+    TextureId,
 };
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
@@ -27,6 +28,7 @@ struct TitleSceneIds {
     btn_sfx_id: SfxId,
     meme_id: SfxId,
     bg_id: TextureId,
+    start_scene_id: SceneId,
 }
 
 impl TitleScene {
@@ -100,6 +102,9 @@ impl Scene for TitleScene {
         let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) else {
             return Err("cannot init scene if sound effect not available: blip".into());
         };
+        let Ok(start_scene_id) = catalog.get_scene_id_for_name(SCENE_START_NAME) else {
+            return Err("cannot init scene if start scene id is not available".into());
+        };
 
         let Some(audio) = game_context.audio.as_mut() else {
             return Err("cannot init scene if audio context is not set".into());
@@ -112,6 +117,7 @@ impl Scene for TitleScene {
             meme_id: meme,
             btn_sfx_id: blip,
             bg_id,
+            start_scene_id,
         };
         self.ids = ids.into();
 
@@ -175,8 +181,10 @@ impl Scene for TitleScene {
                 {
                     let _ = audio.play_sfx(id);
                 }
-                // TODO swap to real id
-                game_context.queue_story_scene(SceneId(0));
+                let Some(start_scene_id) = self.ids.as_ref().map(|ids| ids.start_scene_id) else {
+                    return Err("cannot start new game if scene id is unknown".into());
+                };
+                game_context.queue_story_scene(start_scene_id);
                 btn.clicked = false;
                 game_context.mouse_context.consume_left_click();
                 self.fade = Some(TransitionScene::new_fade_out());
@@ -242,6 +250,7 @@ mod transition_scene_tests {
             bg_id: TextureId(0),
             btn_sfx_id: SfxId(1),
             meme_id: SfxId(2),
+            start_scene_id: SceneId(0),
         });
 
         scene.quit_btn = Some(TitleScene::quit_btn(FontId::BoldPixels, TextureId(1)));

@@ -42,3 +42,5 @@ pub struct SceneId(pub usize);
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
 pub struct ProgramCounter(pub usize);
+
+pub const SCENE_START_NAME: &str = "start";

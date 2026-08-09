@@ -318,13 +318,13 @@
   "scenes": [
     {
       "id": 0,
-      "name": "test",
-      "asset_path": "assets/scenes/test.scene"
+      "name": "start",
+      "asset_path": "assets/scenes/start.scene"
     },
     {
       "id": 1,
-      "name": "noaudio",
-      "asset_path": "assets/scenes/noaudio.scene"
+      "name": "game-over-confirm",
+      "asset_path": "assets/scenes/game-over-confirm.scene"
     }
   ]
 }

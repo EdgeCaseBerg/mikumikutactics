@@ -64,6 +64,9 @@ pub struct VisualNovelMachine {
 }
 
 impl VisualNovelMachine {
+    pub fn is_flag_set(&self, flag_name: &str) -> bool {
+        self.flags.contains(flag_name)
+    }
     pub fn advance(&mut self) {
         self.do_current_op();
         self.program_counter += 1;

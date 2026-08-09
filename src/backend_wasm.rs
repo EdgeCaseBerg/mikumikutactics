@@ -267,8 +267,10 @@ impl AssetLoader for AssetLoaderWasm {
         };
         let name = name.to_string_lossy();
         let string = match name {
-            Borrowed("test.scene") => include_str!("../assets/scenes/test.scene"),
-            Borrowed("noaudio.scene") => include_str!("../assets/scenes/noaudio.scene"),
+            Borrowed("start.scene") => include_str!("../assets/scenes/start.scene"),
+            Borrowed("game-over-confirm.scene") => {
+                include_str!("../assets/scenes/game-over-confirm.scene")
+            }
             _ => return Err(format!("no scene by name {} could be loaded", name).into()),
         };
         Ok(string.to_string())
