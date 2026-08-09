@@ -425,7 +425,6 @@ impl Scene for StoryScene {
         // looking. Kindly go do something more useful plz clippy.
         #[allow(clippy::collapsible_if)]
         if let Some(vn) = self.vn.as_mut() {
-            // TODO: move quit to constants
             if vn.is_flag_set(VN_QUIT_FLAG) {
                 game_context.shutdown();
                 self.fade = Some(TransitionScene::new_fade_out());
