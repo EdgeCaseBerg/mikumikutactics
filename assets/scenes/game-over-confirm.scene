@@ -1,0 +1,18 @@
+BACKGROUND game-over
+ENTER miku FROM left
+CHARACTER miku IS mad
+SAY Really?
+You really don't want to play anymore?
+CHOICE
+| quit OPTION Let me out, let me ouuuuut
+| nah  OPTION Actually, I changed my mind
+LABEL nah
+CHARACTER miku IS happy
+SAY Oh good! I'm glad you still love me!
+TO SCENE start
+LABEL quit
+CHARACTER miku IS idle
+SAY Oh, well... if that's how you really feel. I guess uhm.
+PLAY blipDeSelect
+SAY Ok. Bye. It's not like I wanted you to have fun or anything.
+FLAG SET quit
