@@ -1,5 +1,5 @@
 use crate::GameResult;
-use crate::asset_loader::{AssetCatalog, AssetLoader};
+use crate::asset_loader::{AssetCatalog, AssetLoader, AssetResult};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
 use crate::clock::Clock;
@@ -11,6 +11,7 @@ use crate::game::GameContext;
 use crate::game_options::GameOptions;
 use crate::renderer::{Color, RenderCommand, Renderer};
 
+use std::borrow::Cow::Borrowed;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -260,6 +261,18 @@ fn pathbuf_to_url(p: &PathBuf) -> String {
 }
 
 impl AssetLoader for AssetLoaderWasm {
+    fn load_story_scene_contents(&mut self, path: PathBuf) -> AssetResult<String> {
+        let Some(name) = path.file_name() else {
+            return Err("path was a directory or did not point to a valid file path".into());
+        };
+        let name = name.to_string_lossy();
+        let string = match name {
+            Borrowed("test.scene") => include_str!("../assets/scenes/test.scene"),
+            Borrowed("noaudio.scene") => include_str!("../assets/scenes/noaudio.scene"),
+            _ => return Err(format!("no scene by name {} could be loaded", name).into()),
+        };
+        Ok(string.to_string())
+    }
     fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) {
         let context = &mut *self.wasm_context.borrow_mut();
 

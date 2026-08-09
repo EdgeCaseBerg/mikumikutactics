@@ -11,6 +11,7 @@ use std::rc::Rc;
 pub type AssetResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait AssetLoader {
+    fn load_story_scene_contents(&mut self, path: PathBuf) -> AssetResult<String>;
     fn ensure_texture_spritesheet_loaded(&mut self, sheet_id: TextureId);
     fn get_catalog(&self) -> Rc<AssetCatalog>;
 }
@@ -172,7 +173,6 @@ impl SceneLoadingContext for AssetCatalog {
         self.get_scene_id_for_name(name)
             .map_or_else(|_| None, |id| Some(id))
     }
-    // TODO: add name_to_scene once we add loading scenes into the DSL
 }
 
 #[cfg(test)]

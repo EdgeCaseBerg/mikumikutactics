@@ -1,6 +1,6 @@
 use crate::GameResult;
 use crate::Rect;
-use crate::asset_loader::{AssetCatalog, AssetLoader};
+use crate::asset_loader::{AssetCatalog, AssetLoader, AssetResult};
 use crate::audio::{Audio, AudioResult};
 use crate::backend::*;
 use crate::clock::Clock;
@@ -399,6 +399,10 @@ impl AssetLoaderSDL3 {
 }
 
 impl AssetLoader for AssetLoaderSDL3 {
+    fn load_story_scene_contents(&mut self, path: PathBuf) -> AssetResult<String> {
+        // TODO if we wanted to cache it we could do so here
+        Ok(std::fs::read_to_string(path)?)
+    }
     fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) {
         let ctx = &mut *self.context.borrow_mut();
         if ctx.textures.get_texture(id).is_some() {
