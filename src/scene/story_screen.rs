@@ -5,8 +5,8 @@ use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, SFX_BLIP, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI, TEXTURE_UI_FOCUS_TAG,
-    TextureId,
+    FontId, ProgramCounter, SFX_BLIP, SceneId, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI,
+    TEXTURE_UI_FOCUS_TAG, TextureId,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -232,6 +232,27 @@ impl StoryScene {
         );
         Some(b)
     }
+    fn load_story_scene_contents(
+        &mut self,
+        scene_id: SceneId,
+        pc: ProgramCounter,
+        game_context: &mut GameContext,
+    ) -> GameResult<()> {
+        let Some(asset_loader) = game_context.asset_loader.as_mut() else {
+            return Err("cannot load scene contents if asset loader is not configured".into());
+        };
+        let catalog = asset_loader.get_catalog();
+        let scene_path = catalog.get_scene_path(scene_id)?;
+        let raw_scene = asset_loader.load_story_scene_contents(scene_path)?;
+        let mut vn = parse_scene(&raw_scene, catalog.as_ref())?;
+        ensure_ops_loaded(&vn.program, game_context);
+        // TODO: restore state safely (validate bounds, fast forward the script to determine what the current state of the system should be, etc)
+        // we'll likely need to have some kind of thing that also sets the story_screen state fields based on what was loaded as well, maybe. it
+        // might be enough to just run through and advance the pc and let the various queues fill up (and ensure we DRAIN the audio ones where appropriate)
+        vn.program_counter = pc.0;
+        self.vn = Some(vn);
+        Ok(())
+    }
 }
 
 impl Default for StoryScene {
@@ -335,17 +356,7 @@ impl Scene for StoryScene {
         let Some((scene_id, pc)) = game_context.story_scene.as_ref() else {
             return Err("No scene set to load during init of story.".into());
         };
-        // Force a copy here so the borrow checker doesn't shit itself on vn.program_counter = pc.0;
-        let pc = *pc;
-        let scene_path = catalog.get_scene_path(*scene_id)?;
-        let raw_scene = asset_loader.load_story_scene_contents(scene_path)?;
-        let mut vn = parse_scene(&raw_scene, catalog.as_ref())?;
-        ensure_ops_loaded(&vn.program, game_context);
-        // TODO: restore state safely (validate bounds, fast forward the script to determine what the current state of the system should be, etc)
-        // we'll likely need to have some kind of thing that also sets the story_screen state fields based on what was loaded as well, maybe. it
-        // might be enough to just run through and advance the pc and let the various queues fill up (and ensure we DRAIN the audio ones where appropriate)
-        vn.program_counter = pc.0;
-        self.vn = Some(vn);
+        self.load_story_scene_contents(*scene_id, *pc, game_context)?;
         Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
