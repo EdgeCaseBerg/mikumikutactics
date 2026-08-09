@@ -780,7 +780,18 @@ fn parse_single_line_ops(
     if let Some(op) = parse_music(line, errors, line_number) {
         return Some(op);
     }
-    // TODO parse flags,scene load
+    if let Some(op) = parse_set_flag(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_clear_flag(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_if_flag_goto_label(line, errors, line_number) {
+        return Some(op);
+    }
+    if let Some(op) = parse_to_scene(line, errors, line_number) {
+        return Some(op);
+    }
     if parse_choice_option(line, errors, line_number).is_some() {
         errors.push(format!(
             "line {} invalid state, trying to add choice option when no choice has been started",
@@ -1198,6 +1209,130 @@ fn parse_show_character(
         name.to_owned(),
         position.to_owned(),
     ))
+}
+
+fn parse_set_flag(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("FLAG SET") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("FLAG SET ") else {
+        errors.push(format!(
+            "line {} could not parse flag name from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse flag name from empty string, add a flag name to scene",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::SetFlag(name.to_owned()))
+}
+
+fn parse_clear_flag(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("FLAG CLEAR") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("FLAG CLEAR ") else {
+        errors.push(format!(
+            "line {} could not parse flag name from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse flag name from empty string, add a flag name to scene",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::ClearFlag(name.to_owned()))
+}
+
+fn parse_if_flag_goto_label(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("IF FLAG") {
+        return None;
+    }
+    let Some((_, flag_and_label)) = line.split_once("IF FLAG ") else {
+        errors.push(format!(
+            "line {} could not parse conditional jump from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if flag_and_label.trim().is_empty() {
+        errors.push(
+            format!("line {} could not parse flag or label from empty string, add a label and flag to scene", line_number),
+        );
+        return None;
+    }
+    let Some((flag_name, label_name)) = flag_and_label.split_once(" GOTO ") else {
+        errors.push(format!(
+            "line {} could not parse label from {}, missing GOTO between flag name and label name",
+            line_number, line
+        ));
+        return None;
+    };
+
+    if flag_name.trim().is_empty() {
+        errors.push(
+            format!("line {} could not parse flag name from empty string, add a flag name and state to scene", line_number),
+        );
+        return None;
+    }
+    if label_name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse target label from empty string, add a non-empty label name to scene",
+            line_number
+        ));
+        return None;
+    }
+
+    Some(UnvalidatedNovelOps::IfFlagGoto(
+        flag_name.to_owned(),
+        label_name.to_owned(),
+    ))
+}
+
+fn parse_to_scene(
+    line: &str,
+    errors: &mut Vec<String>,
+    line_number: usize,
+) -> Option<UnvalidatedNovelOps> {
+    if !line.starts_with("TO SCENE") {
+        return None;
+    }
+    let Some((_, name)) = line.split_once("TO SCENE ") else {
+        errors.push(format!(
+            "line {} could not parse scene name from {}",
+            line_number, line
+        ));
+        return None;
+    };
+    if name.trim().is_empty() {
+        errors.push(format!(
+            "line {} could not parse scene name from empty string, add a scene name to your TO SCENE command",
+            line_number
+        ));
+        return None;
+    }
+    Some(UnvalidatedNovelOps::ToScene(name.to_owned()))
 }
 
 #[cfg(test)]
