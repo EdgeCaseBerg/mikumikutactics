@@ -44,3 +44,4 @@ pub struct SceneId(pub usize);
 pub struct ProgramCounter(pub usize);
 
 pub const SCENE_START_NAME: &str = "start";
+pub const VN_QUIT_FLAG: &str = "quit";

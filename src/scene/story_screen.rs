@@ -6,7 +6,7 @@ use crate::asset_loader::AssetCatalog;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
     FontId, ProgramCounter, SFX_BLIP, SceneId, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI,
-    TEXTURE_UI_FOCUS_TAG, TextureId,
+    TEXTURE_UI_FOCUS_TAG, TextureId, VN_QUIT_FLAG,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;
@@ -426,7 +426,7 @@ impl Scene for StoryScene {
         #[allow(clippy::collapsible_if)]
         if let Some(vn) = self.vn.as_mut() {
             // TODO: move quit to constants
-            if vn.is_flag_set("quit") {
+            if vn.is_flag_set(VN_QUIT_FLAG) {
                 game_context.shutdown();
                 self.fade = Some(TransitionScene::new_fade_out());
             }
