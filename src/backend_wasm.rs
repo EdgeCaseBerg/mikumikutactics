@@ -539,7 +539,10 @@ impl BackendEventLoop for EventLoopWasm {
         // First time load setup
         let scene = game.scene.as_mut();
         if let Some(scene) = scene {
-            let _ = scene.init(&mut game_context)?;
+            if let Err(game_error) = scene.init(&mut game_context) {
+                window().alert_with_message(&game_error.to_string());
+                panic!("A game error occurred: {:?}", game_error);
+            }
         }
 
         // setup input processing
@@ -628,9 +631,10 @@ impl BackendEventLoop for EventLoopWasm {
                     panic!("A game error occurred: {:?}", game_error);
                 }
                 if let Some(mut next_scene) = game_context.next_scene.take() {
-                    next_scene
-                        .init(&mut game_context)
-                        .expect("could not init next scene");
+                    if let Err(game_error) = next_scene.init(&mut game_context) {
+                        window().alert_with_message(&game_error.to_string());
+                        panic!("A game error occurred: {:?}", game_error);
+                    }
                     game.scene = Some(next_scene);
                     game.reset_for_next_scene();
                     let audio = game_context.audio.as_mut();
