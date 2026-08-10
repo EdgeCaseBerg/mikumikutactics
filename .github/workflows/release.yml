@@ -64,7 +64,9 @@ jobs:
             libwayland-dev \
             libxkbcommon-dev \
             libxss-dev \
-            libxtst-dev
+            libxtst-dev \
+            libharfbuzz-dev \
+            libfreetype6-dev \
 
       - name: Install dependencies (mac)
         if: runner.os == 'macOS'
@@ -78,6 +80,8 @@ jobs:
 
       - name: Build (mac and Microslop)
         if: runner.os != 'Linux'
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: "3.5"
         run: cargo build --release --locked
 
       - name: Build (Linux with rpath)
@@ -92,7 +96,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          cp target/release/mikumikutower dist/
+          cp target/release/mikumikutactics dist/
           cp target/release/libSDL3* dist/
 
           # game assets
@@ -105,7 +109,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          cp target/release/mikumikutower dist/
+          cp target/release/mikumikutactics dist/
           cp target/release/libSDL3*.dylib dist/ || true
 
           cp -r assets dist/
@@ -113,13 +117,13 @@ jobs:
           cp -r levels dist/ || true
           cp -r shaders dist/ || true
 
-          install_name_tool -add_rpath @loader_path dist/mikumikutower || true
+          install_name_tool -add_rpath @loader_path dist/mikumikutactics || true
 
       - name: Prepare dist (Microslop)
         if: runner.os == 'Windows'
         run: |
           mkdir dist
-          copy target\release\mikumikutower.exe dist\
+          copy target\release\mikumikutactics.exe dist\
           copy target\release\libSDL3* dist\
           copy target\release\SDL3.dll dist\
           copy target\release\SDL3_image.dll dist\
@@ -142,20 +146,20 @@ jobs:
 
       - name: Archive (Linux)
         if: runner.os == 'Linux'
-        run: tar -czf mikumikutower-linux.tar.gz -C dist .
+        run: tar -czf mikumikutactics-linux.tar.gz -C dist .
 
       - name: Archive (macOS)
         if: runner.os == 'macOS'
-        run: tar -czf mikumikutower-macos.tar.gz -C dist .
+        run: tar -czf mikumikutactics-macos.tar.gz -C dist .
 
       - name: Archive (Microslop)
         if: runner.os == 'Windows'
-        run: powershell Compress-Archive dist mikumikutower-windows.zip
+        run: powershell Compress-Archive dist mikumikutactics-windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mikumikutower-${{ runner.os }}
+          name: mikumikutactics-${{ runner.os }}
           path: |
             *.tar.gz
             *.zip
@@ -164,6 +168,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            mikumikutower-linux.tar.gz
-            mikumikutower-macos.tar.gz
-            mikumikutower-windows.zip
+            mikumikutactics-linux.tar.gz
+            mikumikutactics-macos.tar.gz
+            mikumikutactics-windows.zip
