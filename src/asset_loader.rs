@@ -85,6 +85,18 @@ impl AssetCatalog {
             scene_to_scene_idx,
         })
     }
+    pub fn get_sprite_name_for_id(&self, scene_id: SceneId) -> AssetResult<&str> {
+        let maybe_sheet = self
+            .manifest
+            .spritesheets
+            .iter()
+            .find(|sheet| sheet.id == scene_id.0);
+        if let Some(sheet) = maybe_sheet.as_ref() {
+            Ok(&sheet.name)
+        } else {
+            Err(format!("no sprite with id {} found", scene_id.0).into())
+        }
+    }
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.manifest.spritesheets.get(*idx)?;
@@ -101,6 +113,7 @@ impl AssetCatalog {
         Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
+        // TODO: this is relying on the previous enumeration id-strategy
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.manifest.spritesheets.get(*idx)?;
         Some(TextureId(sheet.id))
