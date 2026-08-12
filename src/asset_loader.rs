@@ -59,26 +59,22 @@ impl AssetCatalog {
         let character_to_sprite_id = manifest
             .spritesheets
             .iter()
-            .enumerate()
-            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
+            .map(|sheet| (sheet.name.to_owned(), sheet.id))
             .collect();
         let music_to_music_idx = manifest
             .music
             .iter()
-            .enumerate()
-            .map(|(idx, music)| (music.name.to_owned(), idx))
+            .map(|music| (music.name.to_owned(), music.id))
             .collect();
         let sound_to_sfx_idx = manifest
             .sounds
             .iter()
-            .enumerate()
-            .map(|(idx, sound)| (sound.name.to_owned(), idx))
+            .map(|sound| (sound.name.to_owned(), sound.id))
             .collect();
         let scene_to_scene_idx = manifest
             .scenes
             .iter()
-            .enumerate()
-            .map(|(idx, scene)| (scene.name.to_owned(), idx))
+            .map(|scene| (scene.name.to_owned(), scene.id))
             .collect();
 
         Ok(AssetCatalog {
