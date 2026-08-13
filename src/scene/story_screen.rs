@@ -143,13 +143,17 @@ impl StoryScene {
         };
         let catalog = asset_loader.get_catalog();
 
-        if let (Some(background_id), Some(sprite_info)) = (vn.background, self.bg.as_ref()) {
-            let src = sprite_info.get_rect();
-            renderer.send_command(RenderCommand::DrawRect {
-                texture_id: background_id,
-                source: src,
-                destination: Rect::new(0, 0, layout.area.width, layout.area.height),
-            });
+        if let Some(background_id) = vn.background {
+            if let Ok(name) = catalog.get_sprite_name_for_id(background_id) {
+                if let Some(sprite_info) = catalog.get_sprite(name) {
+                    let src = sprite_info.get_rect();
+                    renderer.send_command(RenderCommand::DrawRect {
+                        texture_id: background_id,
+                        source: src,
+                        destination: Rect::new(0, 0, layout.area.width, layout.area.height),
+                    });
+                }
+            }
         }
         Self::draw_character_slot(
             vn.slot_left.as_ref(),
