@@ -250,9 +250,8 @@ impl StoryScene {
         // we'll likely need to have some kind of thing that also sets the story_screen state fields based on what was loaded as well, maybe. it
         // might be enough to just run through and advance the pc and let the various queues fill up (and ensure we DRAIN the audio ones where appropriate)
         vn.program_counter = pc.0;
-        if let Some(existing_vn) = self.vn {
-            let to_merge = existing_vn.flags;
-            vn.flags = to_merge.union(vn.flags).collect();
+        if let Some(existing_vn) = self.vn.take() {
+            vn.flags.extend(existing_vn.flags);
         }
         self.vn = Some(vn);
         Ok(())
