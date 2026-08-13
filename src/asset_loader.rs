@@ -35,6 +35,10 @@ pub struct AssetCatalog {
     music_to_music_idx: HashMap<String, usize>,
     sound_to_sfx_idx: HashMap<String, usize>,
     scene_to_scene_idx: HashMap<String, usize>,
+    character_id_to_sprite_idx: HashMap<usize, usize>,
+    music_id_to_music_idx: HashMap<usize, usize>,
+    sound_id_to_sfx_idx: HashMap<usize, usize>,
+    scene_id_to_scene_idx: HashMap<usize, usize>,
 }
 
 fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
@@ -59,22 +63,51 @@ impl AssetCatalog {
         let character_to_sprite_id = manifest
             .spritesheets
             .iter()
-            .map(|sheet| (sheet.name.to_owned(), sheet.id))
+            .enumerate()
+            .map(|(idx, sheet)| (sheet.name.to_owned(), idx))
             .collect();
         let music_to_music_idx = manifest
             .music
             .iter()
-            .map(|music| (music.name.to_owned(), music.id))
+            .enumerate()
+            .map(|(idx, music)| (music.name.to_owned(), idx))
             .collect();
         let sound_to_sfx_idx = manifest
             .sounds
             .iter()
-            .map(|sound| (sound.name.to_owned(), sound.id))
+            .enumerate()
+            .map(|(idx, sound)| (sound.name.to_owned(), idx))
             .collect();
         let scene_to_scene_idx = manifest
             .scenes
             .iter()
-            .map(|scene| (scene.name.to_owned(), scene.id))
+            .enumerate()
+            .map(|(idx, scene)| (scene.name.to_owned(), idx))
+            .collect();
+
+        let character_id_to_sprite_idx = manifest
+            .spritesheets
+            .iter()
+            .enumerate()
+            .map(|(idx, sheet)| (sheet.id, idx))
+            .collect();
+        let music_id_to_music_idx = manifest
+            .music
+            .iter()
+            .enumerate()
+            .map(|(idx, music)| (music.id, idx))
+            .collect();
+        let sound_id_to_sfx_idx = manifest
+            .sounds
+            .iter()
+            .enumerate()
+            .map(|(idx, sound)| (sound.id, idx))
+            .collect();
+        let scene_id_to_scene_idx = manifest
+            .scenes
+            .iter()
+            .enumerate()
+            .map(|(idx, scene)| (scene.id, idx))
             .collect();
 
         Ok(AssetCatalog {
@@ -83,19 +116,18 @@ impl AssetCatalog {
             music_to_music_idx,
             sound_to_sfx_idx,
             scene_to_scene_idx,
+            character_id_to_sprite_idx,
+            music_id_to_music_idx,
+            sound_id_to_sfx_idx,
+            scene_id_to_scene_idx,
         })
     }
     pub fn get_sprite_name_for_id(&self, scene_id: SceneId) -> AssetResult<&str> {
-        let maybe_sheet = self
-            .manifest
-            .spritesheets
-            .iter()
-            .find(|sheet| sheet.id == scene_id.0);
-        if let Some(sheet) = maybe_sheet.as_ref() {
-            Ok(&sheet.name)
-        } else {
-            Err(format!("no sprite with id {} found", scene_id.0).into())
-        }
+        let Some(idx) = self.character_id_to_sprite_idx.get(&scene_id.0) else {
+            return Err(format!("no sprite with id {} found", scene_id.0).into());
+        };
+        let sheet = &self.manifest.spritesheets[*idx];
+        Ok(&sheet.name)
     }
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
         let idx = self.character_to_sprite_id.get(name)?;
@@ -113,21 +145,18 @@ impl AssetCatalog {
         Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
-        // TODO: this is relying on the previous enumeration id-strategy
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.manifest.spritesheets.get(*idx)?;
         Some(TextureId(sheet.id))
     }
     pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
-        let sheet = self
-            .manifest
-            .spritesheets
-            .iter()
-            .find(|sprite| sprite.id == id.0)?;
+        let idx = self.character_id_to_sprite_idx.get(&id.0)?;
+        let sheet = &self.manifest.spritesheets[*idx];
         Some(PathBuf::from(&sheet.asset_path))
     }
     pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
-        let music = Self::file_asset_list_to_id(&self.manifest.music, id.0)?;
+        let idx = self.music_id_to_music_idx.get(&id.0)?;
+        let music = &self.manifest.music[*idx];
         Some(PathBuf::from(&music.asset_path))
     }
     pub fn get_music_id_for_name(&self, name: &str) -> Option<MusicId> {
@@ -136,7 +165,8 @@ impl AssetCatalog {
         Some(MusicId(sheet.id))
     }
     pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
-        let sound = Self::file_asset_list_to_id(&self.manifest.sounds, id.0)?;
+        let idx = self.sound_id_to_sfx_idx.get(&id.0)?;
+        let sound = &self.manifest.sounds[*idx];
         Some(PathBuf::from(&sound.asset_path))
     }
     pub fn get_sfx_id_for_name(&self, name: &str) -> Option<SfxId> {
@@ -145,9 +175,10 @@ impl AssetCatalog {
         Some(SfxId(sheet.id))
     }
     pub fn get_scene_path(&self, id: SceneId) -> AssetResult<PathBuf> {
-        let Some(scene) = Self::file_asset_list_to_id(&self.manifest.scenes, id.0) else {
+        let Some(idx) = self.scene_id_to_scene_idx.get(&id.0) else {
             return Err(format!("could not find scene asset path for id {}", id.0).into());
         };
+        let scene = &self.manifest.scenes[*idx];
         Ok(PathBuf::from(&scene.asset_path))
     }
     pub fn get_scene_id_for_name(&self, name: &str) -> AssetResult<SceneId> {
@@ -161,10 +192,6 @@ impl AssetCatalog {
             .into());
         };
         Ok(SceneId(scene_file_asset.id))
-    }
-
-    fn file_asset_list_to_id(v: &[FileAsset], id: usize) -> Option<&FileAsset> {
-        v.iter().find(|f| f.id == id)
     }
 }
 
