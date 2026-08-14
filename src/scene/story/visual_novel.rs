@@ -710,7 +710,7 @@ fn validate_if_flag_goto(
         ));
         None
     } else {
-        return Some(NovelOps::IfFlagGoto { flag_name, label });
+        Some(NovelOps::IfFlagGoto { flag_name, label })
     }
 }
 

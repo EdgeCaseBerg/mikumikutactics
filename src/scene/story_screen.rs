@@ -5,8 +5,8 @@ use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::asset_loader::ensure_texture_by_name;
 use crate::constants::{
-    FontId, ProgramCounter, SFX_BLIP, SceneId, SfxId, TEXTURE_PLANNING_LAYOUT_BG, TEXTURE_UI,
-    TEXTURE_UI_FOCUS_TAG, TextureId, VN_QUIT_FLAG,
+    FontId, ProgramCounter, SFX_BLIP, SceneId, SfxId, TEXTURE_UI, TEXTURE_UI_FOCUS_TAG, TextureId,
+    VN_QUIT_FLAG,
 };
 use crate::font::LoadedFont;
 use crate::game::GameContext;

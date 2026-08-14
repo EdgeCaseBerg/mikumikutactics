@@ -1,6 +1,6 @@
 use crate::SpriteInfo;
 use crate::constants::{MusicId, SceneId, SfxId, TextureId};
-use crate::manifest::{FileAsset, Manifest, SpriteFrame};
+use crate::manifest::{Manifest, SpriteFrame};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
@@ -206,8 +206,7 @@ impl SceneLoadingContext for AssetCatalog {
         self.get_music_id_for_name(name)
     }
     fn name_to_scene(&self, name: &str) -> Option<SceneId> {
-        self.get_scene_id_for_name(name)
-            .map_or_else(|_| None, |id| Some(id))
+        self.get_scene_id_for_name(name).ok()
     }
 }
 
