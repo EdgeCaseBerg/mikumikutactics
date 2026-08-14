@@ -25,7 +25,7 @@ const STORY_FONT: FontId = FontId::BoldPixelScaled { pixel_size: 24 };
 const BUTTON_FONT: FontId = FontId::BoldPixels;
 
 pub struct StoryScene {
-    bg: Option<SpriteInfo>,
+    bg: Option<(TextureId, SpriteInfo)>,
     highlight: Option<SpriteInfo>,
     fade: Option<TransitionScene>,
     text_box: Option<TextBox>,
@@ -143,17 +143,13 @@ impl StoryScene {
         };
         let catalog = asset_loader.get_catalog();
 
-        if let Some(background_id) = vn.background {
-            if let Ok(name) = catalog.get_sprite_name_for_id(background_id) {
-                if let Some(sprite_info) = catalog.get_sprite(name) {
-                    let src = sprite_info.get_rect();
-                    renderer.send_command(RenderCommand::DrawRect {
-                        texture_id: background_id,
-                        source: src,
-                        destination: Rect::new(0, 0, layout.area.width, layout.area.height),
-                    });
-                }
-            }
+        if let Some((background_id, sprite_info)) = self.bg.as_ref() {
+            let src = sprite_info.get_rect();
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: *background_id,
+                source: src,
+                destination: Rect::new(0, 0, layout.area.width, layout.area.height),
+            });
         }
         Self::draw_character_slot(
             vn.slot_left.as_ref(),
@@ -337,9 +333,6 @@ impl Scene for StoryScene {
         };
         let catalog = asset_loader.get_catalog();
 
-        let _ = ensure_texture_by_name(TEXTURE_PLANNING_LAYOUT_BG, asset_loader.as_mut())?;
-        self.bg = catalog.get_sprite(TEXTURE_PLANNING_LAYOUT_BG);
-
         let ui_textures_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
         self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
 
@@ -435,6 +428,16 @@ impl Scene for StoryScene {
             if vn.is_flag_set(VN_QUIT_FLAG) {
                 game_context.shutdown();
                 self.fade = Some(TransitionScene::new_fade_out());
+            }
+            if let Some(background_id) = vn.background.take() {
+                if let Some(asset_loader) = game_context.asset_loader.as_ref() {
+                    let catalog = asset_loader.get_catalog();
+                    if let Ok(name) = catalog.get_sprite_name_for_id(background_id) {
+                        if let Some(sprite_info) = catalog.get_sprite(name) {
+                            self.bg = Some((background_id, sprite_info));
+                        }
+                    }
+                }
             }
             if let Some(next_scene) = vn.to_scene.take() {
                 game_context.queue_story_scene(next_scene);
