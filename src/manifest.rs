@@ -62,7 +62,7 @@ pub struct Spritesheet {
     pub tags: Vec<FrameTag>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpriteFrame {
     pub x: u32,
     pub y: u32,
@@ -71,7 +71,7 @@ pub struct SpriteFrame {
     pub duration_ms: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FrameTag {
     pub name: String,
     pub from: u32,

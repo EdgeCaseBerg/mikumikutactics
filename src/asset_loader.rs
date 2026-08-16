@@ -4,7 +4,9 @@ use crate::manifest::{Manifest, SpriteFrame};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::error::Error;
+use std::ops::RangeInclusive;
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -144,6 +146,42 @@ impl AssetCatalog {
         let num_frames = tag.to - tag.from;
         Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
+    // things like get (portraits [miku, talking-neutral])
+    pub fn get_sprite_with_tags(
+        &self,
+        sheet_name: &str,
+        matching_all_tags: &[&str],
+    ) -> Option<SpriteInfo> {
+        if matching_all_tags.is_empty() {
+            // TODO: Err(empty tag list)
+            return None;
+        }
+        let idx = self.character_to_sprite_id.get(sheet_name)?;
+        let sheet = self.manifest.spritesheets.get(*idx)?;
+        let mut queue: VecDeque<&str> = matching_all_tags.iter().copied().collect();
+        let mut matching = RangeInclusive::new(0, sheet.frames.len() - 1);
+        while let Some(narrowing) = queue.pop_front() {
+            let Some(t) = sheet.tags.iter().find(|tag| {
+                matching.contains(&(tag.from as usize))
+                    && matching.contains(&(tag.to as usize))
+                    && tag.name == narrowing
+            }) else {
+                // TODO: Err(bad narrowing path)
+                return None;
+            };
+
+            matching = RangeInclusive::new(
+                *matching.start().max(&(t.from as usize)),
+                *matching.end().min(&(t.to as usize)),
+            );
+        }
+
+        let num_frames = matching.end() - matching.start();
+        Some(to_sprite_info(
+            &sheet.frames[*matching.start()],
+            1 + num_frames as u32,
+        ))
+    }
     pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
         let idx = self.character_to_sprite_id.get(name)?;
         let sheet = self.manifest.spritesheets.get(*idx)?;
@@ -225,5 +263,99 @@ mod transition_scene_tests {
             panic!("expected to contain rin but got {:?}", catalog);
         };
         assert_eq!(0, rin.start_x);
+    }
+
+    #[test]
+    fn get_sprite_with_tags_narrows_correctly() {
+        let catalog = AssetCatalog::from_manifest_str(
+            r#"{
+            "spritesheets": [{
+                "id": 0,
+                "name": "not_it",
+                "asset_path": "b/p.png",
+                "frames": [],
+                "tags": []
+            },{
+                "id": 0,
+                "name": "portraits",
+                "asset_path": "c/m.png",
+                "frames": [
+                    { "x": 0, "y": 0, "w": 64, "h": 64, "duration_ms": 100 },
+                    { "x": 64, "y": 0, "w": 64, "h": 64, "duration_ms": 100 },
+                    { "x": 128, "y": 0, "w": 64, "h": 64, "duration_ms": 100 },
+                    { "x": 192, "y": 0, "w": 64, "h": 64, "duration_ms": 100 }
+                ],
+                "tags": [
+                    {
+                      "name": "miku",
+                      "from": 0,
+                      "to": 1
+                    },
+                    {
+                      "name": "meiko",
+                      "from": 2,
+                      "to": 3
+                    },
+                    {
+                      "name": "talking-idle",
+                      "from": 0,
+                      "to": 0
+                    },
+                    {
+                      "name": "talking-idle",
+                      "from": 2,
+                      "to": 2
+                    },
+                    {
+                      "name": "talking-mad",
+                      "from": 1,
+                      "to": 1
+                    },
+                    {
+                      "name": "talking-mad",
+                      "from": 3,
+                      "to": 3
+                    },
+                    {
+                      "name": "talking",
+                      "from": 2,
+                      "to": 3
+                    }
+                ]
+            }],
+            "sounds": [],
+            "music": [],
+            "scenes": []
+        }"#,
+        );
+        let Ok(catalog) = catalog else {
+            panic!("expected to parse manifest but got {:?}", catalog);
+        };
+        // Finds a range of frames
+        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["miku"]) else {
+            panic!("expected to find sprite info but got None");
+        };
+        assert_eq!(sp.start_x, 0);
+        assert_eq!(sp.frames, 2);
+
+        // Finds a narrowed set of frames
+        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["miku", "talking-mad"]) else {
+            panic!("expected to find sprite info but got None");
+        };
+        assert_eq!(sp.start_x, 64);
+        assert_eq!(sp.frames, 1);
+
+        // Finds nothing on bad narrowing path
+        let found = catalog.get_sprite_with_tags("portraits", &["miku", "doesnt exist"]);
+        let None = found else {
+            panic!("expected to not find sprite info {:?}", found);
+        };
+
+        // Finds a narrowed set of frames
+        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["meiko", "talking"]) else {
+            panic!("expected to find sprite info but got None");
+        };
+        assert_eq!(sp.start_x, 128);
+        assert_eq!(sp.frames, 2);
     }
 }
