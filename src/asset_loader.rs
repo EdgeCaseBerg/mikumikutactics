@@ -121,11 +121,17 @@ impl AssetCatalog {
             scene_id_to_scene_idx,
         })
     }
-    pub fn get_sprite_name_for_id(&self, scene_id: TextureId) -> AssetResult<&str> {
-        let Some(idx) = self.character_id_to_sprite_idx.get(&scene_id.0) else {
-            return Err(format!("no sprite with id {} found", scene_id.0).into());
+    pub fn get_sprite_name_for_id(&self, texture_id: TextureId) -> AssetResult<&str> {
+        let Some(idx) = self.character_id_to_sprite_idx.get(&texture_id.0) else {
+            return Err(format!("no sprite with id {} found", texture_id.0).into());
         };
-        let sheet = &self.manifest.spritesheets[*idx];
+        let Some(sheet) = &self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no sprite name for texture id {} exists at index {idx}",
+                texture_id.0
+            )
+            .into());
+        };
         Ok(&sheet.name)
     }
     pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
