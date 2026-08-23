@@ -408,10 +408,7 @@ impl AssetLoader for AssetLoaderSDL3 {
         if ctx.textures.get_texture(id).is_some() {
             return;
         }
-        let asset_path = ctx
-            .catalog
-            .get_asset_path(id)
-            .unwrap_or_else(|| panic!("could not ensure texture would be loaded for id {:?}", id));
+        let asset_path = ctx.catalog.get_asset_path(id).unwrap();
         let asset_path = self.base_path.join(asset_path);
         ctx.textures.load(id, asset_path);
     }

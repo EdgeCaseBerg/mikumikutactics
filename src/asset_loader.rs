@@ -202,10 +202,18 @@ impl AssetCatalog {
         };
         Ok(TextureId(sheet.id))
     }
-    pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
-        let idx = self.character_id_to_sprite_idx.get(&id.0)?;
-        let sheet = &self.manifest.spritesheets[*idx];
-        Some(PathBuf::from(&sheet.asset_path))
+    pub fn get_asset_path(&self, id: TextureId) -> AssetResult<PathBuf> {
+        let Some(idx) = self.character_id_to_sprite_idx.get(&id.0) else {
+            return Err(format!("could not find asset path with id {}", id.0).into());
+        };
+        let Some(sheet) = self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no texture for id {} exists at index {idx}",
+                id.0
+            )
+            .into());
+        };
+        Ok(PathBuf::from(&sheet.asset_path))
     }
     pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
         let idx = self.music_id_to_music_idx.get(&id.0)?;
