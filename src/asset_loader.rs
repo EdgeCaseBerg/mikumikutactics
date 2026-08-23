@@ -151,13 +151,22 @@ impl AssetCatalog {
         &self,
         sheet_name: &str,
         matching_all_tags: &[&str],
-    ) -> Option<SpriteInfo> {
+    ) -> AssetResult<SpriteInfo> {
         if matching_all_tags.is_empty() {
-            // TODO: Err(empty tag list)
-            return None;
+            return Err("cannot narrow sprite if no tags are provided".into());
         }
-        let idx = self.character_to_sprite_id.get(sheet_name)?;
-        let sheet = self.manifest.spritesheets.get(*idx)?;
+        let Some(idx) = self.character_to_sprite_id.get(sheet_name) else {
+            return Err(
+                format!("sheet name {} does not exist in loaded assets", sheet_name).into(),
+            );
+        };
+        let Some(sheet) = self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "sheet name {} does not exist in manifest assets",
+                sheet_name
+            )
+            .into());
+        };
         let mut queue: VecDeque<&str> = matching_all_tags.iter().copied().collect();
         let mut matching = RangeInclusive::new(0, sheet.frames.len() - 1);
         for &narrowing in matching_all_tags {
@@ -166,8 +175,11 @@ impl AssetCatalog {
                     && matching.contains(&(tag.to as usize))
                     && tag.name == narrowing
             }) else {
-                // TODO: Err(bad narrowing path)
-                return None;
+                return Err(format!(
+                    "invalid narrowing path {:?} provided for sheet {:?}",
+                    narrowing, sheet_name
+                )
+                .into());
             };
 
             matching = RangeInclusive::new(
@@ -177,7 +189,7 @@ impl AssetCatalog {
         }
 
         let num_frames = matching.end() - matching.start();
-        Some(to_sprite_info(
+        Ok(to_sprite_info(
             &sheet.frames[*matching.start()],
             1 + num_frames as u32,
         ))
@@ -332,14 +344,14 @@ mod transition_scene_tests {
             panic!("expected to parse manifest but got {:?}", catalog);
         };
         // Finds a range of frames
-        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["miku"]) else {
+        let Ok(sp) = catalog.get_sprite_with_tags("portraits", &["miku"]) else {
             panic!("expected to find sprite info but got None");
         };
         assert_eq!(sp.start_x, 0);
         assert_eq!(sp.frames, 2);
 
         // Finds a narrowed set of frames
-        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["miku", "talking-mad"]) else {
+        let Ok(sp) = catalog.get_sprite_with_tags("portraits", &["miku", "talking-mad"]) else {
             panic!("expected to find sprite info but got None");
         };
         assert_eq!(sp.start_x, 64);
@@ -347,12 +359,17 @@ mod transition_scene_tests {
 
         // Finds nothing on bad narrowing path
         let found = catalog.get_sprite_with_tags("portraits", &["miku", "doesnt exist"]);
-        let None = found else {
+        if let Err(error) = found {
+            assert_eq!(
+                "invalid narrowing path \"doesnt exist\" provided for sheet \"portraits\"",
+                error.to_string()
+            );
+        } else {
             panic!("expected to not find sprite info {:?}", found);
         };
 
         // Finds a narrowed set of frames
-        let Some(sp) = catalog.get_sprite_with_tags("portraits", &["meiko", "talking"]) else {
+        let Ok(sp) = catalog.get_sprite_with_tags("portraits", &["meiko", "talking"]) else {
             panic!("expected to find sprite info but got None");
         };
         assert_eq!(sp.start_x, 128);
