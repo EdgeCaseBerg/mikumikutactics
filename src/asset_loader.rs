@@ -232,10 +232,18 @@ impl AssetCatalog {
         };
         Ok(MusicId(sheet.id))
     }
-    pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
-        let idx = self.sound_id_to_sfx_idx.get(&id.0)?;
-        let sound = &self.manifest.sounds[*idx];
-        Some(PathBuf::from(&sound.asset_path))
+    pub fn get_sfx_path(&self, id: SfxId) -> AssetResult<PathBuf> {
+        let Some(idx) = self.sound_id_to_sfx_idx.get(&id.0) else {
+            return Err(format!("could not find sfx path with id {}", id.0).into());
+        };
+        let Some(sound) = self.manifest.sounds.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no sfx for id {} exists at index {idx}",
+                id.0
+            )
+            .into());
+        };
+        Ok(PathBuf::from(&sound.asset_path))
     }
     pub fn get_sfx_id_for_name(&self, name: &str) -> AssetResult<SfxId> {
         let Some(idx) = self.sound_to_sfx_idx.get(name) else {
