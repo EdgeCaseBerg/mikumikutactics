@@ -23,7 +23,7 @@ pub fn ensure_texture_by_name(
 ) -> AssetResult<TextureId> {
     let catalog = asset_loader.get_catalog();
     let id = catalog.get_texture_id_for_sprite(name)?;
-    asset_loader.ensure_texture_spritesheet_loaded(id);
+    asset_loader.ensure_texture_spritesheet_loaded(id)?;
     Ok(id)
 }
 

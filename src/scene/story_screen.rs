@@ -245,7 +245,7 @@ impl StoryScene {
         let scene_path = catalog.get_scene_path(scene_id)?;
         let raw_scene = asset_loader.load_story_scene_contents(scene_path)?;
         let mut vn = parse_scene(&raw_scene, catalog.as_ref())?;
-        ensure_ops_loaded(&vn.program, game_context);
+        ensure_ops_loaded(&vn.program, game_context)?;
         // TODO: restore state safely (validate bounds, fast forward the script to determine what the current state of the system should be, etc)
         // we'll likely need to have some kind of thing that also sets the story_screen state fields based on what was loaded as well, maybe. it
         // might be enough to just run through and advance the pc and let the various queues fill up (and ensure we DRAIN the audio ones where appropriate)
@@ -300,13 +300,16 @@ impl Default for StoryScene {
     }
 }
 
-fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
+fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) -> GameResult<()> {
+    let mut errors = vec![];
     for op in ops {
         if let Some(id) = op.as_texture_id() {
             let Some(ref mut asset_loader) = game_context.asset_loader else {
-                return;
+                return Err("cannot insure assets if asset loader is not in game context".into());
             };
-            asset_loader.ensure_texture_spritesheet_loaded(id);
+            if let Err(e) = asset_loader.ensure_texture_spritesheet_loaded(id) {
+                errors.push(e);
+            }
         }
         if let NovelOps::PlaySfx(sfx_id) = op {
             if let Some(ref mut audio) = game_context.audio {
@@ -319,6 +322,16 @@ fn ensure_ops_loaded(ops: &[NovelOps], game_context: &mut GameContext) {
         } else {
             continue;
         }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
+            .into())
     }
 }
 

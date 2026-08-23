@@ -88,7 +88,7 @@ impl FontLibrary for BitmapFontLibrary {
         };
         let catalog = asset_loader.get_catalog();
         let texture_id = catalog.get_texture_id_for_sprite(FONT_NAME)?;
-        asset_loader.ensure_texture_spritesheet_loaded(texture_id);
+        asset_loader.ensure_texture_spritesheet_loaded(texture_id)?;
         // NOT unsafe, we literally make the bytes here.
         let ascii = unsafe {
             let bytes: Vec<u8> = (0u8..=127).collect();
