@@ -610,7 +610,7 @@ fn validate_show(
     let maybe_texture_id = context.name_to_texture(&character_name);
     let maybe_pp = PortraitPosition::lift(&pp);
 
-    if !maybe_texture_id.is_ok() {
+    if maybe_texture_id.is_err() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name
@@ -644,7 +644,7 @@ fn validate_new_character_state(
     };
     let maybe_texture_id = context.name_to_texture(&character_name);
     let maybe_state = CharacterState::lift(&state);
-    if !maybe_texture_id.is_ok() {
+    if maybe_texture_id.is_err() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name

@@ -4,7 +4,6 @@ use crate::manifest::{Manifest, SpriteFrame};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
-use std::collections::VecDeque;
 use std::error::Error;
 use std::ops::RangeInclusive;
 use std::path::PathBuf;
@@ -165,7 +164,6 @@ impl AssetCatalog {
             )
             .into());
         };
-        let mut queue: VecDeque<&str> = matching_all_tags.iter().copied().collect();
         let mut matching = RangeInclusive::new(0, sheet.frames.len() - 1);
         for &narrowing in matching_all_tags {
             let Some(t) = sheet.tags.iter().find(|tag| {
