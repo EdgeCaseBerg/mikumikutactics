@@ -87,9 +87,7 @@ impl FontLibrary for BitmapFontLibrary {
             FontId::BoldPixelScaled { pixel_size } => pixel_size as f32 / 16.0,
         };
         let catalog = asset_loader.get_catalog();
-        let Some(texture_id) = catalog.get_texture_id_for_sprite(FONT_NAME) else {
-            return Err("could not find texture id for bitmap font texture".into());
-        };
+        let texture_id = catalog.get_texture_id_for_sprite(FONT_NAME)?;
         asset_loader.ensure_texture_spritesheet_loaded(texture_id);
         // NOT unsafe, we literally make the bytes here.
         let ascii = unsafe {

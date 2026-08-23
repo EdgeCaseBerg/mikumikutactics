@@ -23,9 +23,7 @@ pub fn ensure_texture_by_name(
     asset_loader: &mut dyn AssetLoader,
 ) -> AssetResult<TextureId> {
     let catalog = asset_loader.get_catalog();
-    let Some(id) = catalog.get_texture_id_for_sprite(name) else {
-        return Err(format!("could not load texture for name {}", name).into());
-    };
+    let id = catalog.get_texture_id_for_sprite(name)?;
     asset_loader.ensure_texture_spritesheet_loaded(id);
     Ok(id)
 }
@@ -194,10 +192,17 @@ impl AssetCatalog {
             1 + num_frames as u32,
         ))
     }
-    pub fn get_texture_id_for_sprite(&self, name: &str) -> Option<TextureId> {
-        let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.manifest.spritesheets.get(*idx)?;
-        Some(TextureId(sheet.id))
+    pub fn get_texture_id_for_sprite(&self, name: &str) -> AssetResult<TextureId> {
+        let Some(idx) = self.character_to_sprite_id.get(name) else {
+            return Err(format!("could not find texture id with name {name}").into());
+        };
+        let Some(sheet) = self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no texture for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        Ok(TextureId(sheet.id))
     }
     pub fn get_asset_path(&self, id: TextureId) -> Option<PathBuf> {
         let idx = self.character_id_to_sprite_idx.get(&id.0)?;
@@ -209,20 +214,34 @@ impl AssetCatalog {
         let music = &self.manifest.music[*idx];
         Some(PathBuf::from(&music.asset_path))
     }
-    pub fn get_music_id_for_name(&self, name: &str) -> Option<MusicId> {
-        let idx = self.music_to_music_idx.get(name)?;
-        let sheet = self.manifest.music.get(*idx)?;
-        Some(MusicId(sheet.id))
+    pub fn get_music_id_for_name(&self, name: &str) -> AssetResult<MusicId> {
+        let Some(idx) = self.music_to_music_idx.get(name) else {
+            return Err(format!("could not find music id with name {name}").into());
+        };
+        let Some(sheet) = self.manifest.music.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no music for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        Ok(MusicId(sheet.id))
     }
     pub fn get_sfx_path(&self, id: SfxId) -> Option<PathBuf> {
         let idx = self.sound_id_to_sfx_idx.get(&id.0)?;
         let sound = &self.manifest.sounds[*idx];
         Some(PathBuf::from(&sound.asset_path))
     }
-    pub fn get_sfx_id_for_name(&self, name: &str) -> Option<SfxId> {
-        let idx = self.sound_to_sfx_idx.get(name)?;
-        let sheet = self.manifest.sounds.get(*idx)?;
-        Some(SfxId(sheet.id))
+    pub fn get_sfx_id_for_name(&self, name: &str) -> AssetResult<SfxId> {
+        let Some(idx) = self.sound_to_sfx_idx.get(name) else {
+            return Err(format!("could not find sfx id with name {name}").into());
+        };
+        let Some(sheet) = self.manifest.sounds.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no sfx for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        Ok(SfxId(sheet.id))
     }
     pub fn get_scene_path(&self, id: SceneId) -> AssetResult<PathBuf> {
         let Some(idx) = self.scene_id_to_scene_idx.get(&id.0) else {
@@ -246,17 +265,17 @@ impl AssetCatalog {
 }
 
 impl SceneLoadingContext for AssetCatalog {
-    fn name_to_texture(&self, name: &str) -> Option<TextureId> {
+    fn name_to_texture(&self, name: &str) -> AssetResult<TextureId> {
         self.get_texture_id_for_sprite(name)
     }
-    fn name_to_sfx(&self, name: &str) -> Option<SfxId> {
+    fn name_to_sfx(&self, name: &str) -> AssetResult<SfxId> {
         self.get_sfx_id_for_name(name)
     }
-    fn name_to_music(&self, name: &str) -> Option<MusicId> {
+    fn name_to_music(&self, name: &str) -> AssetResult<MusicId> {
         self.get_music_id_for_name(name)
     }
-    fn name_to_scene(&self, name: &str) -> Option<SceneId> {
-        self.get_scene_id_for_name(name).ok()
+    fn name_to_scene(&self, name: &str) -> AssetResult<SceneId> {
+        self.get_scene_id_for_name(name)
     }
 }
 

@@ -336,9 +336,7 @@ impl Scene for StoryScene {
         let ui_textures_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
         self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
 
-        let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) else {
-            return Err("cannot init scene if sound effect not available: blip".into());
-        };
+        let blip = catalog.get_sfx_id_for_name(SFX_BLIP)?;
         let _ = audio.load_sfx(blip);
 
         let ids = StorySceneIds {

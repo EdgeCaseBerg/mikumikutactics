@@ -93,15 +93,6 @@ impl Scene for TitleScene {
         let catalog = asset_loader.get_catalog();
         self.bg = catalog.get_sprite(TEXTURE_TITLE_BG);
 
-        // TODO: consider returning a result rather than an option so we can dynamically create
-        // the error string to perfectly match the manifest instead since blip != blipSelect from
-        // a power users eye perhaps.
-        let Some(meme) = catalog.get_sfx_id_for_name(SFX_MEME) else {
-            return Err("cannot init scene if sound effect not available: meme".into());
-        };
-        let Some(blip) = catalog.get_sfx_id_for_name(SFX_BLIP) else {
-            return Err("cannot init scene if sound effect not available: blip".into());
-        };
         let Ok(start_scene_id) = catalog.get_scene_id_for_name(SCENE_START_NAME) else {
             return Err("cannot init scene if start scene id is not available".into());
         };
@@ -109,7 +100,9 @@ impl Scene for TitleScene {
         let Some(audio) = game_context.audio.as_mut() else {
             return Err("cannot init scene if audio context is not set".into());
         };
+        let meme = catalog.get_sfx_id_for_name(SFX_MEME)?;
         audio.load_sfx(meme)?;
+        let blip = catalog.get_sfx_id_for_name(SFX_BLIP)?;
         audio.load_sfx(blip)?;
 
         let bg_id = ensure_texture_by_name(TEXTURE_TITLE_BG, asset_loader.as_mut())?;

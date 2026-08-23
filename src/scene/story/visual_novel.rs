@@ -232,10 +232,10 @@ impl From<Vec<NovelOps>> for VisualNovelMachine {
 
 /// Trait for a scene or backend to implement in order to convert stuff like 'miku idle' into a proper sprite texture
 pub trait SceneLoadingContext {
-    fn name_to_texture(&self, name: &str) -> Option<TextureId>;
-    fn name_to_sfx(&self, name: &str) -> Option<SfxId>;
-    fn name_to_music(&self, name: &str) -> Option<MusicId>;
-    fn name_to_scene(&self, name: &str) -> Option<SceneId>;
+    fn name_to_texture(&self, name: &str) -> VnResult<TextureId>;
+    fn name_to_sfx(&self, name: &str) -> VnResult<SfxId>;
+    fn name_to_music(&self, name: &str) -> VnResult<MusicId>;
+    fn name_to_scene(&self, name: &str) -> VnResult<SceneId>;
 }
 
 // Unresolved novel ops are loaded from the file, but have not been validated against
@@ -531,11 +531,12 @@ fn validate_background(
     let UnvalidatedNovelOps::Background(name) = unvalidated else {
         return None;
     };
-    if let Some(texture_id) = context.name_to_texture(&name) {
-        Some(NovelOps::Background(texture_id))
-    } else {
-        errors.push(format!("cannot load texture for background {:?}", name));
-        None
+    match context.name_to_texture(&name) {
+        Ok(texture_id) => Some(NovelOps::Background(texture_id)),
+        Err(error) => {
+            errors.push(error.to_string());
+            None
+        }
     }
 }
 
@@ -547,11 +548,12 @@ fn validate_play_sfx(
     let UnvalidatedNovelOps::PlaySfx(name) = unvalidated else {
         return None;
     };
-    if let Some(sfx_id) = context.name_to_sfx(&name) {
-        Some(NovelOps::PlaySfx(sfx_id))
-    } else {
-        errors.push(format!("cannot load sound effect for name {:?}", name));
-        None
+    match context.name_to_sfx(&name) {
+        Ok(sfx_id) => Some(NovelOps::PlaySfx(sfx_id)),
+        Err(error) => {
+            errors.push(error.to_string());
+            None
+        }
     }
 }
 
@@ -563,11 +565,12 @@ fn validate_play_music(
     let UnvalidatedNovelOps::PlayMusic(name) = unvalidated else {
         return None;
     };
-    if let Some(music_id) = context.name_to_music(&name) {
-        Some(NovelOps::PlayMusic(music_id))
-    } else {
-        errors.push(format!("cannot load music for name {:?}", name));
-        None
+    match context.name_to_music(&name) {
+        Ok(music_id) => Some(NovelOps::PlayMusic(music_id)),
+        Err(error) => {
+            errors.push(error.to_string());
+            None
+        }
     }
 }
 
@@ -607,7 +610,7 @@ fn validate_show(
     let maybe_texture_id = context.name_to_texture(&character_name);
     let maybe_pp = PortraitPosition::lift(&pp);
 
-    if maybe_texture_id.is_none() {
+    if !maybe_texture_id.is_ok() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name
@@ -620,7 +623,7 @@ fn validate_show(
         ));
     }
 
-    let texture_id = maybe_texture_id?;
+    let texture_id = maybe_texture_id.ok()?;
     let pp = maybe_pp?;
 
     let character = Character {
@@ -641,7 +644,7 @@ fn validate_new_character_state(
     };
     let maybe_texture_id = context.name_to_texture(&character_name);
     let maybe_state = CharacterState::lift(&state);
-    if maybe_texture_id.is_none() {
+    if !maybe_texture_id.is_ok() {
         errors.push(format!(
             "cannot load texture for character {:?}",
             character_name
@@ -653,7 +656,7 @@ fn validate_new_character_state(
             state, character_name
         ));
     }
-    let texture_id = maybe_texture_id?;
+    let texture_id = maybe_texture_id.ok()?;
     let state = maybe_state?;
     let character = Character {
         name: character_name,
@@ -671,14 +674,14 @@ fn validate_to_scene(
     let UnvalidatedNovelOps::ToScene(scene_name) = unvalidated else {
         return None;
     };
-    let Some(scene_id) = context.name_to_scene(&scene_name) else {
-        errors.push(format!(
-            "cannot load unknown scene with name {:?}",
-            scene_name
-        ));
-        return None;
-    };
-    Some(NovelOps::ToScene(scene_id))
+    match context.name_to_scene(&scene_name) {
+        Ok(scene_id) => Some(NovelOps::ToScene(scene_id)),
+        Err(error) => {
+            //TODO: to_string is fine here for now, but maybe we can shift to a vec of errors at some point?
+            errors.push(error.to_string());
+            None
+        }
+    }
 }
 
 fn validate_set_flag(unvalidated: UnvalidatedNovelOps) -> Option<NovelOps> {
@@ -1367,17 +1370,33 @@ mod visual_novel_tests {
     }
 
     impl SceneLoadingContext for TmpSceneLoadingContext {
-        fn name_to_texture(&self, name: &str) -> Option<TextureId> {
-            self.textures.get(name).copied()
+        fn name_to_texture(&self, name: &str) -> VnResult<TextureId> {
+            if let Some(id) = self.textures.get(name) {
+                return Ok(*id);
+            } else {
+                return Err(format!("could not map name {} to texture", name).into());
+            }
         }
-        fn name_to_sfx(&self, name: &str) -> Option<SfxId> {
-            self.sounds.get(name).copied()
+        fn name_to_sfx(&self, name: &str) -> VnResult<SfxId> {
+            if let Some(id) = self.sounds.get(name) {
+                return Ok(*id);
+            } else {
+                return Err(format!("could not map name {} to sfx", name).into());
+            }
         }
-        fn name_to_music(&self, name: &str) -> Option<MusicId> {
-            self.music.get(name).copied()
+        fn name_to_music(&self, name: &str) -> VnResult<MusicId> {
+            if let Some(id) = self.music.get(name) {
+                return Ok(*id);
+            } else {
+                return Err(format!("could not map name {} to music", name).into());
+            }
         }
-        fn name_to_scene(&self, name: &str) -> Option<SceneId> {
-            self.scenes.get(name).copied()
+        fn name_to_scene(&self, name: &str) -> VnResult<SceneId> {
+            if let Some(id) = self.scenes.get(name) {
+                return Ok(*id);
+            } else {
+                return Err(format!("could not map name {} to scene", name).into());
+            }
         }
     }
 
