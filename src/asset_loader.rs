@@ -13,7 +13,7 @@ pub type AssetResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait AssetLoader {
     fn load_story_scene_contents(&mut self, path: PathBuf) -> AssetResult<String>;
-    fn ensure_texture_spritesheet_loaded(&mut self, sheet_id: TextureId);
+    fn ensure_texture_spritesheet_loaded(&mut self, sheet_id: TextureId) -> AssetResult<()>;
     fn get_catalog(&self) -> Rc<AssetCatalog>;
 }
 

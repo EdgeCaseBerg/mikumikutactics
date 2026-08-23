@@ -275,12 +275,12 @@ impl AssetLoader for AssetLoaderWasm {
         };
         Ok(string.to_string())
     }
-    fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) {
+    fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) -> AssetResult<()> {
         let context = &mut *self.wasm_context.borrow_mut();
 
         if let Some(_) = context.texture_id_to_image.get(&id) {
             web_sys::console::log_1(&format!("texture id {} already loaded", id.0).into());
-            return;
+            return Ok(());
         }
         web_sys::console::log_1(&format!("loading texture id {}", id.0).into());
         let img = context
@@ -300,11 +300,13 @@ impl AssetLoader for AssetLoaderWasm {
         if let Ok(_) = result {
             context.texture_id_to_image.insert(id, img);
             web_sys::console::log_1(&format!("texture loaded for texture id {}", id.0).into());
+            return Ok(());
         } else if let Err(e) = result {
             web_sys::console::log_1(
                 &format!("error loading texture id {} {:?}", id.0, e.as_string()).into(),
             );
         }
+        Err(format!("could not ensure texture {} was loaded", id.0).into())
     }
 
     fn get_catalog(&self) -> Rc<AssetCatalog> {

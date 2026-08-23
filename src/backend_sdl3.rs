@@ -403,14 +403,15 @@ impl AssetLoader for AssetLoaderSDL3 {
         // TODO if we wanted to cache it we could do so here
         Ok(std::fs::read_to_string(path)?)
     }
-    fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) {
+    fn ensure_texture_spritesheet_loaded(&mut self, id: TextureId) -> AssetResult<()> {
         let ctx = &mut *self.context.borrow_mut();
         if ctx.textures.get_texture(id).is_some() {
-            return;
+            return Ok(());
         }
-        let asset_path = ctx.catalog.get_asset_path(id).unwrap();
+        let asset_path = ctx.catalog.get_asset_path(id)?;
         let asset_path = self.base_path.join(asset_path);
         ctx.textures.load(id, asset_path);
+        Ok(())
     }
 
     fn get_catalog(&self) -> Rc<AssetCatalog> {
