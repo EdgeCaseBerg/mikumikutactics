@@ -184,7 +184,7 @@ impl Audio for SDL3Sounds {
         self.sound_by_id.insert(sound_id, data);
         Ok(())
     }
-    fn play_music(&mut self, id: MusicId) -> Result<(), Box<dyn std::error::Error>> {
+    fn play_music(&mut self, id: MusicId) -> AudioResult<()> {
         let Some(mixer_audio) = self.music_by_id.get(&id) else {
             let err = format!("Could not play music with id {}, music not loaded.", id.0);
             return Err(Box::<dyn Error>::from(err));
