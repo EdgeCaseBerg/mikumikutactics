@@ -160,7 +160,7 @@ impl AssetCatalog {
         let sheet = self.manifest.spritesheets.get(*idx)?;
         let mut queue: VecDeque<&str> = matching_all_tags.iter().copied().collect();
         let mut matching = RangeInclusive::new(0, sheet.frames.len() - 1);
-        while let Some(narrowing) = queue.pop_front() {
+        for &narrowing in matching_all_tags {
             let Some(t) = sheet.tags.iter().find(|tag| {
                 matching.contains(&(tag.from as usize))
                     && matching.contains(&(tag.to as usize))
