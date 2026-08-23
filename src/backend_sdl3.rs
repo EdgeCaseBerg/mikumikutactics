@@ -202,9 +202,7 @@ impl Audio for SDL3Sounds {
             return Ok(());
         }
         let ctx = &mut *self.context.borrow_mut();
-        let Some(path) = ctx.catalog.get_music_path(id) else {
-            return Err(format!("cannot load sfx {}, not found in catalog", id.0).into());
-        };
+        let path = ctx.catalog.get_music_path(id)?;
         let audio = ctx.mixer.load_audio(path, true)?;
         self.music_by_id.insert(id, audio);
         Ok(())

@@ -215,10 +215,18 @@ impl AssetCatalog {
         };
         Ok(PathBuf::from(&sheet.asset_path))
     }
-    pub fn get_music_path(&self, id: MusicId) -> Option<PathBuf> {
-        let idx = self.music_id_to_music_idx.get(&id.0)?;
-        let music = &self.manifest.music[*idx];
-        Some(PathBuf::from(&music.asset_path))
+    pub fn get_music_path(&self, id: MusicId) -> AssetResult<PathBuf> {
+        let Some(idx) = self.music_id_to_music_idx.get(&id.0) else {
+            return Err(format!("could not find music path with id {}", id.0).into());
+        };
+        let Some(music) = &self.manifest.music.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no music path for id {} exists at index {idx}",
+                id.0
+            )
+            .into());
+        };
+        Ok(PathBuf::from(&music.asset_path))
     }
     pub fn get_music_id_for_name(&self, name: &str) -> AssetResult<MusicId> {
         let Some(idx) = self.music_to_music_idx.get(name) else {
