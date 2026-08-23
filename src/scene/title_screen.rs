@@ -91,7 +91,7 @@ impl Scene for TitleScene {
         };
 
         let catalog = asset_loader.get_catalog();
-        self.bg = catalog.get_sprite(TEXTURE_TITLE_BG);
+        self.bg = Some(catalog.get_sprite(TEXTURE_TITLE_BG)?);
 
         let Some(audio) = game_context.audio.as_mut() else {
             return Err("cannot init scene if audio context is not set".into());

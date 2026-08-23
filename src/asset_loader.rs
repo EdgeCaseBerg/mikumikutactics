@@ -134,20 +134,40 @@ impl AssetCatalog {
         };
         Ok(&sheet.name)
     }
-    pub fn get_sprite(&self, name: &str) -> Option<SpriteInfo> {
-        let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.manifest.spritesheets.get(*idx)?;
-        Some(to_sprite_info(&sheet.frames[0], 1))
+    pub fn get_sprite(&self, name: &str) -> AssetResult<SpriteInfo> {
+        let Some(idx) = self.character_to_sprite_id.get(name) else {
+            return Err(format!("no sprite with name {name} found").into());
+        };
+        let Some(sheet) = self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no sprite with name {name} exists at index {idx}",
+            )
+            .into());
+        };
+        if sheet.frames.is_empty() {
+            return Err("cannot get sprite from empty frames listing".into());
+        }
+        Ok(to_sprite_info(&sheet.frames[0], 1))
     }
-    pub fn get_sprite_in_state(&self, name: &str, state: &str) -> Option<SpriteInfo> {
-        let idx = self.character_to_sprite_id.get(name)?;
-        let sheet = self.manifest.spritesheets.get(*idx)?;
+    pub fn get_sprite_in_state(&self, name: &str, state: &str) -> AssetResult<SpriteInfo> {
+        let Some(idx) = self.character_to_sprite_id.get(name) else {
+            return Err(format!("no sprite with name {name} found").into());
+        };
+        let Some(sheet) = self.manifest.spritesheets.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no sprite with name {name} exists at index {idx}",
+            )
+            .into());
+        };
         let Some(tag) = sheet.tags.iter().find(|t| t.name == state) else {
             // if no state found, fallback to idle (1st sprite of name by convention)
             return self.get_sprite(name);
         };
+        if sheet.frames.is_empty() {
+            return Err("cannot get sprite from empty frames listing".into());
+        }
         let num_frames = tag.to - tag.from;
-        Some(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
+        Ok(to_sprite_info(&sheet.frames[tag.from as usize], num_frames))
     }
     // things like get (portraits [miku, talking-neutral])
     pub fn get_sprite_with_tags(
@@ -318,7 +338,7 @@ mod transition_scene_tests {
         let Ok(catalog) = catalog else {
             panic!("expected to parse manifest but got {:?}", catalog);
         };
-        let Some(rin) = catalog.get_sprite("rin") else {
+        let Ok(rin) = catalog.get_sprite("rin") else {
             panic!("expected to contain rin but got {:?}", catalog);
         };
         assert_eq!(0, rin.start_x);

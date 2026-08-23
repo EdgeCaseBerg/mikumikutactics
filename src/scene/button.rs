@@ -51,12 +51,12 @@ impl Button {
             return Err("cannot init button if asset_loader is not present in game_context".into());
         };
         let catalog = asset_loader.get_catalog();
-        let Some(bg) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_BTN_TAG) else {
+        let Ok(bg) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_BTN_TAG) else {
             let msg =
                 "cannot init button if catalog is missing button tag in ui texture sprite info";
             return Err(msg.into());
         };
-        let Some(highlight) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG) else {
+        let Ok(highlight) = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG) else {
             let msg =
                 "cannot init button if catalog is missing focus tag in ui texture sprite info";
             return Err(msg.into());

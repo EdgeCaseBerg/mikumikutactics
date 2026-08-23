@@ -88,7 +88,7 @@ impl StoryScene {
         let Some(character) = slot.as_ref() else {
             return;
         };
-        let Some(src) = catalog
+        let Ok(src) = catalog
             .get_sprite_in_state(&character.name, character.state.as_str())
             .map(|s| s.get_rect())
         else {
@@ -347,7 +347,7 @@ impl Scene for StoryScene {
         let catalog = asset_loader.get_catalog();
 
         let ui_textures_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
-        self.highlight = catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG);
+        self.highlight = Some(catalog.get_sprite_in_state(TEXTURE_UI, TEXTURE_UI_FOCUS_TAG)?);
 
         let blip = catalog.get_sfx_id_for_name(SFX_BLIP)?;
         let _ = audio.load_sfx(blip);
@@ -444,7 +444,7 @@ impl Scene for StoryScene {
                 if let Some(asset_loader) = game_context.asset_loader.as_ref() {
                     let catalog = asset_loader.get_catalog();
                     if let Ok(name) = catalog.get_sprite_name_for_id(background_id) {
-                        if let Some(sprite_info) = catalog.get_sprite(name) {
+                        if let Ok(sprite_info) = catalog.get_sprite(name) {
                             self.bg = Some((background_id, sprite_info));
                         }
                     }
