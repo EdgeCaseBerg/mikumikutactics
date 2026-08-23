@@ -544,7 +544,7 @@ impl BackendEventLoop for EventLoopWasm {
         let scene = game.scene.as_mut();
         if let Some(scene) = scene {
             if let Err(game_error) = scene.init(&mut game_context) {
-                window().alert_with_message(&game_error.to_string());
+                let _ = window().alert_with_message(&game_error.to_string());
                 panic!("A game error occurred: {:?}", game_error);
             }
         }
@@ -631,12 +631,12 @@ impl BackendEventLoop for EventLoopWasm {
 
                 // Run updates.
                 if let Err(game_error) = game.update(&mut game_context) {
-                    window().alert_with_message(&game_error.to_string());
+                    let _ = window().alert_with_message(&game_error.to_string());
                     panic!("A game error occurred: {:?}", game_error);
                 }
                 if let Some(mut next_scene) = game_context.next_scene.take() {
                     if let Err(game_error) = next_scene.init(&mut game_context) {
-                        window().alert_with_message(&game_error.to_string());
+                        let _ = window().alert_with_message(&game_error.to_string());
                         panic!("A game error occurred: {:?}", game_error);
                     }
                     game.scene = Some(next_scene);
@@ -646,7 +646,8 @@ impl BackendEventLoop for EventLoopWasm {
                         audio.prepare();
                     }
                 }
-                game.draw(&mut game_context);
+                // Since we're in a closure we cant return this
+                let _ = game.draw(&mut game_context);
                 if game_context.shutdown_flag {
                     return;
                 }
