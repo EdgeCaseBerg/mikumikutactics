@@ -24,6 +24,9 @@ pub struct MouseContext {
     pub left_clicked: bool,
     pub right_clicked: bool,
     pub position: Option<(f32, f32)>,
+    pub previous_left_click: Option<bool>,
+    pub previous_right_click: Option<bool>,
+    pub previous_position: Option<(f32, f32)>,
 }
 
 impl Default for MouseContext {
@@ -32,15 +35,38 @@ impl Default for MouseContext {
             left_clicked: false,
             right_clicked: false,
             position: None,
+            previous_left_click: None,
+            previous_right_click: None,
+            previous_position: None,
         }
     }
 }
 
 impl MouseContext {
     pub fn update(&mut self, left: bool, right: bool, position: Option<(f32, f32)>) {
+        self.previous_position = self.position;
+        self.previous_left_click = Some(self.left_clicked);
+        self.previous_right_click = Some(self.right_clicked);
         self.left_clicked = left;
         self.right_clicked = right;
         self.position = position;
+    }
+
+    pub fn just_left_clicked(&self) -> bool {
+        self.previous_left_click.is_none_or(|plc| !plc) && self.left_clicked
+    }
+
+    pub fn just_right_clicked(&self) -> bool {
+        self.previous_right_click.is_none_or(|prc| !prc) && self.right_clicked
+    }
+
+    pub fn just_moved_position(&self) -> bool {
+        match (self.previous_position.as_ref(), self.position.as_ref()) {
+            (None, None) => false,
+            (None, Some(_)) => true,
+            (Some(_), None) => true,
+            (Some((px, py)), Some((x, y))) => px != x && py != y, //TODO: untested if floating point will be a problem here or not
+        }
     }
 
     pub fn consume_left_click(&mut self) {
