@@ -411,8 +411,6 @@ impl Scene for StoryScene {
                         b.set_speed(LineSpeed::Instant);
                     }
                 };
-                btn.clicked = false;
-                game_context.mouse_context.consume_left_click();
             }
         };
         if let Some(btn) = self.speed_btn.as_mut() {
@@ -423,8 +421,6 @@ impl Scene for StoryScene {
                     text_box.set_speed(self.text_speed)
                 };
                 btn.text = self.text_speed.to_string();
-                btn.clicked = false;
-                game_context.mouse_context.consume_left_click();
             }
         };
 
@@ -497,8 +493,6 @@ impl Scene for StoryScene {
                         clicked = true;
                         vn.jump(&choice.label);
                     }
-                    btn.clicked = false;
-                    game_context.mouse_context.consume_left_click();
                 }
             }
             if clicked {
