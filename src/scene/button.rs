@@ -1,4 +1,5 @@
 use crate::GameResult;
+use crate::ReadyState;
 use crate::Rect;
 use crate::SpriteInfo;
 use crate::constants::{FontId, TEXTURE_UI, TEXTURE_UI_BTN_TAG, TEXTURE_UI_FOCUS_TAG, TextureId};
@@ -19,6 +20,8 @@ pub struct Button {
     pub(crate) highlight: Option<SpriteInfo>,
     pub(crate) font_id: FontId,
     pub(crate) texture_id: TextureId,
+    pub(crate) click_state: ReadyState,
+    pub(crate) cooldown_ticks: u32,
 }
 
 // TODO idea:
@@ -43,6 +46,8 @@ impl Button {
             highlight: None,
             font_id,
             texture_id,
+            click_state: ReadyState::Ready,
+            cooldown_ticks: 15, // TODO: take it as new if we ever need buttons to feel different from each other.
         }
     }
 
@@ -71,17 +76,22 @@ impl Button {
     pub(crate) fn update(
         &mut self,
         ticks: u32,
-        game_context: &GameContext,
+        game_context: &mut GameContext,
         parent_layout: &GridLayout,
     ) {
         let layout = self.relative_layout(parent_layout);
         let Some(_) = layout.cell_for_mouse(game_context.mouse_context.position) else {
             self.hovered = false;
             self.clicked = false;
+            self.click_state = ReadyState::Ready;
             return;
         };
 
-        self.hovered = true;
+        if let ReadyState::Ready = self.click_state {
+            self.hovered = true;
+        } else {
+            self.hovered = false;
+        }
         if let Some(sprite_info) = self.highlight.as_mut() {
             sprite_info.advance(ticks);
         }
@@ -89,8 +99,18 @@ impl Button {
             sprite_info.advance(ticks);
         }
 
-        if game_context.mouse_context.left_clicked {
+        if let ReadyState::Ready = self.click_state
+            && game_context.mouse_context.left_clicked
+        {
             self.clicked = true;
+            game_context.mouse_context.consume_left_click();
+            self.click_state = ReadyState::Cooldown {
+                ticks_waited: 0,
+                wait_for: self.cooldown_ticks,
+            };
+        } else {
+            self.clicked = false;
+            self.click_state = self.click_state.advance(ticks);
         }
     }
 
