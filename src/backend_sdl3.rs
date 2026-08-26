@@ -547,9 +547,27 @@ impl BackendEventLoop for EventLoopSDL3 {
                     Event::MouseButtonDown {
                         mouse_btn, x, y, ..
                     } => {
+                        eprintln!("MOUSE DOWN");
                         game_context.mouse_context.update(
                             mouse_btn == MouseButton::Left,
                             mouse_btn == MouseButton::Right,
+                            Some((x, y)),
+                        );
+                    }
+                    Event::MouseButtonUp {
+                        mouse_btn, x, y, ..
+                    } => {
+                        game_context.mouse_context.update(
+                            if mouse_btn == MouseButton::Left {
+                                false
+                            } else {
+                                game_context.mouse_context.left_clicked
+                            },
+                            if mouse_btn == MouseButton::Right {
+                                false
+                            } else {
+                                game_context.mouse_context.right_clicked
+                            },
                             Some((x, y)),
                         );
                     }
