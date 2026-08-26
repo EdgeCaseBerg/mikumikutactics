@@ -12,16 +12,16 @@ use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 
 pub struct Button {
-    pub(crate) text: String,
-    pub(crate) rect: Rect,
-    pub(crate) hovered: bool,
-    pub(crate) clicked: bool,
-    pub(crate) bg: Option<SpriteInfo>,
-    pub(crate) highlight: Option<SpriteInfo>,
-    pub(crate) font_id: FontId,
-    pub(crate) texture_id: TextureId,
-    pub(crate) click_state: ReadyState,
-    pub(crate) cooldown_ticks: u32,
+    pub text: String,
+    pub rect: Rect,
+    pub hovered: bool,
+    pub clicked: bool,
+    pub bg: Option<SpriteInfo>,
+    pub highlight: Option<SpriteInfo>,
+    pub font_id: FontId,
+    pub texture_id: TextureId,
+    pub click_state: ReadyState,
+    pub cooldown_ticks: u32,
 }
 
 // TODO idea:
@@ -36,7 +36,7 @@ impl Button {
     /// Define buttons in terms of their parent layout's grid unit space.
     /// When update and draw are called the parent layout will convert the
     /// button unit space into screen coordinates for interaction purposes
-    pub(crate) fn new(text: String, rect: Rect, font_id: FontId, texture_id: TextureId) -> Self {
+    pub fn new(text: String, rect: Rect, font_id: FontId, texture_id: TextureId) -> Self {
         Self {
             text,
             rect,
@@ -51,7 +51,7 @@ impl Button {
         }
     }
 
-    pub(crate) fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
+    pub fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let Some(asset_loader) = game_context.asset_loader.as_mut() else {
             return Err("cannot init button if asset_loader is not present in game_context".into());
         };
@@ -63,7 +63,7 @@ impl Button {
         Ok(())
     }
 
-    pub(crate) fn relative_layout(&self, parent_layout: &GridLayout) -> GridLayout {
+    pub fn relative_layout(&self, parent_layout: &GridLayout) -> GridLayout {
         let area = self.rect.relative_rect_to_layout(parent_layout);
         GridLayout {
             area,
@@ -73,7 +73,7 @@ impl Button {
         }
     }
 
-    pub(crate) fn update(
+    pub fn update(
         &mut self,
         ticks: u32,
         game_context: &mut GameContext,
@@ -114,7 +114,7 @@ impl Button {
         }
     }
 
-    pub(crate) fn draw(&self, game_context: &mut GameContext, parent_layout: &GridLayout) {
+    pub fn draw(&self, game_context: &mut GameContext, parent_layout: &GridLayout) {
         let Some(ref mut renderer) = game_context.renderer else {
             return;
         };
