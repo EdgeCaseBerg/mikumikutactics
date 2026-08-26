@@ -157,8 +157,6 @@ impl Scene for TitleScene {
                     let _ = audio.play_sfx(id);
                 }
                 game_context.shutdown();
-                btn.clicked = false;
-                game_context.mouse_context.consume_left_click();
                 self.fade = Some(TransitionScene::new_fade_out());
             }
         }
@@ -175,8 +173,6 @@ impl Scene for TitleScene {
                     return Err("cannot start new game if scene id is unknown".into());
                 };
                 game_context.queue_story_scene(start_scene_id);
-                btn.clicked = false;
-                game_context.mouse_context.consume_left_click();
                 self.fade = Some(TransitionScene::new_fade_out());
             }
         }
