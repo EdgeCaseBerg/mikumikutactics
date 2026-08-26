@@ -226,6 +226,7 @@ mod transition_scene_tests {
     use super::*;
     use crate::backend_dummy::FakeRenderer;
     use crate::backend_dummy::click_button_with_left_mouse;
+    use crate::backend_dummy::release_button_click_of_left_mouse;
     use crate::constants::{SfxId, TextureId};
 
     #[test]
