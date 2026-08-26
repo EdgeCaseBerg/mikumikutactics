@@ -52,3 +52,16 @@ pub fn click_button_with_left_mouse(
         .mouse_context
         .update(left_mouse_btn, right_mouse_btn, position);
 }
+
+pub fn release_button_click_of_left_mouse(
+    btn: &Button,
+    game_context: &mut GameContext,
+    layout: &GridLayout,
+) {
+    let position = center_of_rect_screen_coordinates(&btn.rect, &layout);
+    let left_mouse_btn = false;
+    let right_mouse_btn = false;
+    game_context
+        .mouse_context
+        .update(left_mouse_btn, right_mouse_btn, position);
+}
