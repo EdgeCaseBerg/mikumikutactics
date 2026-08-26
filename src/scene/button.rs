@@ -22,6 +22,7 @@ pub struct Button {
     pub texture_id: TextureId,
     pub click_state: ReadyState,
     pub cooldown_ticks: u32,
+    pub waiting_for_release: bool,
 }
 
 // TODO idea:
@@ -47,7 +48,8 @@ impl Button {
             font_id,
             texture_id,
             click_state: ReadyState::Ready,
-            cooldown_ticks: 15, // TODO: take it as new if we ever need buttons to feel different from each other.
+            cooldown_ticks: 10, // TODO: take it as new if we ever need buttons to feel different from each other.
+            waiting_for_release: false,
         }
     }
 
@@ -87,7 +89,9 @@ impl Button {
             return;
         };
 
-        if let ReadyState::Ready = self.click_state {
+        if let ReadyState::Ready = self.click_state
+            && !self.waiting_for_release
+        {
             self.hovered = true;
         } else {
             self.hovered = false;
@@ -99,19 +103,39 @@ impl Button {
             sprite_info.advance(ticks);
         }
 
+        if !game_context.mouse_context.left_clicked {
+            self.waiting_for_release = false;
+        }
         if let ReadyState::Ready = self.click_state
             && game_context.mouse_context.left_clicked
+            && !self.waiting_for_release
         {
             self.clicked = true;
-            game_context.mouse_context.consume_left_click();
+            self.waiting_for_release = true;
             self.click_state = ReadyState::Cooldown {
                 ticks_waited: 0,
                 wait_for: self.cooldown_ticks,
             };
         } else {
             self.clicked = false;
-            self.click_state = self.click_state.advance(ticks);
         }
+        self.click_state = match self.click_state {
+            ReadyState::Ready => self.click_state,
+            ReadyState::Cooldown {
+                wait_for,
+                ticks_waited,
+            } => {
+                let ticks_waited = ticks_waited.saturating_add(ticks);
+                if ticks_waited >= wait_for && !self.waiting_for_release {
+                    ReadyState::Ready
+                } else {
+                    ReadyState::Cooldown {
+                        wait_for,
+                        ticks_waited,
+                    }
+                }
+            }
+        };
     }
 
     pub fn draw(&self, game_context: &mut GameContext, parent_layout: &GridLayout) {
