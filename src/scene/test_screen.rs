@@ -146,25 +146,55 @@ impl Scene for TestScene {
                 match map_state.action {
                     None => {
                         // if a user clicks on a units cell
-                        if game_context.mouse_context.left_clicked {
-                            let layout = TestScene::layout(game_context);
-                            let Some((r, c, _)) =
-                                layout.cell_for_mouse(game_context.mouse_context.position)
-                            else {
-                                break 'action;
-                            };
-                            let Some(tile) = map_instance.get((r as isize, c as isize)) else {
-                                break 'action;
-                            };
-                            if let Some(uid) = tile.occupant {
-                                if let Some(unit_data) = map_state.units.get(&uid) {
-                                    let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
-                                    self.current_portrait = Some(portrait.clone());
-                                }
-                            } else {
-                                self.current_portrait = None;
-                            }
+                        if !game_context.mouse_context.left_clicked {
+                            break 'action;
                         }
+                        let layout = TestScene::layout(game_context);
+                        let Some((r, c, _)) =
+                            layout.cell_for_mouse(game_context.mouse_context.position)
+                        else {
+                            break 'action;
+                        };
+                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
+                            break 'action;
+                        };
+                        if let Some(uid) = tile.occupant {
+                            if let Some(unit_data) = map_state.units.get(&uid) {
+                                let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
+                                self.current_portrait = Some(portrait.clone());
+                                map_state.action =
+                                    Some(ActionState::UnitSelected(uid, (r as isize, c as isize)));
+                                // Thought: create hash set of selected tiles based on range of unit, computed once now
+                                // and then used to validate if next click is within the range of the unit and should result
+                                // in anything happening or not.
+                                eprintln!("swap to selected");
+                            }
+                        } else {
+                            self.current_portrait = None;
+                        }
+                    }
+                    Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
+                        if !game_context.mouse_context.left_clicked {
+                            break 'action;
+                        }
+                        let layout = TestScene::layout(game_context);
+                        let Some((r, c, _)) =
+                            layout.cell_for_mouse(game_context.mouse_context.position)
+                        else {
+                            break 'action;
+                        };
+                        // Double clicking on the selected unit does nothing
+                        if selected_row == r as isize && selected_column == c as isize {
+                            break 'action;
+                        }
+                        // If we're clicking on something else though?
+                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
+                            break 'action;
+                        };
+
+                        // for now clear state. but when ready, this would prompt open a menu and do range checks?
+                        map_state.action = None;
+                        eprintln!("swap to cleared");
                     }
                     _ => {}
                 }
