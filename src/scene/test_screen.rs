@@ -15,8 +15,8 @@ use crate::tactics::units::*;
 #[derive(Default)]
 pub struct TestScene {
     test_sprite: Option<(SpriteInfo, TextureId)>,
-    test_portrait: Option<(SpriteInfo, TextureId)>,
-    test_portrait_bg: Option<(SpriteInfo, TextureId)>,
+    current_portrait: Option<(SpriteInfo, TextureId)>,
+    current_portrait_bg: Option<(SpriteInfo, TextureId)>,
     test_btn: Option<Button>,
     map: Option<(MapInstance, MapState)>,
 }
@@ -69,7 +69,7 @@ impl Scene for TestScene {
         let mut the_map = make_map();
         let map_state = MapState {
             action: None,
-            units: (0..4)
+            units: (0..2)
                 .map(|uid| {
                     let id = UnitId(uid);
                     let name = if uid % 2 == 0 { "miku" } else { "meiko" };
@@ -101,12 +101,8 @@ impl Scene for TestScene {
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
 
         self.test_sprite = Some(sprite_tuple("onmap", None, asset_loader.as_mut())?);
-        self.test_portrait = Some(sprite_tuple(
-            "portrait",
-            Some(&["miku", "talking-idle"]),
-            asset_loader.as_mut(),
-        )?);
-        self.test_portrait_bg = Some(sprite_tuple(
+        self.current_portrait = None;
+        self.current_portrait_bg = Some(sprite_tuple(
             "portrait",
             Some(&["background"]),
             asset_loader.as_mut(),
@@ -135,10 +131,10 @@ impl Scene for TestScene {
         if let Some((sprite_info, _)) = self.test_sprite.as_mut() {
             sprite_info.advance(ticks);
         }
-        if let Some((sprite_info, _)) = self.test_portrait_bg.as_mut() {
+        if let Some((sprite_info, _)) = self.current_portrait_bg.as_mut() {
             sprite_info.advance(ticks);
         }
-        if let Some((sprite_info, _)) = self.test_portrait.as_mut() {
+        if let Some((sprite_info, _)) = self.current_portrait.as_mut() {
             sprite_info.advance(ticks);
         }
         if let Some(btn) = self.test_btn.as_mut() {
@@ -160,14 +156,13 @@ impl Scene for TestScene {
                             let Some(tile) = map_instance.get((r as isize, c as isize)) else {
                                 break 'action;
                             };
-                            eprintln!("clicked on a tile {:?}", tile);
                             if let Some(uid) = tile.occupant {
                                 if let Some(unit_data) = map_state.units.get(&uid) {
                                     let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
-                                    self.test_portrait = Some(portrait.clone());
+                                    self.current_portrait = Some(portrait.clone());
                                 }
                             } else {
-                                self.test_portrait = None;
+                                self.current_portrait = None;
                             }
                         }
                     }
@@ -194,18 +189,18 @@ impl Scene for TestScene {
 
 fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
     let row = 8;
-    if let Some((sprite_info, texture_id)) = scene.test_portrait_bg.as_ref() {
-        let src = sprite_info.get_rect();
-        let tl = layout.cell_rect(row, 0);
-        let (cw, ch) = layout.cell_size();
-        let dst = Rect::new(tl.x, tl.y, cw * 4, ch * 4);
-        renderer.send_command(RenderCommand::DrawRect {
-            texture_id: *texture_id,
-            source: src,
-            destination: dst,
-        });
-    }
-    if let Some((sprite_info, texture_id)) = scene.test_portrait.as_ref() {
+    if let Some((sprite_info, texture_id)) = scene.current_portrait.as_ref() {
+        if let Some((sprite_info, texture_id)) = scene.current_portrait_bg.as_ref() {
+            let src = sprite_info.get_rect();
+            let tl = layout.cell_rect(row, 0);
+            let (cw, ch) = layout.cell_size();
+            let dst = Rect::new(tl.x, tl.y, cw * 4, ch * 4);
+            renderer.send_command(RenderCommand::DrawRect {
+                texture_id: *texture_id,
+                source: src,
+                destination: dst,
+            });
+        }
         let src = sprite_info.get_rect();
         let tl = layout.cell_rect(row, 0);
         let (cw, ch) = layout.cell_size();
