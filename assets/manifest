@@ -62,6 +62,133 @@
     },
     {
       "id": 4,
+      "name": "portrait",
+      "asset_path": "portrait.png",
+      "frames": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 128,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 192,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 256,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 384,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 448,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        },
+        {
+          "x": 512,
+          "y": 0,
+          "w": 64,
+          "h": 64,
+          "duration_ms": 100
+        }
+      ],
+      "tags": [
+        {
+          "name": "background",
+          "from": 0,
+          "to": 0
+        },
+        {
+          "name": "talking-idle",
+          "from": 1,
+          "to": 2
+        },
+        {
+          "name": "miku",
+          "from": 1,
+          "to": 4
+        },
+        {
+          "name": "talking-mad",
+          "from": 3,
+          "to": 8
+        },
+        {
+          "name": "yell",
+          "from": 3,
+          "to": 3
+        },
+        {
+          "name": "talking-mad",
+          "from": 3,
+          "to": 4
+        },
+        {
+          "name": "meiko",
+          "from": 5,
+          "to": 8
+        },
+        {
+          "name": "happy",
+          "from": 5,
+          "to": 5
+        },
+        {
+          "name": "talking-idle",
+          "from": 5,
+          "to": 6
+        },
+        {
+          "name": "talking-mad",
+          "from": 7,
+          "to": 8
+        },
+        {
+          "name": "mad",
+          "from": 7,
+          "to": 7
+        }
+      ]
+    },
+    {
+      "id": 5,
       "name": "rin",
       "asset_path": "characters/rin.png",
       "frames": [
@@ -111,7 +238,40 @@
       ]
     },
     {
-      "id": 5,
+      "id": 6,
+      "name": "onmap",
+      "asset_path": "characters/onmap.png",
+      "frames": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "duration_ms": 100
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "duration_ms": 100
+        }
+      ],
+      "tags": [
+        {
+          "name": "miku",
+          "from": 0,
+          "to": 0
+        },
+        {
+          "name": "meiko",
+          "from": 1,
+          "to": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
       "name": "miku",
       "asset_path": "characters/miku.png",
       "frames": [
@@ -161,7 +321,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 8,
       "name": "ui",
       "asset_path": "ui.png",
       "frames": [
@@ -306,7 +466,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 9,
       "name": "BoldPixels",
       "asset_path": "fontmaps/BoldPixels.png",
       "frames": [
