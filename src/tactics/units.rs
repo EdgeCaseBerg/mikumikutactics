@@ -100,12 +100,16 @@ impl MapInstance {
 }
 
 pub type Coordinate = (isize, isize);
+pub type FromHere = Coordinate;
+pub type ToThere = Coordinate;
+pub type Attacker = (UnitId, Coordinate);
+pub type Defender = (UnitId, Coordinate);
 
 pub enum ActionState {
     UnitSelected(UnitId, Coordinate),   // 1. Click a unit
     CommandPending(UnitId, Coordinate), // 2. Click a tile around that unit, ask what to do
-    Move(UnitId, Coordinate),           // 3. If tile empty -> check in range?
-    Attack(UnitId, Coordinate),         // 4. If tile has empty -> check in range?
+    Move(UnitId, FromHere, ToThere),    // 3. If tile empty -> check in range?
+    Attack(Attacker, Defender),         // 4. If tile has empty -> check in range?
 }
 
 pub struct MapState {
