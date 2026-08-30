@@ -183,6 +183,7 @@ pub fn run(game_options: &GameOptions, mut game: Game) -> GameResult<()> {
     game_context.audio = Some(audio);
     game_context.clock = Some(clock);
     game.scene = Some(Box::new(TitleScene::default()));
+    game.scene = Some(Box::new(crate::scene::test_screen::TestScene::default()));
     event_loop.run(game, game_context)
 }
 
