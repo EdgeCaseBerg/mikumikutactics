@@ -72,16 +72,17 @@ impl Scene for TestScene {
             units: (0..4)
                 .map(|uid| {
                     let id = UnitId(uid);
+                    let name = if uid % 2 == 0 { "miku" } else { "meiko" };
                     let p = sprite_tuple(
                         "portrait",
-                        Some(&["miku", "talking-idle"]),
+                        Some(&[name, "talking-idle"]),
                         asset_loader.as_mut(),
                     )
                     .expect("cannot load miku portrait");
-                    let s = sprite_tuple("onmap2", None, asset_loader.as_mut())
+                    let s = sprite_tuple("onmap", Some(&[name]), asset_loader.as_mut())
                         .expect("cannot load miku sprite");
                     let unit_data = UnitData {
-                        name: "miku".to_owned(),
+                        name: name.to_owned(),
                         sprite_data: UnitSpriteData {
                             sprite: s,
                             portrait: p,
@@ -99,7 +100,7 @@ impl Scene for TestScene {
 
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
 
-        self.test_sprite = Some(sprite_tuple("onmap2", None, asset_loader.as_mut())?);
+        self.test_sprite = Some(sprite_tuple("onmap", None, asset_loader.as_mut())?);
         self.test_portrait = Some(sprite_tuple(
             "portrait",
             Some(&["miku", "talking-idle"]),
@@ -160,6 +161,14 @@ impl Scene for TestScene {
                                 break 'action;
                             };
                             eprintln!("clicked on a tile {:?}", tile);
+                            if let Some(uid) = tile.occupant {
+                                if let Some(unit_data) = map_state.units.get(&uid) {
+                                    let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
+                                    self.test_portrait = Some(portrait.clone());
+                                }
+                            } else {
+                                self.test_portrait = None;
+                            }
                         }
                     }
                     _ => {}
