@@ -88,7 +88,7 @@ impl Scene for TestScene {
                             portrait: p,
                         },
                     };
-                    let mut tile = the_map
+                    let tile = the_map
                         .get_mut((3, 3 + uid as isize))
                         .expect("couldnt get tile to place unit in");
                     tile.occupant = Some(id);
@@ -173,7 +173,7 @@ impl Scene for TestScene {
                             self.current_portrait = None;
                         }
                     }
-                    Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
+                    Some(ActionState::UnitSelected(_unit_id, (selected_row, selected_column))) => {
                         if !game_context.mouse_context.left_clicked {
                             break 'action;
                         }
@@ -188,7 +188,7 @@ impl Scene for TestScene {
                             break 'action;
                         }
                         // If we're clicking on something else though?
-                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
+                        let Some(_tile) = map_instance.get((r as isize, c as isize)) else {
                             break 'action;
                         };
 
