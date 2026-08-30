@@ -21,6 +21,8 @@ pub mod manifest;
 pub mod renderer;
 pub mod scene;
 
+pub mod tactics;
+
 use std::error::Error;
 use std::ops::{Add, Div, Sub};
 
