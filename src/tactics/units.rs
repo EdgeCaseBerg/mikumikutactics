@@ -83,7 +83,7 @@ impl MapInstance {
     }
     pub fn get(&self, coordinate: Coordinate) -> Option<&Tile> {
         let (row, column) = coordinate;
-        if row > self.height || row < 0 || column < 0 || column > self.width {
+        if row >= self.height || row < 0 || column < 0 || column >= self.width {
             return None;
         }
         let idx = row * self.width + column;
@@ -91,7 +91,7 @@ impl MapInstance {
     }
     pub fn get_mut(&mut self, coordinate: Coordinate) -> Option<&mut Tile> {
         let (row, column) = coordinate;
-        if row > self.height || row < 0 || column < 0 || column > self.width {
+        if row >= self.height || row < 0 || column < 0 || column >= self.width {
             return None;
         }
         let idx = row * self.width + column;
