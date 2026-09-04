@@ -147,26 +147,19 @@ impl Scene for TestScene {
             'action: {
                 match map_state.action {
                     None => {
-                        let Some((action, unit_data)) = check_if_unit_selected_action(
-                            &game_context,
-                            &map_instance,
-                            &map_state,
-                        ) else {
+                        let Some((action, unit_data)) =
+                            check_if_unit_selected_action(&game_context, &map_instance, &map_state)
+                        else {
                             // If the state function said there was no update, then bail.
                             break 'action;
                         };
                         // Otherwise, take the action (which might clear via None) and update the portrait
-                        if let Some(unit_data) = unit_data {
-                            let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
-                            self.current_portrait = Some(portrait.clone());
-                            // Thought: create hash set of selected tiles based on range of unit, computed once now
-                            // and then used to validate if next click is within the range of the unit and should result
-                            // in anything happening or not.
-                            eprintln!("swap to selected");
-                        } else {
-                            self.current_portrait = None;
-                        }
+                        self.current_portrait = selected_portrait_from(unit_data);
                         map_state.action = action;
+                        eprintln!("swap to selected");
+                        // Thought: create hash set of selected tiles based on range of unit, computed once now
+                        // and then used to validate if next click is within the range of the unit and should result
+                        // in anything happening or not.
                     }
                     Some(ActionState::UnitSelected(_unit_id, (selected_row, selected_column))) => {
                         if !game_context.mouse_context.left_clicked {
@@ -236,6 +229,14 @@ fn check_if_unit_selected_action<'a>(
         return Some((None, None));
     }
     return None;
+}
+
+fn selected_portrait_from(unit_data: Option<&UnitData>) -> Option<(SpriteInfo, TextureId)> {
+    let Some(unit_data) = unit_data else {
+        return None;
+    };
+    let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
+    Some(portrait.clone())
 }
 
 fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
