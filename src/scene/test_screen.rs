@@ -219,6 +219,32 @@ impl Scene for TestScene {
     }
 }
 
+fn check_if_unit_selected_action<'a>(
+    game_context: &GameContext,
+    map_instance: &MapInstance,
+    map_state: &'a MapState,
+) -> Option<(Option<ActionState>, Option<&'a UnitData>)> {
+    if !game_context.mouse_context.left_clicked {
+        return None;
+    }
+    let layout = TestScene::layout(game_context);
+    let Some((r, c, _)) = layout.cell_for_mouse(game_context.mouse_context.position) else {
+        return None;
+    };
+    let Some(tile) = map_instance.get((r as isize, c as isize)) else {
+        return None;
+    };
+    if let Some(uid) = tile.occupant {
+        if let Some(unit_data) = map_state.units.get(&uid) {
+            let action = Some(ActionState::UnitSelected(uid, (r as isize, c as isize)));
+            return Some((action, Some(unit_data)));
+        }
+    } else {
+        return Some((None, None));
+    }
+    return None;
+}
+
 fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
     let row = 8;
     if let Some((sprite_info, texture_id)) = scene.current_portrait.as_ref() {
