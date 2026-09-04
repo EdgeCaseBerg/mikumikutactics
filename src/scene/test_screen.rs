@@ -147,33 +147,26 @@ impl Scene for TestScene {
             'action: {
                 match map_state.action {
                     None => {
-                        // if a user clicks on a units cell
-                        if !game_context.mouse_context.left_clicked {
-                            break 'action;
-                        }
-                        let layout = TestScene::layout(game_context);
-                        let Some((r, c, _)) =
-                            layout.cell_for_mouse(game_context.mouse_context.position)
-                        else {
+                        let Some((action, unit_data)) = check_if_unit_selected_action(
+                            &game_context,
+                            &map_instance,
+                            &map_state,
+                        ) else {
+                            // If the state function said there was no update, then bail.
                             break 'action;
                         };
-                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
-                            break 'action;
-                        };
-                        if let Some(uid) = tile.occupant {
-                            if let Some(unit_data) = map_state.units.get(&uid) {
-                                let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
-                                self.current_portrait = Some(portrait.clone());
-                                map_state.action =
-                                    Some(ActionState::UnitSelected(uid, (r as isize, c as isize)));
-                                // Thought: create hash set of selected tiles based on range of unit, computed once now
-                                // and then used to validate if next click is within the range of the unit and should result
-                                // in anything happening or not.
-                                eprintln!("swap to selected");
-                            }
+                        // Otherwise, take the action (which might clear via None) and update the portrait
+                        if let Some(unit_data) = unit_data {
+                            let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
+                            self.current_portrait = Some(portrait.clone());
+                            // Thought: create hash set of selected tiles based on range of unit, computed once now
+                            // and then used to validate if next click is within the range of the unit and should result
+                            // in anything happening or not.
+                            eprintln!("swap to selected");
                         } else {
                             self.current_portrait = None;
                         }
+                        map_state.action = action;
                     }
                     Some(ActionState::UnitSelected(_unit_id, (selected_row, selected_column))) => {
                         if !game_context.mouse_context.left_clicked {
