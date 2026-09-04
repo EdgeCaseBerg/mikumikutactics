@@ -11,6 +11,7 @@ use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::Button;
 use crate::tactics::units::*;
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct TestScene {
@@ -69,6 +70,7 @@ impl Scene for TestScene {
         let mut the_map = make_map();
         let map_state = MapState {
             action: None,
+            selectable_tiles: HashSet::new(),
             units: (0..2)
                 .map(|uid| {
                     let id = UnitId(uid);

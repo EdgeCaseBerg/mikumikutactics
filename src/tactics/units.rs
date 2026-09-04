@@ -1,6 +1,7 @@
 use crate::SpriteInfo;
 use crate::constants::TextureId;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnitState {
@@ -114,5 +115,6 @@ pub enum ActionState {
 
 pub struct MapState {
     pub units: HashMap<UnitId, UnitData>,
+    pub selectable_tiles: HashSet<(isize, isize)>,
     pub action: Option<ActionState>,
 }
