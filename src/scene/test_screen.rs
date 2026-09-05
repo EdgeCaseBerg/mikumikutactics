@@ -156,34 +156,31 @@ impl Scene for TestScene {
                             map_state.action = action;
                         };
                     }
-                    Some(ActionState::UnitSelected(_unit_id, (selected_row, selected_column))) => {
-                        if !game_context.mouse_context.left_clicked {
-                            break 'action;
-                        }
-                        let layout = TestScene::layout(game_context);
-                        let Some((r, c, _)) =
-                            layout.cell_for_mouse(game_context.mouse_context.position)
-                        else {
+                    Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
+                        let Some(maybe_tile) = valid_selected_tile_clicked(
+                            game_context,
+                            map_instance,
+                            map_state,
+                            (selected_row, selected_column),
+                        ) else {
                             break 'action;
                         };
-                        // Double clicking on the selected unit does nothing
-                        if selected_row == r as isize && selected_column == c as isize {
-                            break 'action;
-                        }
-                        // Clicking outside of the range of the unit should revert us to no action
-                        if !map_state.selectable_tiles.contains(&(r as isize, c as isize)) {
+                        if let Some((r, c)) = maybe_tile {
+                            map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
+                            // TODO: figure out buttons for actions on this tile
+                            eprintln!("command pending");
+                        } else {
                             map_state.action = None;
                             map_state.selectable_tiles = HashSet::new();
+                        }
+                    }
+                    Some(ActionState::CommandPending(_unit_id, (target_row, target_column))) => {
+                        if !game_context.mouse_context.right_clicked {
                             break 'action;
                         }
-
-                        // Ensure that the click within range is on the map
-                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
-                            break 'action;
-                        };
-
                         // for now clear state. but when ready, this would prompt open a menu and do range checks?
                         map_state.action = None;
+                        map_state.selectable_tiles = HashSet::new();
                         eprintln!("swap to cleared");
                     }
                     _ => {}
@@ -239,6 +236,39 @@ fn selected_portrait_from(unit_data: Option<&UnitData>) -> Option<(SpriteInfo, T
     let unit_data = unit_data?;
     let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
     Some(portrait.clone())
+}
+
+fn valid_selected_tile_clicked(
+    game_context: &GameContext,
+    map_instance: &MapInstance,
+    map_state: &MapState,
+    selected_tile_position: (isize, isize),
+) -> Option<Option<(isize, isize)>> {
+    if !game_context.mouse_context.left_clicked {
+        return None;
+    }
+    let layout = TestScene::layout(game_context);
+    let (r, c, _) = layout.cell_for_mouse(game_context.mouse_context.position)?;
+    let (selected_row, selected_column) = selected_tile_position;
+
+    // Double clicking on the selected unit does nothing
+    if selected_row == r as isize && selected_column == c as isize {
+        return None;
+    }
+    // Clicking outside of the range of the unit should revert us to no action
+    if !map_state
+        .selectable_tiles
+        .contains(&(r as isize, c as isize))
+    {
+        return Some(None);
+    }
+
+    // Ensure that the click within range is on the map
+    let Some(tile) = map_instance.get((r as isize, c as isize)) else {
+        return None;
+    };
+
+    Some(Some((r as isize, c as isize)))
 }
 
 fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
