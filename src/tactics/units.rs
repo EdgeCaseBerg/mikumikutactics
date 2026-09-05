@@ -203,7 +203,7 @@ mod tactics_units {
     }
 
     #[test]
-    fn reachable_by_unit_should_work_properly() {
+    fn reachable_by_unit_should_work_properly_on_fully_walkable_map() {
         let m = MapInstance::empty_walkable(10, 10);
         let u = UnitData {
             name: "".to_owned(),
@@ -219,6 +219,31 @@ mod tactics_units {
         eprintln!("bottom corner left");
         let reachable = reachable_by_unit(&u, (0, 9), &m);
         let expected = bl_corner();
+        assert_eq!(expected, reachable);
+    }
+
+    #[test]
+    fn reachable_by_unit_should_work_properly_on_partially_walkable_map() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+        m.get_mut((4, 4)).unwrap().is_walkable = false;
+        m.get_mut((0, 8)).unwrap().is_walkable = false;
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            range: 2,
+        };
+
+        eprintln!("in center");
+        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let mut expected = center_star();
+        expected.remove(&(4, 4));
+        assert_eq!(expected, reachable);
+
+        eprintln!("bottom corner left");
+        let reachable = reachable_by_unit(&u, (0, 9), &m);
+        let mut expected = bl_corner();
+        expected.remove(&(0, 8));
         assert_eq!(expected, reachable);
     }
 }
