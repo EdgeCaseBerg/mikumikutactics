@@ -179,7 +179,7 @@ mod tactics_units {
     }
 
     #[rustfmt::skip]
-    fn center_star() -> HashSet<(isize, isize)> {
+    fn center_star_2() -> HashSet<(isize, isize)> {
         HashSet::from(
             [
                            (5,3),
@@ -187,6 +187,21 @@ mod tactics_units {
             (3,5),  (4,5), (5,5), (6,5), (7,5),
                     (4,6), (5,6), (6,6),
                            (5,7),
+            ],
+        )
+    }
+
+    #[rustfmt::skip]
+    fn center_star_3() -> HashSet<(isize, isize)> {
+        HashSet::from(
+            [
+                                  (5,2),
+                           (4,3), (5,3), (6,3),
+                    (3,4), (4,4), (5,4), (6,4), (7,4),
+            (2, 5), (3,5), (4,5), (5,5), (6,5), (7,5), (8,5),
+                    (4,6), (5,6), (6,6), (6,6), (7,6),
+                           (5,7), (5,8), (5,9),
+                                  (5,9)
             ],
         )
     }
@@ -211,14 +226,24 @@ mod tactics_units {
             range: 2,
         };
 
-        eprintln!("in center");
+        eprintln!("in center 2");
         let reachable = reachable_by_unit(&u, (5, 5), &m);
-        let expected = center_star();
+        let expected = center_star_2();
         assert_eq!(expected, reachable);
 
         eprintln!("bottom corner left");
         let reachable = reachable_by_unit(&u, (0, 9), &m);
         let expected = bl_corner();
+        assert_eq!(expected, reachable);
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            range: 2,
+        };
+        eprintln!("in center 3");
+        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let expected = center_star_3();
         assert_eq!(expected, reachable);
     }
 
@@ -236,7 +261,7 @@ mod tactics_units {
 
         eprintln!("in center");
         let reachable = reachable_by_unit(&u, (5, 5), &m);
-        let mut expected = center_star();
+        let mut expected = center_star_2();
         expected.remove(&(4, 4));
         assert_eq!(expected, reachable);
 
