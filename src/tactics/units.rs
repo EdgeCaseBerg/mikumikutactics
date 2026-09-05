@@ -126,13 +126,12 @@ pub fn reachable_by_unit(
     at: Coordinate,
     map_instance: &MapInstance,
 ) -> HashSet<(isize, isize)> {
-    let d_squared = (unit_data.range * unit_data.range) as isize;
+    let range = unit_data.range as isize;
     let (start_x, start_y) = at;
     let mut queue = VecDeque::from([at]); // FIFO
     let mut seen = HashSet::new();
     let mut reachable = HashSet::new();
     while let Some(location) = queue.pop_front() {
-        eprintln!("CHECKING {:?}", location);
         if seen.contains(&location) {
             continue;
         }
@@ -144,11 +143,10 @@ pub fn reachable_by_unit(
             continue;
         }
         let (tx, ty) = location;
-        let d = (start_x - tx) * (start_x - tx) + (start_y - ty) * (start_y - ty);
-        if d <= d_squared {
+        let manhatten_d = (start_x - tx).abs() + (start_y - ty).abs();
+        if manhatten_d <= range {
             reachable.insert(location);
         }
-        eprintln!("PUSH!");
         queue.push_front((tx + 1, ty));
         queue.push_front((tx - 1, ty));
         queue.push_front((tx, ty + 1));
@@ -199,9 +197,9 @@ mod tactics_units {
                            (4,3), (5,3), (6,3),
                     (3,4), (4,4), (5,4), (6,4), (7,4),
             (2, 5), (3,5), (4,5), (5,5), (6,5), (7,5), (8,5),
-                    (4,6), (5,6), (6,6), (6,6), (7,6),
-                           (5,7), (5,8), (5,9),
-                                  (5,9)
+                    (3,6), (4,6), (5,6), (6,6), (7,6),
+                           (4,7), (5,7), (6,7),
+                                  (5,8)
             ],
         )
     }
@@ -239,11 +237,16 @@ mod tactics_units {
         let u = UnitData {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
-            range: 2,
+            range: 3,
         };
-        eprintln!("in center 3");
         let reachable = reachable_by_unit(&u, (5, 5), &m);
         let expected = center_star_3();
+        eprintln!("in center 3 {:?}", {
+            (
+                reachable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&reachable).collect::<Vec<_>>(),
+            )
+        });
         assert_eq!(expected, reachable);
     }
 
