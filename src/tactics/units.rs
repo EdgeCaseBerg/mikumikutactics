@@ -2,6 +2,7 @@ use crate::SpriteInfo;
 use crate::constants::TextureId;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnitState {
@@ -118,4 +119,106 @@ pub struct MapState {
     pub units: HashMap<UnitId, UnitData>,
     pub selectable_tiles: HashSet<(isize, isize)>,
     pub action: Option<ActionState>,
+}
+
+pub fn reachable_by_unit(
+    unit_data: &UnitData,
+    at: Coordinate,
+    map_instance: &MapInstance,
+) -> HashSet<(isize, isize)> {
+    let d_squared = (unit_data.range * unit_data.range) as isize;
+    let (start_x, start_y) = at;
+    let mut queue = VecDeque::from([at]); // FIFO
+    let mut seen = HashSet::new();
+    let mut reachable = HashSet::new();
+    while let Some(location) = queue.pop_front() {
+        eprintln!("CHECKING {:?}", location);
+        if seen.contains(&location) {
+            continue;
+        }
+        seen.insert(location);
+        let Some(tile) = map_instance.get(location) else {
+            continue;
+        };
+        if !tile.is_walkable {
+            continue;
+        }
+        let (tx, ty) = location;
+        let d = (start_x - tx) * (start_x - tx) + (start_y - ty) * (start_y - ty);
+        if d <= d_squared {
+            reachable.insert(location);
+        }
+        eprintln!("PUSH!");
+        queue.push_front((tx + 1, ty));
+        queue.push_front((tx - 1, ty));
+        queue.push_front((tx, ty + 1));
+        queue.push_front((tx, ty - 1));
+    }
+    reachable
+}
+
+#[cfg(test)]
+mod tactics_units {
+    use super::*;
+
+    fn fake_sprite_data() -> UnitSpriteData {
+        let s = SpriteInfo {
+            current_frame: 0,
+            delta: 0,
+            framerate_per_second: 0,
+            frames: 0,
+            height: 0,
+            start_x: 0,
+            start_y: 0,
+            width: 1,
+        };
+        UnitSpriteData {
+            portrait: (s.clone(), TextureId(0)),
+            sprite: (s.clone(), TextureId(0)),
+        }
+    }
+
+    #[rustfmt::skip]
+    fn center_star() -> HashSet<(isize, isize)> {
+        HashSet::from(
+            [
+                           (5,3),
+                    (4,4), (5,4), (6,4),
+            (3,5),  (4,5), (5,5), (6,5), (7,5),
+                    (4,6), (5,6), (6,6),
+                           (5,7),
+            ],
+        )
+    }
+
+    #[rustfmt::skip]
+    fn bl_corner() -> HashSet<(isize, isize)> {
+        HashSet::from(
+            [
+                (0,7),
+                (0,8), (1,8),
+                (0,9), (1, 9), (2, 9),
+            ],
+        )
+    }
+
+    #[test]
+    fn reachable_by_unit_should_work_properly() {
+        let m = MapInstance::empty_walkable(10, 10);
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            range: 2,
+        };
+
+        eprintln!("in center");
+        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let expected = center_star();
+        assert_eq!(expected, reachable);
+
+        eprintln!("bottom corner left");
+        let reachable = reachable_by_unit(&u, (0, 9), &m);
+        let expected = bl_corner();
+        assert_eq!(expected, reachable);
+    }
 }
