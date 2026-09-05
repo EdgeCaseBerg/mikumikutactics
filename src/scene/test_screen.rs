@@ -148,12 +148,12 @@ impl Scene for TestScene {
             'action: {
                 match map_state.action {
                     None => {
-                        if let Some((action, unit_data)) =
-                            check_if_unit_selected_action(&game_context, &map_instance, &map_state)
+                        if let Some((action, unit_data, reachable_positions)) =
+                            check_if_unit_selected_action(game_context, map_instance, map_state)
                         {
                             self.current_portrait = selected_portrait_from(unit_data);
+                            map_state.selectable_tiles = reachable_positions;
                             map_state.action = action;
-                            eprintln!("swap to selected");
                             // Thought: create hash set of selected tiles based on range of unit, computed once now
                             // and then used to validate if next click is within the range of the unit and should result
                             // in anything happening or not.
@@ -207,32 +207,32 @@ fn check_if_unit_selected_action<'a>(
     game_context: &GameContext,
     map_instance: &MapInstance,
     map_state: &'a MapState,
-) -> Option<(Option<ActionState>, Option<&'a UnitData>)> {
+) -> Option<(
+    Option<ActionState>,
+    Option<&'a UnitData>,
+    HashSet<(isize, isize)>,
+)> {
     if !game_context.mouse_context.left_clicked {
         return None;
     }
     let layout = TestScene::layout(game_context);
-    let Some((r, c, _)) = layout.cell_for_mouse(game_context.mouse_context.position) else {
-        return None;
-    };
-    let Some(tile) = map_instance.get((r as isize, c as isize)) else {
-        return None;
-    };
+    let (r, c, _) = layout.cell_for_mouse(game_context.mouse_context.position)?;
+    let tile = map_instance.get((r as isize, c as isize))?;
     if let Some(uid) = tile.occupant {
         if let Some(unit_data) = map_state.units.get(&uid) {
-            let action = Some(ActionState::UnitSelected(uid, (r as isize, c as isize)));
-            return Some((action, Some(unit_data)));
+            let position = (r as isize, c as isize);
+            let action = Some(ActionState::UnitSelected(uid, position));
+            let reachable_positions = reachable_by_unit(unit_data, position, map_instance);
+            return Some((action, Some(unit_data), reachable_positions));
         }
     } else {
-        return Some((None, None));
+        return Some((None, None, HashSet::new()));
     }
-    return None;
+    None
 }
 
 fn selected_portrait_from(unit_data: Option<&UnitData>) -> Option<(SpriteInfo, TextureId)> {
-    let Some(unit_data) = unit_data else {
-        return None;
-    };
+    let unit_data = unit_data?;
     let UnitSpriteData { portrait, .. } = &unit_data.sprite_data;
     Some(portrait.clone())
 }
