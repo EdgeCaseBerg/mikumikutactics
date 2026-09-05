@@ -15,7 +15,7 @@ use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct TestScene {
-    test_sprite: Option<(SpriteInfo, TextureId)>,
+    focus_sprite: Option<(SpriteInfo, TextureId)>,
     current_portrait: Option<(SpriteInfo, TextureId)>,
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
     test_btn: Option<Button>,
@@ -103,7 +103,7 @@ impl Scene for TestScene {
 
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
 
-        self.test_sprite = Some(sprite_tuple("onmap", None, asset_loader.as_mut())?);
+        self.focus_sprite = Some(sprite_tuple("ui", Some(&["focus"]), asset_loader.as_mut())?);
         self.current_portrait = None;
         self.current_portrait_bg = Some(sprite_tuple(
             "portrait",
@@ -131,7 +131,7 @@ impl Scene for TestScene {
         Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
-        if let Some((sprite_info, _)) = self.test_sprite.as_mut() {
+        if let Some((sprite_info, _)) = self.focus_sprite.as_mut() {
             sprite_info.advance(ticks);
         }
         if let Some((sprite_info, _)) = self.current_portrait_bg.as_mut() {
@@ -272,18 +272,29 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
             let Some(tile) = map_instance.get((row, column)) else {
                 continue;
             };
-            if let Some(uid) = tile.occupant {
-                if let Some(unit_data) = map_state.units.get(&uid) {
-                    let UnitSpriteData { sprite, .. } = &unit_data.sprite_data;
-                    let (sprite_info, texture_id) = sprite;
-                    let src = sprite_info.get_rect();
-                    let dst = layout.cell_rect(row as usize, column as usize);
-                    renderer.send_command(RenderCommand::DrawRect {
-                        texture_id: *texture_id,
-                        source: src,
-                        destination: dst,
-                    });
-                }
+            if let Some((sprite_info, texture_id)) = scene.focus_sprite.as_ref()
+                && map_state.selectable_tiles.contains(&(row, column))
+            {
+                let src = sprite_info.get_rect();
+                let dst = layout.cell_rect(row as usize, column as usize);
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: *texture_id,
+                    source: src,
+                    destination: dst,
+                });
+            }
+            if let Some(uid) = tile.occupant
+                && let Some(unit_data) = map_state.units.get(&uid)
+            {
+                let UnitSpriteData { sprite, .. } = &unit_data.sprite_data;
+                let (sprite_info, texture_id) = sprite;
+                let src = sprite_info.get_rect();
+                let dst = layout.cell_rect(row as usize, column as usize);
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: *texture_id,
+                    source: src,
+                    destination: dst,
+                });
             }
         }
     }
