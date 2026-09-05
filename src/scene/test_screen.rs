@@ -154,9 +154,6 @@ impl Scene for TestScene {
                             self.current_portrait = selected_portrait_from(unit_data);
                             map_state.selectable_tiles = reachable_positions;
                             map_state.action = action;
-                            // Thought: create hash set of selected tiles based on range of unit, computed once now
-                            // and then used to validate if next click is within the range of the unit and should result
-                            // in anything happening or not.
                         };
                     }
                     Some(ActionState::UnitSelected(_unit_id, (selected_row, selected_column))) => {
@@ -173,8 +170,15 @@ impl Scene for TestScene {
                         if selected_row == r as isize && selected_column == c as isize {
                             break 'action;
                         }
-                        // If we're clicking on something else though?
-                        let Some(_tile) = map_instance.get((r as isize, c as isize)) else {
+                        // Clicking outside of the range of the unit should revert us to no action
+                        if !map_state.selectable_tiles.contains(&(r as isize, c as isize)) {
+                            map_state.action = None;
+                            map_state.selectable_tiles = HashSet::new();
+                            break 'action;
+                        }
+
+                        // Ensure that the click within range is on the map
+                        let Some(tile) = map_instance.get((r as isize, c as isize)) else {
                             break 'action;
                         };
 
