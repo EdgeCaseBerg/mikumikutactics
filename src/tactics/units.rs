@@ -48,6 +48,7 @@ pub struct UnitData {
     pub name: String,
     // behavior: UnitBehavior, add this back when we actually need it
     pub sprite_data: UnitSpriteData, // load via name
+    pub range: usize,
 }
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]

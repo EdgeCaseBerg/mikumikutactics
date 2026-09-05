@@ -89,6 +89,7 @@ impl Scene for TestScene {
                             sprite: s,
                             portrait: p,
                         },
+                        range: 3,
                     };
                     let tile = the_map
                         .get_mut((3, 3 + uid as isize))
