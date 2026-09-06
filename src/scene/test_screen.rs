@@ -44,40 +44,40 @@ impl ContextMenu {
         let mut y_offset = 0;
         ContextMenu {
             move_btn: {
-                let location = &map_instance
+                let btn_rect = &map_instance
                     .get((r, c))
                     .map(|tile| {
                         // let None = tile.occupant else { return None; };
                         if tile.occupant.is_some() {
                             return None;
                         }
-                        let mut location = anchor.clone();
-                        location.y += y_offset;
+                        let mut btn_rect = anchor.clone();
+                        btn_rect.y += y_offset;
                         y_offset += 1;
-                        Some(location)
+                        Some(btn_rect)
                     })
                     .flatten();
-                location
-                    .map(|location| {
-                        new_btn(btn_prototype, "Move".to_owned(), location)
+                btn_rect
+                    .map(|btn_rect| {
+                        new_btn(btn_prototype, "Move".to_owned(), btn_rect)
                             .map(|btn| (btn, (selected_row, selected_column), (r, c)))
                     })
                     .flatten()
             },
             attack_btn: {
-                let location = &map_instance
+                let btn_rect = &map_instance
                     .get((r, c))
                     .map(|tile| {
                         tile.occupant.map(|unit_id| {
-                            let mut location = anchor.clone();
-                            location.y += y_offset;
+                            let mut btn_rect = anchor.clone();
+                            btn_rect.y += y_offset;
                             y_offset += 1;
-                            (location, unit_id)
+                            (btn_rect, unit_id)
                         })
                     })
                     .flatten();
-                if let Some((location, target_id)) = location.as_ref() {
-                    new_btn(btn_prototype, "Attack".to_owned(), *location).map(|btn| {
+                if let Some((btn_rect, target_id)) = btn_rect.as_ref() {
+                    new_btn(btn_prototype, "Attack".to_owned(), *btn_rect).map(|btn| {
                         let attacker = (selected_unit_id, (selected_row, selected_column));
                         let defender = (*target_id, (r, c));
                         (btn, attacker, defender)
@@ -87,9 +87,9 @@ impl ContextMenu {
                 }
             },
             cancel_btn: {
-                let location =
+                let btn_rect =
                     Rect::new(anchor.x, anchor.y + y_offset, anchor.width, anchor.height);
-                new_btn(btn_prototype, "Cancel".to_owned(), location)
+                new_btn(btn_prototype, "Cancel".to_owned(), btn_rect)
             },
         }
     }
