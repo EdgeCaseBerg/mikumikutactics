@@ -68,55 +68,36 @@ impl ContextMenu {
         let (r, c) = clicked_position;
         let (selected_row, selected_column) = selected_unit_position;
         let mut y_offset = 0;
+        let mut next_rect = || {
+            let mut rect = anchor.clone();
+            rect.y += y_offset;
+            y_offset += 1;
+            rect
+        };
+
+        let tile = map_instance.get((r, c));
+
+        let move_btn = if tile.is_some_and(|tile| tile.occupant.is_none()) {
+            new_btn(btn_prototype, "Move".to_owned(), next_rect())
+                .map(|btn| (btn, selected_unit_position, clicked_position))
+        } else {
+            None
+        };
+
+        let attack_btn = tile.and_then(|tile| tile.occupant).and_then(|target_id| {
+            new_btn(btn_prototype, "Attack".to_owned(), next_rect()).map(|btn| {
+                let attacker = (selected_unit_id, selected_unit_position);
+                let defender = (target_id, clicked_position);
+                (btn, attacker, defender)
+            })
+        });
+
+        let cancel_btn = new_btn(btn_prototype, "Cancel".to_owned(), next_rect());
+
         ContextMenu {
-            move_btn: {
-                let btn_rect = &map_instance
-                    .get((r, c))
-                    .map(|tile| {
-                        // let None = tile.occupant else { return None; };
-                        if tile.occupant.is_some() {
-                            return None;
-                        }
-                        let mut btn_rect = anchor.clone();
-                        btn_rect.y += y_offset;
-                        y_offset += 1;
-                        Some(btn_rect)
-                    })
-                    .flatten();
-                btn_rect
-                    .map(|btn_rect| {
-                        new_btn(btn_prototype, "Move".to_owned(), btn_rect)
-                            .map(|btn| (btn, (selected_row, selected_column), (r, c)))
-                    })
-                    .flatten()
-            },
-            attack_btn: {
-                let btn_rect = &map_instance
-                    .get((r, c))
-                    .map(|tile| {
-                        tile.occupant.map(|unit_id| {
-                            let mut btn_rect = anchor.clone();
-                            btn_rect.y += y_offset;
-                            y_offset += 1;
-                            (btn_rect, unit_id)
-                        })
-                    })
-                    .flatten();
-                if let Some((btn_rect, target_id)) = btn_rect.as_ref() {
-                    new_btn(btn_prototype, "Attack".to_owned(), *btn_rect).map(|btn| {
-                        let attacker = (selected_unit_id, (selected_row, selected_column));
-                        let defender = (*target_id, (r, c));
-                        (btn, attacker, defender)
-                    })
-                } else {
-                    None
-                }
-            },
-            cancel_btn: {
-                let btn_rect =
-                    Rect::new(anchor.x, anchor.y + y_offset, anchor.width, anchor.height);
-                new_btn(btn_prototype, "Cancel".to_owned(), btn_rect)
-            },
+            move_btn,
+            attack_btn,
+            cancel_btn,
         }
     }
 }
