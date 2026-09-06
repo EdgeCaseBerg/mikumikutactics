@@ -11,6 +11,7 @@ use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 
+#[derive(Clone, Debug)]
 pub struct Button {
     pub text: String,
     pub rect: Rect,
