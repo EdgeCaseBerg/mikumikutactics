@@ -31,6 +31,31 @@ pub struct ContextMenu {
 }
 
 impl ContextMenu {
+    // where the context menu's top left corner is, shifted to ensure it doesn't render
+    // off the side of the screen by accident
+    fn anchor(
+        map_instance: &MapInstance,
+        btn_rect: &Rect,
+        clicked_position: Coordinate,
+    ) -> Coordinate {
+        assert!(btn_rect.width + 1 < map_instance.width);
+        assert!(btn_rect.height + 1 < map_instance.height);
+        let num_btns = 2; // cancel and move|attack
+        let w = map_instance.width;
+        let h = map_instance.height;
+        let (row, column) = clicked_position;
+        let c = if column + 1 + btn_rect.width < w {
+            column + 1
+        } else {
+            column - btn_rect.width - 1
+        };
+        let r = if row + btn_rect.height * num_btns < h {
+            row
+        } else {
+            row - btn_rect.height - 1
+        };
+        (r, c)
+    }
     fn new(
         map_instance: &MapInstance,
         anchor: Rect,
