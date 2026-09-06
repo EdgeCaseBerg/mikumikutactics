@@ -243,29 +243,31 @@ impl Scene for TestScene {
                         };
                     }
                     Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
-                        let Some(maybe_tile) = valid_selected_tile_clicked(
+                        match valid_selected_tile_clicked(
                             game_context,
                             map_instance,
                             map_state,
                             (selected_row, selected_column),
-                        ) else {
-                            break 'action;
-                        };
-                        if let Some((r, c)) = maybe_tile {
-                            map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
-                            let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
-                            self.context_menu = Some(ContextMenu::new(
-                                map_instance,
-                                anchor,
-                                &self.btn_prototype,
-                                (r, c),
-                                (selected_row, selected_column),
-                                unit_id,
-                            ));
-                        } else {
-                            map_state.action = None;
-                            map_state.selectable_tiles = HashSet::new();
-                            self.current_portrait = None;
+                        ) {
+                            None => {}
+                            Some(None) => {
+                                map_state.action = None;
+                                map_state.selectable_tiles = HashSet::new();
+                                self.current_portrait = None;
+                            }
+                            Some(Some((r, c))) => {
+                                map_state.action =
+                                    Some(ActionState::CommandPending(unit_id, (r, c)));
+                                let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
+                                self.context_menu = Some(ContextMenu::new(
+                                    map_instance,
+                                    anchor,
+                                    &self.btn_prototype,
+                                    (r, c),
+                                    (selected_row, selected_column),
+                                    unit_id,
+                                ));
+                            }
                         }
                     }
                     Some(ActionState::CommandPending(_unit_id, (target_row, target_column))) => {
