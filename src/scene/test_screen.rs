@@ -50,7 +50,7 @@ impl ContextMenu {
         } else {
             column - bw - 1
         };
-        let r = if row + bh * num_btns < h {
+        let r = if row - 1 + bh * num_btns < h {
             row
         } else {
             row - bh
