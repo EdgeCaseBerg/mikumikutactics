@@ -35,26 +35,27 @@ impl ContextMenu {
     // off the side of the screen by accident
     fn anchor(
         map_instance: &MapInstance,
-        btn_rect: &Rect,
+        btn_size: (isize, isize),
         clicked_position: Coordinate,
-    ) -> Coordinate {
-        assert!(btn_rect.width + 1 < map_instance.width);
-        assert!(btn_rect.height + 1 < map_instance.height);
-        let num_btns = 2; // cancel and move|attack
+        num_btns: isize,
+    ) -> Rect {
+        let (bw, bh) = btn_size;
+        assert!(bw + 1 < map_instance.width);
+        assert!(bh + 1 < map_instance.height);
         let w = map_instance.width;
         let h = map_instance.height;
         let (row, column) = clicked_position;
-        let c = if column + 1 + btn_rect.width < w {
+        let c = if column + 1 + bw < w {
             column + 1
         } else {
-            column - btn_rect.width - 1
+            column - bw - 1
         };
-        let r = if row + btn_rect.height * num_btns < h {
+        let r = if row + bh * num_btns < h {
             row
         } else {
-            row - btn_rect.height - 1
+            row - bh
         };
-        (r, c)
+        Rect::new(c, r, bw, bh)
     }
     fn new(
         map_instance: &MapInstance,
@@ -271,7 +272,7 @@ impl Scene for TestScene {
                         };
                         if let Some((r, c)) = maybe_tile {
                             map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
-                            let anchor = Rect::new(c + 1, r + 1, 2, 1); // TODO: affix anchor based on location in grid
+                            let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
                             let context_menu = ContextMenu::new(
                                 map_instance,
                                 anchor,
