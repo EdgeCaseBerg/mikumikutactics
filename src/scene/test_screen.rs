@@ -380,9 +380,7 @@ fn valid_selected_tile_clicked(
     }
 
     // Ensure that the click within range is on the map
-    let Some(tile) = map_instance.get((r as isize, c as isize)) else {
-        return None;
-    };
+    let tile = map_instance.get((r as isize, c as isize))?;
 
     Some(Some((r as isize, c as isize)))
 }
