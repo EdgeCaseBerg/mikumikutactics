@@ -1,3 +1,4 @@
+use crate::GameResult;
 use crate::SpriteInfo;
 use crate::constants::TextureId;
 use std::collections::HashMap;
@@ -99,6 +100,33 @@ impl MapInstance {
         }
         let idx = row * self.width + column;
         self.tiles.get_mut(idx as usize)
+    }
+    pub fn move_unit_to(
+        &mut self,
+        unit_id: UnitId,
+        from: Coordinate,
+        to: Coordinate,
+    ) -> GameResult<()> {
+        let unit_moving = self.get_mut(from).and_then(|tile| tile.occupant.take());
+        if unit_moving.is_none_or(|occupant| occupant != unit_id) {
+            return Err(
+                format!("unexpected map state, occupant to be moved {:?} did not match target of move command {:?}", unit_moving, unit_id).into()
+            );
+        }
+        if self.get(to).is_none_or(|tile| tile.occupant.is_some()) {
+            return Err(format!(
+                "destination {:?} is already occupied by {:?}, should have been empty",
+                to,
+                self.get(to)
+            )
+            .into());
+        }
+        if let Some(tile) = self.get_mut(to) {
+            tile.occupant = unit_moving;
+        } else {
+            return Err(format!("destination {:?} was not a valid tile on the map", to).into());
+        }
+        Ok(())
     }
 }
 
