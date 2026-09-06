@@ -246,72 +246,16 @@ impl Scene for TestScene {
                         };
                         if let Some((r, c)) = maybe_tile {
                             map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
-                            let mut y_offset = 0;
-                            let anchor = Rect::new(c + 1, r + 1, 2, 1);
-                            let context_menu = ContextMenu {
-                                move_btn: {
-                                    let location = &map_instance
-                                        .get((r, c))
-                                        .map(|tile| {
-                                            // let None = tile.occupant else { return None; };
-                                            if tile.occupant.is_some() {
-                                                return None;
-                                            }
-                                            let mut location = anchor.clone();
-                                            location.y += y_offset;
-                                            y_offset += 1;
-                                            Some(location)
-                                        })
-                                        .flatten();
-                                    location
-                                        .map(|location| {
-                                            new_btn(
-                                                &self.btn_prototype,
-                                                "Move".to_owned(),
-                                                location,
-                                            )
-                                            .map(
-                                                |btn| {
-                                                    (btn, (selected_row, selected_column), (r, c))
-                                                },
-                                            )
-                                        })
-                                        .flatten()
-                                },
-                                attack_btn: {
-                                    let location = &map_instance
-                                        .get((r, c))
-                                        .map(|tile| {
-                                            tile.occupant.map(|unit_id| {
-                                                let mut location = anchor.clone();
-                                                location.y += y_offset;
-                                                y_offset += 1;
-                                                (location, unit_id)
-                                            })
-                                        })
-                                        .flatten();
-                                    if let Some((location, target_id)) = location.as_ref() {
-                                        new_btn(&self.btn_prototype, "Attack".to_owned(), *location)
-                                            .map(|btn| {
-                                                let attacker =
-                                                    (unit_id, (selected_row, selected_column));
-                                                let defender = (*target_id, (r, c));
-                                                (btn, attacker, defender)
-                                            })
-                                    } else {
-                                        None
-                                    }
-                                },
-                                cancel_btn: {
-                                    let location = Rect::new(
-                                        anchor.x,
-                                        anchor.y + y_offset,
-                                        anchor.width,
-                                        anchor.height,
-                                    );
-                                    new_btn(&self.btn_prototype, "Cancel".to_owned(), location)
-                                },
-                            };
+                            let anchor = Rect::new(c + 1, r + 1, 2, 1); // TODO: affix anchor based on location in grid
+                            let context_menu = ContextMenu::new(
+                                map_instance,
+                                anchor,
+                                &self.btn_prototype,
+                                (r, c),
+                                (selected_row, selected_column),
+                                unit_id,
+                            );
+
                             self.context_menu = Some(context_menu);
 
                             eprintln!("command pending");
