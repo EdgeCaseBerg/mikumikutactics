@@ -284,6 +284,9 @@ impl Scene for TestScene {
                         }
                     }
                     Some(ActionState::CommandPending(_unit_id, (target_row, target_column))) => {
+                        if let Some(menu) = self.context_menu.as_mut() {
+                            menu.update(ticks, game_context);
+                        }
                         if !game_context.mouse_context.right_clicked {
                             break 'action;
                         }
