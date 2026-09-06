@@ -259,7 +259,7 @@ impl Scene for TestScene {
                         if !game_context.mouse_context.right_clicked {
                             break 'action;
                         }
-                        // for now clear state. but when ready, this would prompt open a menu and do range checks?
+                        // Check if each context menu btn is being pressed or not, update/advance them.
                         map_state.action = None;
                         map_state.selectable_tiles = HashSet::new();
                         self.context_menu = None;
