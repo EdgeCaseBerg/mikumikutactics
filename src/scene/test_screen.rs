@@ -338,37 +338,15 @@ impl Scene for TestScene {
                         }
                     }
                     Some(ActionState::Move(unit_id, from, to)) => {
-                        let unit_moving = map_instance
-                            .get_mut(from)
-                            .and_then(|tile| tile.occupant.take());
-                        if unit_moving.is_none_or(|occupant| occupant != unit_id) {
-                            return Err(
-                                format!("unexpected map state, occupant to be moved {:?} did not match target of move command {:?}", unit_moving, unit_id).into()
-                            );
-                        }
-                        if map_instance
-                            .get(to)
-                            .is_none_or(|tile| tile.occupant.is_some())
-                        {
-                            return Err(format!(
-                                "destination {:?} is already occupied by {:?}, should have been empty",
-                                to, map_instance.get(to)
-                            )
-                            .into());
-                        }
-                        if let Some(tile) = map_instance.get_mut(to) {
-                            tile.occupant = unit_moving;
-                        } else {
-                            return Err(format!(
-                                "destination {:?} was not a valid tile on the map",
-                                to
-                            )
-                            .into());
-                        }
-
+                        // For now, just move instantly.
+                        // TODO: advance the unit along a computed path
+                        // and when they reach the <to> then trigger move_unit_to
+                        // or something similar.
+                        map_instance.move_unit_to(unit_id, from, to)?;
                         map_state.action = None;
                         map_state.selectable_tiles = HashSet::new();
                         self.current_portrait = None;
+                        // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
                     }
                     _ => {}
                 }
