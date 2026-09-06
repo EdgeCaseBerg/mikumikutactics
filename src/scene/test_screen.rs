@@ -337,6 +337,23 @@ impl Scene for TestScene {
                             );
                         }
                     }
+                    Some(ActionState::Move(unit_id, from, to)) => {
+                        let unit_moving = map_instance
+                            .get_mut(from)
+                            .and_then(|tile| tile.occupant.take());
+                        // something has gone very very wrong if the unit we selected to start somehow morphed
+                        assert_eq!(unit_moving, Some(unit_id));
+                        if let Some(tile) = map_instance.get_mut(to) {
+                            assert!(tile.occupant.is_none());
+                            tile.occupant = unit_moving;
+                        } else {
+                            // explode.
+                        }
+
+                        map_state.action = None;
+                        map_state.selectable_tiles = HashSet::new();
+                        self.current_portrait = None;
+                    }
                     _ => {}
                 }
             }
