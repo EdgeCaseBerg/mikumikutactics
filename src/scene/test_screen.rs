@@ -273,15 +273,14 @@ impl Scene for TestScene {
                         if let Some((r, c)) = maybe_tile {
                             map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
                             let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
-                            let context_menu = ContextMenu::new(
+                            self.context_menu = Some(ContextMenu::new(
                                 map_instance,
                                 anchor,
                                 &self.btn_prototype,
                                 (r, c),
                                 (selected_row, selected_column),
                                 unit_id,
-                            );
-                            self.context_menu = Some(context_menu);
+                            ));
                         } else {
                             map_state.action = None;
                             map_state.selectable_tiles = HashSet::new();
