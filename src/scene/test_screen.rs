@@ -319,6 +319,11 @@ impl Scene for TestScene {
                                     self.current_portrait = None;
                                 }
                             }
+                        } else {
+                            assert!(
+                                self.context_menu.is_some(),
+                                "entered command pending state with no context menu options",
+                            );
                         }
                     }
                     _ => {}
