@@ -341,13 +341,29 @@ impl Scene for TestScene {
                         let unit_moving = map_instance
                             .get_mut(from)
                             .and_then(|tile| tile.occupant.take());
-                        // something has gone very very wrong if the unit we selected to start somehow morphed
-                        assert_eq!(unit_moving, Some(unit_id));
+                        if unit_moving.is_none_or(|occupant| occupant != unit_id) {
+                            return Err(
+                                format!("unexpected map state, occupant to be moved {:?} did not match target of move command {:?}", unit_moving, unit_id).into()
+                            );
+                        }
+                        if map_instance
+                            .get(to)
+                            .is_none_or(|tile| tile.occupant.is_some())
+                        {
+                            return Err(format!(
+                                "destination {:?} is already occupied by {:?}, should have been empty",
+                                to, map_instance.get(to)
+                            )
+                            .into());
+                        }
                         if let Some(tile) = map_instance.get_mut(to) {
-                            assert!(tile.occupant.is_none());
                             tile.occupant = unit_moving;
                         } else {
-                            // explode.
+                            return Err(format!(
+                                "destination {:?} was not a valid tile on the map",
+                                to
+                            )
+                            .into());
                         }
 
                         map_state.action = None;
