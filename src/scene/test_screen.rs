@@ -455,12 +455,12 @@ fn draw_context_menu(scene: &TestScene, layout: &GridLayout, game_context: &mut 
         return;
     };
     if let Some((btn, ..)) = menu.move_btn.as_ref() {
-        btn.draw(game_context, &layout);
+        btn.draw(game_context, layout);
     }
     if let Some((btn, ..)) = menu.attack_btn.as_ref() {
-        btn.draw(game_context, &layout);
+        btn.draw(game_context, layout);
     }
     if let Some(btn) = menu.cancel_btn.as_ref() {
-        btn.draw(game_context, &layout);
+        btn.draw(game_context, layout);
     }
 }
