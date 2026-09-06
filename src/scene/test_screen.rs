@@ -100,6 +100,19 @@ impl ContextMenu {
             cancel_btn,
         }
     }
+    fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<Option<ActionState>> {
+        let layout = TestScene::layout(game_context);
+        if let Some((btn, ..)) = self.move_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+        }
+        if let Some((btn, ..)) = self.attack_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+        }
+        if let Some(btn) = self.cancel_btn.as_mut() {
+            btn.update(ticks, game_context, &layout);
+        }
+        Ok(None)
+    }
 }
 
 impl TestScene {
