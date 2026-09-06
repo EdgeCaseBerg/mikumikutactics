@@ -100,16 +100,30 @@ impl ContextMenu {
             cancel_btn,
         }
     }
-    fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<Option<ActionState>> {
+    fn update(
+        &mut self,
+        ticks: u32,
+        game_context: &mut GameContext,
+        unit_id: UnitId,
+    ) -> GameResult<Option<ActionState>> {
         let layout = TestScene::layout(game_context);
-        if let Some((btn, ..)) = self.move_btn.as_mut() {
+        if let Some((btn, from, to)) = self.move_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                return Ok(Some(ActionState::Move(unit_id, *from, *to)));
+            }
         }
-        if let Some((btn, ..)) = self.attack_btn.as_mut() {
+        if let Some((btn, attacker, defender)) = self.attack_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                return Ok(Some(ActionState::Attack(*attacker, *defender)));
+            }
         }
         if let Some(btn) = self.cancel_btn.as_mut() {
             btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                return Err("cancel clicked".into());
+            }
         }
         Ok(None)
     }
@@ -283,19 +297,29 @@ impl Scene for TestScene {
                             }
                         }
                     }
-                    Some(ActionState::CommandPending(_unit_id, (target_row, target_column))) => {
+                    Some(ActionState::CommandPending(unit_id, (target_row, target_column))) => {
                         if let Some(menu) = self.context_menu.as_mut() {
-                            menu.update(ticks, game_context);
+                            match menu.update(ticks, game_context, unit_id) {
+                                Ok(None) => {}
+                                Ok(new_action) => {
+                                    self.context_menu = None;
+                                    map_state.action = new_action;
+                                    map_state.selectable_tiles = HashSet::new();
+                                    // If we were doing something like making the unit speak,
+                                    // then perhaps play it here like "I'm on my way!" And if
+                                    // we want to do animation of the character moving, then we
+                                    // could compute all of that here and then replay it back?
+                                    // or have it happen while processing that command perhaps
+                                }
+                                Err(_) => {
+                                    // Error is the cancel button signal
+                                    map_state.action = None;
+                                    map_state.selectable_tiles = HashSet::new();
+                                    self.context_menu = None;
+                                    self.current_portrait = None;
+                                }
+                            }
                         }
-                        if !game_context.mouse_context.right_clicked {
-                            break 'action;
-                        }
-                        // Check if each context menu btn is being pressed or not, update/advance them.
-                        map_state.action = None;
-                        map_state.selectable_tiles = HashSet::new();
-                        self.context_menu = None;
-                        self.current_portrait = None;
-                        eprintln!("swap to cleared");
                     }
                     _ => {}
                 }
