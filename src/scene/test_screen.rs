@@ -18,7 +18,7 @@ pub struct TestScene {
     focus_sprite: Option<(SpriteInfo, TextureId)>,
     current_portrait: Option<(SpriteInfo, TextureId)>,
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
-    test_btn: Option<Button>,
+    btn_prototype: Option<Button>,
     map: Option<(MapInstance, MapState)>,
 }
 
@@ -116,7 +116,7 @@ impl Scene for TestScene {
             return Err("cannot init scene if font_library is not set".into());
         };
         font_library.ensure(font_id, asset_loader.as_mut())?;
-        self.test_btn = Some(Button::new(
+        self.btn_prototype = Some(Button::new(
             "Test".to_string(),
             Rect {
                 x: 16,
@@ -127,7 +127,7 @@ impl Scene for TestScene {
             font_id,
             ui_texture_id,
         ));
-        self.test_btn.as_mut().unwrap().init(game_context)?;
+        self.btn_prototype.as_mut().unwrap().init(game_context)?;
         Ok(())
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
@@ -140,7 +140,7 @@ impl Scene for TestScene {
         if let Some((sprite_info, _)) = self.current_portrait.as_mut() {
             sprite_info.advance(ticks);
         }
-        if let Some(btn) = self.test_btn.as_mut() {
+        if let Some(btn) = self.btn_prototype.as_mut() {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
         }
@@ -197,7 +197,8 @@ impl Scene for TestScene {
         };
         draw_map(self, &layout, renderer.as_mut());
         draw_portrait(self, &layout, renderer.as_mut());
-        if let Some(btn) = self.test_btn.as_ref() {
+        draw_context_menu(self, &layout, game_context);
+        if let Some(btn) = self.btn_prototype.as_ref() {
             btn.draw(game_context, &layout);
         }
         Ok(())
