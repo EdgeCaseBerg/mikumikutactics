@@ -255,13 +255,11 @@ impl Scene for TestScene {
                                 (selected_row, selected_column),
                                 unit_id,
                             );
-
                             self.context_menu = Some(context_menu);
-
-                            eprintln!("command pending");
                         } else {
                             map_state.action = None;
                             map_state.selectable_tiles = HashSet::new();
+                            self.current_portrait = None;
                         }
                     }
                     Some(ActionState::CommandPending(_unit_id, (target_row, target_column))) => {
@@ -272,6 +270,7 @@ impl Scene for TestScene {
                         map_state.action = None;
                         map_state.selectable_tiles = HashSet::new();
                         self.context_menu = None;
+                        self.current_portrait = None;
                         eprintln!("swap to cleared");
                     }
                     _ => {}
