@@ -20,6 +20,14 @@ pub struct TestScene {
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
     btn_prototype: Option<Button>,
     map: Option<(MapInstance, MapState)>,
+    context_menu: Option<ContextMenu>,
+}
+
+#[derive(Default)]
+pub struct ContextMenu {
+    move_btn: Option<(Button, FromHere, ToThere)>,
+    attack_btn: Option<(Button, Attacker, Defender)>,
+    cancel_btn: Option<Button>,
 }
 
 impl TestScene {
@@ -181,6 +189,7 @@ impl Scene for TestScene {
                         // for now clear state. but when ready, this would prompt open a menu and do range checks?
                         map_state.action = None;
                         map_state.selectable_tiles = HashSet::new();
+                        self.context_menu = None;
                         eprintln!("swap to cleared");
                     }
                     _ => {}
@@ -332,5 +341,20 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
                 });
             }
         }
+    }
+}
+
+fn draw_context_menu(scene: &TestScene, layout: &GridLayout, game_context: &mut GameContext) {
+    let Some(menu) = scene.context_menu.as_ref() else {
+        return;
+    };
+    if let Some((btn, ..)) = menu.move_btn.as_ref() {
+        btn.draw(game_context, &layout);
+    }
+    if let Some((btn, ..)) = menu.attack_btn.as_ref() {
+        btn.draw(game_context, &layout);
+    }
+    if let Some(btn) = menu.cancel_btn.as_ref() {
+        btn.draw(game_context, &layout);
     }
 }
