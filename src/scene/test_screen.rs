@@ -30,6 +30,71 @@ pub struct ContextMenu {
     cancel_btn: Option<Button>,
 }
 
+impl ContextMenu {
+    fn new(
+        map_instance: &MapInstance,
+        anchor: Rect,
+        btn_prototype: &Option<Button>,
+        clicked_position: Coordinate,
+        selected_unit_position: Coordinate,
+        selected_unit_id: UnitId,
+    ) -> ContextMenu {
+        let (r, c) = clicked_position;
+        let (selected_row, selected_column) = selected_unit_position;
+        let mut y_offset = 0;
+        ContextMenu {
+            move_btn: {
+                let location = &map_instance
+                    .get((r, c))
+                    .map(|tile| {
+                        // let None = tile.occupant else { return None; };
+                        if tile.occupant.is_some() {
+                            return None;
+                        }
+                        let mut location = anchor.clone();
+                        location.y += y_offset;
+                        y_offset += 1;
+                        Some(location)
+                    })
+                    .flatten();
+                location
+                    .map(|location| {
+                        new_btn(btn_prototype, "Move".to_owned(), location)
+                            .map(|btn| (btn, (selected_row, selected_column), (r, c)))
+                    })
+                    .flatten()
+            },
+            attack_btn: {
+                let location = &map_instance
+                    .get((r, c))
+                    .map(|tile| {
+                        tile.occupant.map(|unit_id| {
+                            let mut location = anchor.clone();
+                            location.y += y_offset;
+                            y_offset += 1;
+                            (location, unit_id)
+                        })
+                    })
+                    .flatten();
+                if let Some((location, target_id)) = location.as_ref() {
+                    new_btn(btn_prototype, "Attack".to_owned(), *location).map(|btn| {
+                        let attacker = (selected_unit_id, (selected_row, selected_column));
+                        let defender = (*target_id, (r, c));
+                        (btn, attacker, defender)
+                    })
+                } else {
+                    None
+                }
+            },
+            cancel_btn: {
+                let location =
+                    Rect::new(anchor.x, anchor.y + y_offset, anchor.width, anchor.height);
+                new_btn(btn_prototype, "Cancel".to_owned(), location)
+            },
+        }
+    }
+}
+
 impl TestScene {
     fn layout(game_context: &GameContext) -> GridLayout {
         let (screen_width, screen_height) = game_context.screen_size;
