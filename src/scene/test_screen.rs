@@ -340,7 +340,9 @@ impl Scene for TestScene {
         };
         draw_map(self, &layout, renderer.as_mut());
         draw_portrait(self, &layout, renderer.as_mut());
-        draw_context_menu(self, &layout, game_context);
+        if let Some(menu) = self.context_menu.as_ref() {
+            draw_context_menu(menu, &layout, game_context);
+        }
         if let Some(btn) = self.btn_prototype.as_ref() {
             btn.draw(game_context, &layout);
         }
@@ -476,17 +478,18 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
     }
 }
 
-fn draw_context_menu(scene: &TestScene, layout: &GridLayout, game_context: &mut GameContext) {
-    let Some(menu) = scene.context_menu.as_ref() else {
-        return;
-    };
-    if let Some((btn, ..)) = menu.move_btn.as_ref() {
+fn draw_context_menu(
+    context_menu: &ContextMenu,
+    layout: &GridLayout,
+    game_context: &mut GameContext,
+) {
+    if let Some((btn, ..)) = context_menu.move_btn.as_ref() {
         btn.draw(game_context, layout);
     }
-    if let Some((btn, ..)) = menu.attack_btn.as_ref() {
+    if let Some((btn, ..)) = context_menu.attack_btn.as_ref() {
         btn.draw(game_context, layout);
     }
-    if let Some(btn) = menu.cancel_btn.as_ref() {
+    if let Some(btn) = context_menu.cancel_btn.as_ref() {
         btn.draw(game_context, layout);
     }
 }
