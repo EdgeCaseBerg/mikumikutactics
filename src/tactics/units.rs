@@ -250,7 +250,7 @@ mod tactics_units {
         let u = UnitData {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
-            range: 2,
+            move_range: 2,
         };
 
         eprintln!("in center 2");
@@ -266,7 +266,7 @@ mod tactics_units {
         let u = UnitData {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
-            range: 3,
+            move_range: 3,
         };
         let reachable = reachable_by_unit(&u, (5, 5), &m);
         let expected = center_star_3();
@@ -288,7 +288,7 @@ mod tactics_units {
         let u = UnitData {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
-            range: 2,
+            move_range: 2,
         };
 
         eprintln!("in center");
