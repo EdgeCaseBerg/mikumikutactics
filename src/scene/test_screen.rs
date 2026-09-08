@@ -348,6 +348,23 @@ impl Scene for TestScene {
                         self.current_portrait = None;
                         // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
                     }
+                    Some(ActionState::Attack(attacker, defender)) => {
+                        eprintln!("{:?} wants to attack {:?}", attacker, defender);
+
+                        // if !in_range(attacker, defender) {
+                        //     map_instance.move_unit_to(attacker_unit, from, to)
+                        // }
+                        // let attack = attacker.attack(defender);
+                        // defender.damage(amount);
+                        // if defender.is_dead() {
+                        //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
+                        // }
+                        // award_xp(attacker);
+
+                        map_state.action = None;
+                        map_state.selectable_tiles = HashSet::new();
+                        self.current_portrait = None;
+                    }
                     _ => {}
                 }
             }
