@@ -50,7 +50,8 @@ pub struct UnitData {
     pub name: String,
     // behavior: UnitBehavior, add this back when we actually need it
     pub sprite_data: UnitSpriteData, // load via name
-    pub range: usize,
+    pub move_range: usize,
+    // pub weapon: Option<WeaponId>,
 }
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
@@ -154,7 +155,7 @@ pub fn reachable_by_unit(
     at: Coordinate,
     map_instance: &MapInstance,
 ) -> HashSet<(isize, isize)> {
-    let range = unit_data.range as isize;
+    let range = unit_data.move_range as isize;
     let (start_x, start_y) = at;
     let mut queue = VecDeque::from([at]); // FIFO
     let mut seen = HashSet::new();
