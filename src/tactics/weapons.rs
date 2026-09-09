@@ -1,5 +1,6 @@
 use crate::GameResult;
 use std::collections::HashMap;
+use std::ops::RangeInclusive;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct WeaponId(pub usize);
@@ -7,7 +8,7 @@ pub struct WeaponId(pub usize);
 #[derive(Debug, Clone)]
 pub struct Weapon {
     pub name: String,
-    pub range: usize,
+    pub range: RangeInclusive<usize>,
     pub attack: usize,
     // TODO once initial game is good and we want to build more on: other properties as we build, cost, crit rate, durability, damage types, weight, status effects
 }
@@ -17,7 +18,7 @@ pub fn dummy_sword() -> (WeaponId, Weapon) {
         WeaponId(0),
         Weapon {
             name: "Sword".to_owned(),
-            range: 1,
+            range: 1..=1,
             attack: 1,
         },
     )
@@ -29,7 +30,7 @@ pub fn dummy_bow() -> (WeaponId, Weapon) {
         WeaponId(1),
         Weapon {
             name: "Bow".to_owned(),
-            range: 2,
+            range: 2..=3,
             attack: 1,
         },
     )
