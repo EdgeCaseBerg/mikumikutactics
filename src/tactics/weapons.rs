@@ -24,7 +24,6 @@ pub fn dummy_sword() -> (WeaponId, Weapon) {
     )
 }
 
-// What's interesting to think of, is that in FE there is min/max range since most Bows require at least a space between units to use
 pub fn dummy_bow() -> (WeaponId, Weapon) {
     (
         WeaponId(1),
@@ -62,7 +61,7 @@ impl WeaponCatalog for DummyWeaponCatalog {
         }
     }
     fn id_to_weapon(&self, id: WeaponId) -> GameResult<Weapon> {
-        if let Some((_, weapon)) = self.weapons.iter().find(|(id, w)| id == id) {
+        if let Some((_, weapon)) = self.weapons.iter().find(|(wid, w)| *wid == id) {
             Ok(weapon.clone())
         } else {
             Err(format!("could not find weapon with name {}", id.0).into())
