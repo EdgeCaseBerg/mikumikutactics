@@ -1,6 +1,7 @@
 use crate::GameResult;
 use crate::SpriteInfo;
 use crate::constants::TextureId;
+use crate::tactics::weapons::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -51,7 +52,7 @@ pub struct UnitData {
     // behavior: UnitBehavior, add this back when we actually need it
     pub sprite_data: UnitSpriteData, // load via name
     pub move_range: usize,
-    // pub weapon: Option<WeaponId>,
+    pub weapon: Option<WeaponId>,
 }
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
@@ -251,6 +252,7 @@ mod tactics_units {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
             move_range: 2,
+            weapon: None,
         };
 
         eprintln!("in center 2");
@@ -267,6 +269,7 @@ mod tactics_units {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
             move_range: 3,
+            weapon: None,
         };
         let reachable = reachable_by_unit(&u, (5, 5), &m);
         let expected = center_star_3();
@@ -289,6 +292,7 @@ mod tactics_units {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
             move_range: 2,
+            weapon: None,
         };
 
         eprintln!("in center");

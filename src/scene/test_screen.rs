@@ -11,6 +11,7 @@ use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::Button;
 use crate::tactics::units::*;
+use crate::tactics::weapons::*;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -214,7 +215,7 @@ impl Scene for TestScene {
                             portrait: p,
                         },
                         move_range: 3,
-                        // weapon: None,
+                        weapon: Some(WeaponId(uid % 2)),
                     };
                     let tile = the_map
                         .get_mut((3, 3 + uid as isize))
