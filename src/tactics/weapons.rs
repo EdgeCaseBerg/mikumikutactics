@@ -35,12 +35,12 @@ pub fn dummy_bow() -> (WeaponId, Weapon) {
     )
 }
 
-trait WeaponCatalog {
+pub trait WeaponCatalog {
     fn name_to_weapon(&self, name: &str) -> GameResult<Weapon>;
     fn id_to_weapon(&self, id: WeaponId) -> GameResult<Weapon>;
 }
 
-struct DummyWeaponCatalog {
+pub struct DummyWeaponCatalog {
     pub weapons: Vec<(WeaponId, Weapon)>,
 }
 
