@@ -159,6 +159,15 @@ pub fn reachable_by_unit(
     asset_catalog: &AssetCatalog,
 ) -> HashSet<(isize, isize)> {
     let range = unit_data.move_range as isize;
+    let attack_range = if let Some(weapon) = unit_data
+        .weapon
+        .and_then(|wid| asset_catalog.id_to_weapon(wid).ok())
+    {
+        weapon.range
+    } else {
+        // We could also potentially consider them "unarmed" and do a range of 1
+        0..=0
+    };
     let (start_x, start_y) = at;
     let mut queue = VecDeque::from([at]); // FIFO
     let mut seen = HashSet::new();
@@ -177,7 +186,11 @@ pub fn reachable_by_unit(
         let (tx, ty) = location;
         let manhatten_d = (start_x - tx).abs() + (start_y - ty).abs();
         if manhatten_d <= range {
-            reachable.insert(location);
+            if tile.occupant.is_none() {
+                reachable.insert(location);
+            } else if attack_range.contains(&(manhatten_d as usize)) {
+                reachable.insert(location);
+            }
         }
         queue.push_front((tx + 1, ty));
         queue.push_front((tx - 1, ty));
