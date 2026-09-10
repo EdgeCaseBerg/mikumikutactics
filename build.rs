@@ -51,6 +51,7 @@ fn main() {
     let scenes = load_file_assets(&assets_dir, "scenes");
     let sounds = load_file_assets(&assets_dir, "sounds");
     let music = load_file_assets(&assets_dir, "music");
+    let weapons = load_weapon_assets(&assets_dir);
 
     // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
     let manifest_path = assets_dir.join("manifest");
@@ -59,7 +60,7 @@ fn main() {
         scenes,
         sounds,
         music,
-        weapons: vec![], // TODO
+        weapons,
     };
     let j: jzon::JsonValue = manifest.into();
     let string = j.pretty(2);
@@ -246,5 +247,41 @@ fn make_spritesheets(ase_files: Vec<(AsepriteFile, PathBuf)>) -> Vec<Spritesheet
                 tags,
             }
         })
+        .collect()
+}
+
+fn load_weapon_assets(assets_dir: &Path) -> Vec<Weapon> {
+    let in_dir = assets_dir.join("weapons");
+    let file = in_dir.join("weapons.csv");
+    let raw_csv = fs::read_to_string(file).expect("could not load weapon csv");
+    raw_csv
+        .lines()
+        .skip(1)
+        .enumerate()
+        .map(
+            |(id, line)| match line.split(",").collect::<Vec<_>>()[0..4] {
+                [name, attack, min, max] => {
+                    let name = name.trim().to_owned();
+                    let attack: usize = attack.trim().parse().unwrap_or_else(|e| {
+                        panic!("could not parse attack power from value '{attack}' {e}")
+                    });
+                    let min_range: usize = min.trim().parse().unwrap_or_else(|e| {
+                        panic!("could not parse min_range power from value '{min}' {e}")
+                    });
+                    let max_range: usize = max.trim().parse().unwrap_or_else(|e| {
+                        panic!("could not parse max_range power from value '{max}' {e}")
+                    });
+                    Weapon {
+                        id,
+                        name,
+                        range: min_range..=max_range,
+                        attack,
+                    }
+                }
+                _ => {
+                    panic!("Bad line! {:?}", line)
+                }
+            },
+        )
         .collect()
 }
