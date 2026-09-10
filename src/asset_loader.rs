@@ -404,7 +404,8 @@ mod transition_scene_tests {
             }],
             "sounds": [],
             "music": [],
-            "scenes": []
+            "scenes": [],
+            "weapons": []
         }"#,
         );
         let Ok(catalog) = catalog else {
