@@ -218,7 +218,7 @@ mod tactics_units {
                 "min_range": 1,
                 "max_range": 1
             }, {
-                "id": 0,
+                "id": 1,
                 "name": "Bow",
                 "attack": 1,
                 "min_range": 2,
@@ -351,6 +351,40 @@ mod tactics_units {
         let reachable = reachable_by_unit(&u, (0, 9), &m, &c);
         let mut expected = bl_corner();
         expected.remove(&(0, 8));
+        assert_eq!(expected, reachable);
+    }
+
+    #[test]
+    fn able_to_attack_unit_within_range_of_weapon() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+        m.get_mut((4, 4)).unwrap().occupant = Some(UnitId(1));
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(1)), // Bow with range 2..2
+        };
+
+        let c = fake_catalog();
+
+        eprintln!("should be able to hit");
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
+        let expected = center_star_2();
+        assert_eq!(expected, reachable);
+
+        eprintln!("should not be able to hit");
+        m.get_mut((4, 4)).unwrap().occupant = None;
+        m.get_mut((4, 5)).unwrap().occupant = Some(UnitId(1));
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
+        let mut expected = center_star_2();
+        expected.remove(&(4, 5));
+        eprintln!("in center 2 {:?}", {
+            (
+                reachable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&reachable).collect::<Vec<_>>(),
+            )
+        });
         assert_eq!(expected, reachable);
     }
 }
