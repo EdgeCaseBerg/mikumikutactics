@@ -1,7 +1,6 @@
 use crate::GameResult;
 use crate::SpriteInfo;
-use crate::constants::TextureId;
-use crate::tactics::weapons::*;
+use crate::constants::{TextureId, WeaponId};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;

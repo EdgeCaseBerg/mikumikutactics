@@ -516,5 +516,6 @@
       "name": "game-over-confirm",
       "asset_path": "assets/scenes/game-over-confirm.scene"
     }
-  ]
+  ],
+  "weapons": []
 }

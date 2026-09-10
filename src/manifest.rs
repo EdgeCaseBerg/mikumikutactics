@@ -1,5 +1,6 @@
 use jzon::JsonValue;
 use std::error::Error;
+use std::ops::RangeInclusive;
 
 /*
 
@@ -51,6 +52,7 @@ pub struct Manifest {
     pub sounds: Vec<FileAsset>,
     pub music: Vec<FileAsset>,
     pub scenes: Vec<FileAsset>,
+    pub weapons: Vec<Weapon>,
 }
 
 #[derive(Debug)]
@@ -85,6 +87,14 @@ pub struct FileAsset {
     pub asset_path: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct Weapon {
+    pub id: usize,
+    pub name: String,
+    pub range: RangeInclusive<usize>,
+    pub attack: usize,
+}
+
 // Writes are simple:
 impl From<Manifest> for JsonValue {
     fn from(val: Manifest) -> Self {
@@ -93,6 +103,7 @@ impl From<Manifest> for JsonValue {
             sounds: val.sounds,
             music: val.music,
             scenes: val.scenes,
+            weapons: val.weapons,
         }
     }
 }
@@ -137,6 +148,18 @@ impl From<FileAsset> for JsonValue {
     }
 }
 
+impl From<Weapon> for JsonValue {
+    fn from(val: Weapon) -> Self {
+        jzon::object! {
+            id: val.id,
+            name: val.name,
+            min_range: *val.range.start(),
+            max_range: *val.range.end(),
+            attack: val.attack,
+        }
+    }
+}
+
 // Reads are a little more complicated:
 
 impl TryFrom<JsonValue> for Manifest {
@@ -166,6 +189,12 @@ impl TryFrom<JsonValue> for Manifest {
 
         let Some(music) = root["music"].as_array() else {
             return Err("unexpected shape of manifest file, root object missing music list".into());
+        };
+
+        let Some(weapons) = root["weapons"].as_array() else {
+            return Err(
+                "unexpected shape of manifest file, root object missing weapons list".into(),
+            );
         };
 
         let mut errors = vec![];
@@ -225,6 +254,20 @@ impl TryFrom<JsonValue> for Manifest {
             })
             .collect();
 
+        let weapons: Vec<Weapon> = weapons
+            .iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<Weapon> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
+
         if !errors.is_empty() {
             return Err(errors
                 .into_iter()
@@ -239,6 +282,7 @@ impl TryFrom<JsonValue> for Manifest {
             sounds,
             music,
             scenes,
+            weapons,
         })
     }
 }
@@ -398,6 +442,34 @@ impl TryFrom<&JsonValue> for FileAsset {
             name: name.to_owned(),
             asset_path: asset_path.to_owned(),
             id,
+        })
+    }
+}
+
+impl TryFrom<&JsonValue> for Weapon {
+    type Error = Box<dyn Error>;
+    fn try_from(obj: &JsonValue) -> AssetResult<Weapon> {
+        let Some(name) = obj["name"].as_str() else {
+            return Err("missing or invalid name field in frame tag".into());
+        };
+        let Some(id) = obj["id"].as_usize() else {
+            return Err("missing or invalid id field in file asset".into());
+        };
+        let Some(attack) = obj["attack"].as_usize() else {
+            return Err("missing or invalid attack field in frame tag".into());
+        };
+        let Some(min_range) = obj["min_range"].as_usize() else {
+            return Err("missing or invalid min_range field in frame tag".into());
+        };
+        let Some(max_range) = obj["max_range"].as_usize() else {
+            return Err("missing or invalid max_range field in frame tag".into());
+        };
+
+        Ok(Weapon {
+            id,
+            name: name.to_owned(),
+            range: RangeInclusive::new(min_range, max_range),
+            attack,
         })
     }
 }

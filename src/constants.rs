@@ -45,3 +45,6 @@ pub struct ProgramCounter(pub usize);
 
 pub const SCENE_START_NAME: &str = "start";
 pub const VN_QUIT_FLAG: &str = "quit";
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct WeaponId(pub usize);

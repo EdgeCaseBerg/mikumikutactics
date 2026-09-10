@@ -3,15 +3,14 @@ use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
 use crate::asset_loader::{AssetLoader, ensure_texture_by_name};
-use crate::constants::TextureId;
 use crate::constants::{FontId, TEXTURE_UI};
+use crate::constants::{TextureId, WeaponId};
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::Button;
 use crate::tactics::units::*;
-use crate::tactics::weapons::*;
 use std::collections::HashSet;
 
 #[derive(Default)]

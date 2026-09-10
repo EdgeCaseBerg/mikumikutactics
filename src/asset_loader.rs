@@ -1,6 +1,6 @@
 use crate::SpriteInfo;
-use crate::constants::{MusicId, SceneId, SfxId, TextureId};
-use crate::manifest::{Manifest, SpriteFrame};
+use crate::constants::{MusicId, SceneId, SfxId, TextureId, WeaponId};
+use crate::manifest::{Manifest, SpriteFrame, Weapon};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
@@ -34,10 +34,12 @@ pub struct AssetCatalog {
     music_to_music_idx: HashMap<String, usize>,
     sound_to_sfx_idx: HashMap<String, usize>,
     scene_to_scene_idx: HashMap<String, usize>,
+    weapon_to_weapon_idx: HashMap<String, usize>,
     character_id_to_sprite_idx: HashMap<usize, usize>,
     music_id_to_music_idx: HashMap<usize, usize>,
     sound_id_to_sfx_idx: HashMap<usize, usize>,
     scene_id_to_scene_idx: HashMap<usize, usize>,
+    weapon_id_to_weapon_idx: HashMap<usize, usize>,
 }
 
 fn to_sprite_info(sprite_frame: &SpriteFrame, num_frames: u32) -> SpriteInfo {
@@ -83,6 +85,12 @@ impl AssetCatalog {
             .enumerate()
             .map(|(idx, scene)| (scene.name.to_owned(), idx))
             .collect();
+        let weapon_to_weapon_idx = manifest
+            .weapons
+            .iter()
+            .enumerate()
+            .map(|(idx, weapon)| (weapon.name.to_owned(), idx))
+            .collect();
 
         let character_id_to_sprite_idx = manifest
             .spritesheets
@@ -108,6 +116,12 @@ impl AssetCatalog {
             .enumerate()
             .map(|(idx, scene)| (scene.id, idx))
             .collect();
+        let weapon_id_to_weapon_idx = manifest
+            .weapons
+            .iter()
+            .enumerate()
+            .map(|(idx, weapon)| (weapon.id, idx))
+            .collect();
 
         Ok(AssetCatalog {
             manifest,
@@ -115,10 +129,12 @@ impl AssetCatalog {
             music_to_music_idx,
             sound_to_sfx_idx,
             scene_to_scene_idx,
+            weapon_to_weapon_idx,
             character_id_to_sprite_idx,
             music_id_to_music_idx,
             sound_id_to_sfx_idx,
             scene_id_to_scene_idx,
+            weapon_id_to_weapon_idx,
         })
     }
     pub fn get_sprite_name_for_id(&self, texture_id: TextureId) -> AssetResult<&str> {
@@ -309,6 +325,32 @@ impl AssetCatalog {
             .into());
         };
         Ok(SceneId(scene_file_asset.id))
+    }
+    pub fn name_to_weapon(&self, name: &str) -> AssetResult<Weapon> {
+        let Some(idx) = self.weapon_to_weapon_idx.get(name) else {
+            return Err(format!("could not find weapon id with name {name}").into());
+        };
+        let Some(weapon) = self.manifest.weapons.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no weapon for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        // TODO: wonder if we should return &Weapon instead...
+        Ok(weapon.clone())
+    }
+    pub fn id_to_weapon(&self, id: WeaponId) -> AssetResult<Weapon> {
+        let Some(idx) = self.weapon_id_to_weapon_idx.get(&id.0) else {
+            return Err(format!("could not find weapon with id {}", id.0).into());
+        };
+        let Some(weapon) = self.manifest.weapons.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no weapon for id {} exists at index {idx}",
+                id.0
+            )
+            .into());
+        };
+        Ok(weapon.clone())
     }
 }
 
