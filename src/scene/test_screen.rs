@@ -402,6 +402,11 @@ fn check_if_unit_selected_action<'a>(
     if !game_context.mouse_context.left_clicked {
         return None;
     }
+    // If there is no catalog to use for weapon checks, then we can't determine actions and something is quite wrong with the world.
+    let catalog = game_context
+        .asset_loader
+        .as_ref()
+        .map(|a| a.get_catalog())?;
     let layout = TestScene::layout(game_context);
     let (r, c, _) = layout.cell_for_mouse(game_context.mouse_context.position)?;
     let tile = map_instance.get((r as isize, c as isize))?;
@@ -409,7 +414,8 @@ fn check_if_unit_selected_action<'a>(
         if let Some(unit_data) = map_state.units.get(&uid) {
             let position = (r as isize, c as isize);
             let action = Some(ActionState::UnitSelected(uid, position));
-            let reachable_positions = reachable_by_unit(unit_data, position, map_instance);
+            let reachable_positions =
+                reachable_by_unit(unit_data, position, map_instance, catalog.as_ref());
             return Some((action, Some(unit_data), reachable_positions));
         }
     } else {

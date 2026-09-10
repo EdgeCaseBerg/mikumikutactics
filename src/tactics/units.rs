@@ -1,6 +1,8 @@
 use crate::GameResult;
 use crate::SpriteInfo;
+use crate::asset_loader::AssetCatalog;
 use crate::constants::{TextureId, WeaponId};
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -154,6 +156,7 @@ pub fn reachable_by_unit(
     unit_data: &UnitData,
     at: Coordinate,
     map_instance: &MapInstance,
+    asset_catalog: &AssetCatalog,
 ) -> HashSet<(isize, isize)> {
     let range = unit_data.move_range as isize;
     let (start_x, start_y) = at;
@@ -187,6 +190,34 @@ pub fn reachable_by_unit(
 #[cfg(test)]
 mod tactics_units {
     use super::*;
+
+    fn fake_catalog() -> AssetCatalog {
+        let catalog = AssetCatalog::from_manifest_str(
+            r#"{
+            "spritesheets": [],
+            "sounds": [],
+            "music": [],
+            "scenes": [],
+            "weapons": [{
+                "id": 0,
+                "name": "Sword",
+                "attack": 1,
+                "min_range": 1,
+                "max_range": 1
+            }, {
+                "id": 0,
+                "name": "Bow",
+                "attack": 1,
+                "min_range": 2,
+                "max_range": 2
+            }]
+        }"#,
+        );
+        let Ok(catalog) = catalog else {
+            panic!("expected to parse manifest but got {:?}", catalog);
+        };
+        catalog
+    }
 
     fn fake_sprite_data() -> UnitSpriteData {
         let s = SpriteInfo {
@@ -253,14 +284,15 @@ mod tactics_units {
             move_range: 2,
             weapon: None,
         };
+        let c = fake_catalog();
 
         eprintln!("in center 2");
-        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_2();
         assert_eq!(expected, reachable);
 
         eprintln!("bottom corner left");
-        let reachable = reachable_by_unit(&u, (0, 9), &m);
+        let reachable = reachable_by_unit(&u, (0, 9), &m, &c);
         let expected = bl_corner();
         assert_eq!(expected, reachable);
 
@@ -270,7 +302,7 @@ mod tactics_units {
             move_range: 3,
             weapon: None,
         };
-        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_3();
         eprintln!("in center 3 {:?}", {
             (
@@ -294,14 +326,16 @@ mod tactics_units {
             weapon: None,
         };
 
+        let c = fake_catalog();
+
         eprintln!("in center");
-        let reachable = reachable_by_unit(&u, (5, 5), &m);
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let mut expected = center_star_2();
         expected.remove(&(4, 4));
         assert_eq!(expected, reachable);
 
         eprintln!("bottom corner left");
-        let reachable = reachable_by_unit(&u, (0, 9), &m);
+        let reachable = reachable_by_unit(&u, (0, 9), &m, &c);
         let mut expected = bl_corner();
         expected.remove(&(0, 8));
         assert_eq!(expected, reachable);
