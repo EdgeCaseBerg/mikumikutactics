@@ -168,7 +168,7 @@ pub fn reachable_by_unit(
         // We could also potentially consider them "unarmed" and do a range of 1
         0..=0
     };
-    let (start_x, start_y) = at;
+    let (start_row, start_column) = at;
     let mut queue = VecDeque::from([at]); // FIFO
     let mut seen = HashSet::new();
     let mut reachable = HashSet::new();
@@ -183,8 +183,8 @@ pub fn reachable_by_unit(
         if !tile.is_walkable {
             continue;
         }
-        let (tx, ty) = location;
-        let manhatten_d = (start_x - tx).abs() + (start_y - ty).abs();
+        let (tr, tc) = location;
+        let manhatten_d = (start_row - tr).abs() + (start_column - tc).abs();
         if manhatten_d <= range {
             if tile.occupant.is_none() {
                 reachable.insert(location);
@@ -192,10 +192,10 @@ pub fn reachable_by_unit(
                 reachable.insert(location);
             }
         }
-        queue.push_front((tx + 1, ty));
-        queue.push_front((tx - 1, ty));
-        queue.push_front((tx, ty + 1));
-        queue.push_front((tx, ty - 1));
+        queue.push_front((tr + 1, tc));
+        queue.push_front((tr - 1, tc));
+        queue.push_front((tr, tc + 1));
+        queue.push_front((tr, tc - 1));
     }
 
     // In the case of a weapon having longer range than a unit's move
@@ -205,10 +205,10 @@ pub fn reachable_by_unit(
     if max_attack_range <= range {
         return reachable;
     }
-    for column in start_x - max_attack_range..=start_x + max_attack_range {
-        for row in start_y - max_attack_range..=start_y + max_attack_range {
+    for column in start_row - max_attack_range..=start_row + max_attack_range {
+        for row in start_column - max_attack_range..=start_column + max_attack_range {
             let location = (row, column);
-            if start_x == column && start_y == row {
+            if start_row == column && start_column == row {
                 continue;
             }
             let Some(tile) = map_instance.get(location) else {
@@ -217,7 +217,7 @@ pub fn reachable_by_unit(
             if tile.occupant.is_none() {
                 continue;
             }
-            let manhatten_d = (start_x - column).abs() + (start_y - row).abs();
+            let manhatten_d = (start_row - column).abs() + (start_column - row).abs();
             if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                 reachable.insert(location);
             }
