@@ -446,11 +446,17 @@ mod tactics_units {
         assert_eq!(expected, reachable);
 
         eprintln!("should be able to hit horizontal");
-        m.get_mut((8, 5)).unwrap().occupant = None;
-        m.get_mut((5, 8)).unwrap().occupant = Some(UnitId(1));
+        m.get_mut((5, 2)).unwrap().occupant = Some(UnitId(1));
+        m.get_mut((2, 5)).unwrap().occupant = Some(UnitId(2));
+        m.get_mut((8, 5)).unwrap().occupant = Some(UnitId(3));
+        m.get_mut((5, 8)).unwrap().occupant = Some(UnitId(4));
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_2();
         let mut expected = center_star_2();
+
+        expected.insert((5, 2));
+        expected.insert((2, 5));
+        expected.insert((8, 5));
         expected.insert((5, 8));
         eprintln!("in center 2 {:?}", {
             (
