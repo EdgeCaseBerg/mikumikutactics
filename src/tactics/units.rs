@@ -432,11 +432,26 @@ mod tactics_units {
 
         let c = fake_catalog();
 
-        eprintln!("should be able to hit");
+        eprintln!("should be able to hit vertically");
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_2();
         let mut expected = center_star_2();
         expected.insert((8, 5));
+        eprintln!("in center 2 {:?}", {
+            (
+                reachable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&reachable).collect::<Vec<_>>(),
+            )
+        });
+        assert_eq!(expected, reachable);
+
+        eprintln!("should be able to hit horizontal");
+        m.get_mut((8, 5)).unwrap().occupant = None;
+        m.get_mut((5, 8)).unwrap().occupant = Some(UnitId(1));
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
+        let expected = center_star_2();
+        let mut expected = center_star_2();
+        expected.insert((5, 8));
         eprintln!("in center 2 {:?}", {
             (
                 reachable.difference(&expected).collect::<Vec<_>>(),
