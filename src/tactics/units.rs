@@ -208,6 +208,9 @@ pub fn reachable_by_unit(
     for column in start_x - max_attack_range..=start_x + max_attack_range {
         for row in start_y - max_attack_range..=start_y + max_attack_range {
             let location = (row, column);
+            if start_x == column && start_y == row {
+                continue;
+            }
             let Some(tile) = map_instance.get(location) else {
                 continue;
             };
