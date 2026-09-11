@@ -205,8 +205,8 @@ pub fn reachable_by_unit(
     if max_attack_range <= range {
         return reachable;
     }
-    for column in start_row - max_attack_range..=start_row + max_attack_range {
-        for row in start_column - max_attack_range..=start_column + max_attack_range {
+    for row in start_row - max_attack_range..=start_row + max_attack_range {
+        for column in start_column - max_attack_range..=start_column + max_attack_range {
             let location = (row, column);
             if start_row == column && start_column == row {
                 continue;
