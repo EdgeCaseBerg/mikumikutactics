@@ -197,6 +197,7 @@ pub fn reachable_by_unit(
         queue.push_front((tx, ty + 1));
         queue.push_front((tx, ty - 1));
     }
+    //Just realized that also an enemy could be outside of move range but in attack range.
     reachable
 }
 
