@@ -197,7 +197,30 @@ pub fn reachable_by_unit(
         queue.push_front((tx, ty + 1));
         queue.push_front((tx, ty - 1));
     }
-    //Just realized that also an enemy could be outside of move range but in attack range.
+
+    // In the case of a weapon having longer range than a unit's move
+    // we also need to work backwards from those tiles.
+    if *attack_range.end() as isize <= range {
+        return reachable;
+    }
+    for column in start_x..=start_x + (*attack_range.end()) as isize {
+        for row in start_y..=start_y + (*attack_range.end()) as isize {
+            let location = (row, column);
+            let Some(tile) = map_instance.get(location) else {
+                continue;
+            };
+            if tile.occupant.is_none() {
+                continue;
+            }
+            let manhatten_d = (start_x - column).abs() + (start_y - row).abs();
+            if manhatten_d <= *attack_range.end() as isize
+                && manhatten_d >= *attack_range.start() as isize
+            {
+                reachable.insert(location);
+            }
+        }
+    }
+
     reachable
 }
 
@@ -224,6 +247,12 @@ mod tactics_units {
                 "attack": 1,
                 "min_range": 2,
                 "max_range": 2
+            }, {
+                "id": 2,
+                "name": "Long Bow",
+                "attack": 1,
+                "min_range": 2,
+                "max_range": 3
             }]
         }"#,
         );
@@ -380,6 +409,34 @@ mod tactics_units {
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let mut expected = center_star_2();
         expected.remove(&(4, 5));
+        eprintln!("in center 2 {:?}", {
+            (
+                reachable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&reachable).collect::<Vec<_>>(),
+            )
+        });
+        assert_eq!(expected, reachable);
+    }
+
+    #[test]
+    fn able_to_attack_unit_within_range_of_weapon_outside_of_move_range() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+        m.get_mut((8, 5)).unwrap().occupant = Some(UnitId(1));
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(2)), // Long Bow with range 2..3
+        };
+
+        let c = fake_catalog();
+
+        eprintln!("should be able to hit");
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
+        let expected = center_star_2();
+        let mut expected = center_star_2();
+        expected.insert((8, 5));
         eprintln!("in center 2 {:?}", {
             (
                 reachable.difference(&expected).collect::<Vec<_>>(),
