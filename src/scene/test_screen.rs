@@ -16,6 +16,9 @@ use std::collections::HashSet;
 #[derive(Default)]
 pub struct TestScene {
     focus_sprite: Option<(SpriteInfo, TextureId)>,
+    walkable_sprite: Option<(SpriteInfo, TextureId)>,
+    attackable_sprite: Option<(SpriteInfo, TextureId)>,
+    danger_sprite: Option<(SpriteInfo, TextureId)>,
     current_portrait: Option<(SpriteInfo, TextureId)>,
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
     btn_prototype: Option<Button>,
@@ -229,6 +232,21 @@ impl Scene for TestScene {
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
 
         self.focus_sprite = Some(sprite_tuple("ui", Some(&["focus"]), asset_loader.as_mut())?);
+        self.walkable_sprite = Some(sprite_tuple(
+            "ui",
+            Some(&["walkable"]),
+            asset_loader.as_mut(),
+        )?);
+        self.attackable_sprite = Some(sprite_tuple(
+            "ui",
+            Some(&["attackable"]),
+            asset_loader.as_mut(),
+        )?);
+        self.danger_sprite = Some(sprite_tuple(
+            "ui",
+            Some(&["danger"]),
+            asset_loader.as_mut(),
+        )?);
         self.current_portrait = None;
         self.current_portrait_bg = Some(sprite_tuple(
             "portrait",
@@ -257,6 +275,15 @@ impl Scene for TestScene {
     }
     fn update(&mut self, ticks: u32, game_context: &mut GameContext) -> GameResult<()> {
         if let Some((sprite_info, _)) = self.focus_sprite.as_mut() {
+            sprite_info.advance(ticks);
+        }
+        if let Some((sprite_info, _)) = self.walkable_sprite.as_mut() {
+            sprite_info.advance(ticks);
+        }
+        if let Some((sprite_info, _)) = self.attackable_sprite.as_mut() {
+            sprite_info.advance(ticks);
+        }
+        if let Some((sprite_info, _)) = self.danger_sprite.as_mut() {
             sprite_info.advance(ticks);
         }
         if let Some((sprite_info, _)) = self.current_portrait_bg.as_mut() {
@@ -496,7 +523,12 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
             let Some(tile) = map_instance.get((row, column)) else {
                 continue;
             };
-            if let Some((sprite_info, texture_id)) = scene.focus_sprite.as_ref()
+            let sprite_info = if tile.occupant.is_none() {
+                scene.walkable_sprite.as_ref()
+            } else {
+                scene.attackable_sprite.as_ref()
+            };
+            if let Some((sprite_info, texture_id)) = sprite_info
                 && map_state.selectable_tiles.contains(&(row, column))
             {
                 let src = sprite_info.get_rect();
