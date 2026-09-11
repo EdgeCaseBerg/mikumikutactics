@@ -200,11 +200,13 @@ pub fn reachable_by_unit(
 
     // In the case of a weapon having longer range than a unit's move
     // we also need to work backwards from those tiles.
-    if *attack_range.end() as isize <= range {
+    let max_attack_range = *attack_range.end() as isize;
+    let min_attack_range = *attack_range.start() as isize;
+    if max_attack_range <= range {
         return reachable;
     }
-    for column in start_x..=start_x + (*attack_range.end()) as isize {
-        for row in start_y..=start_y + (*attack_range.end()) as isize {
+    for column in start_x..=start_x + max_attack_range {
+        for row in start_y..=start_y + max_attack_range {
             let location = (row, column);
             let Some(tile) = map_instance.get(location) else {
                 continue;
@@ -213,9 +215,7 @@ pub fn reachable_by_unit(
                 continue;
             }
             let manhatten_d = (start_x - column).abs() + (start_y - row).abs();
-            if manhatten_d <= *attack_range.end() as isize
-                && manhatten_d >= *attack_range.start() as isize
-            {
+            if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                 reachable.insert(location);
             }
         }
