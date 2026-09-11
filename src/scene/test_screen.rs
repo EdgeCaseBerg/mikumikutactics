@@ -297,104 +297,101 @@ impl Scene for TestScene {
             btn.update(ticks, game_context, &layout);
         }
         if let Some((map_instance, map_state)) = self.map.as_mut() {
-            'action: {
-                match map_state.action {
-                    None => {
-                        if let Some((action, unit_data, reachable_positions)) =
-                            check_if_unit_selected_action(game_context, map_instance, map_state)
-                        {
-                            self.current_portrait = selected_portrait_from(unit_data);
-                            map_state.selectable_tiles = reachable_positions;
-                            map_state.action = action;
-                        };
+            match map_state.action {
+                None => {
+                    if let Some((action, unit_data, reachable_positions)) =
+                        check_if_unit_selected_action(game_context, map_instance, map_state)
+                    {
+                        self.current_portrait = selected_portrait_from(unit_data);
+                        map_state.selectable_tiles = reachable_positions;
+                        map_state.action = action;
+                    };
+                }
+                Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
+                    match valid_selected_tile_clicked(
+                        game_context,
+                        map_instance,
+                        map_state,
+                        (selected_row, selected_column),
+                    ) {
+                        None => {}
+                        Some(None) => {
+                            map_state.action = None;
+                            map_state.selectable_tiles = HashSet::new();
+                            self.current_portrait = None;
+                        }
+                        Some(Some((r, c))) => {
+                            map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
+                            let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
+                            self.context_menu = Some(ContextMenu::new(
+                                map_instance,
+                                anchor,
+                                &self.btn_prototype,
+                                (r, c),
+                                (selected_row, selected_column),
+                                unit_id,
+                            ));
+                        }
                     }
-                    Some(ActionState::UnitSelected(unit_id, (selected_row, selected_column))) => {
-                        match valid_selected_tile_clicked(
-                            game_context,
-                            map_instance,
-                            map_state,
-                            (selected_row, selected_column),
-                        ) {
-                            None => {}
-                            Some(None) => {
+                }
+                Some(ActionState::CommandPending(unit_id, (target_row, target_column))) => {
+                    if let Some(menu) = self.context_menu.as_mut() {
+                        match menu.update(ticks, game_context, unit_id) {
+                            Ok(None) => {}
+                            Ok(new_action) => {
+                                self.context_menu = None;
+                                map_state.action = new_action;
+                                map_state.selectable_tiles = HashSet::new();
+                                // If we were doing something like making the unit speak,
+                                // then perhaps play it here like "I'm on my way!" And if
+                                // we want to do animation of the character moving, then we
+                                // could compute all of that here and then replay it back?
+                                // or have it happen while processing that command perhaps
+                            }
+                            Err(_) => {
+                                // Error is the cancel button signal
                                 map_state.action = None;
                                 map_state.selectable_tiles = HashSet::new();
+                                self.context_menu = None;
                                 self.current_portrait = None;
                             }
-                            Some(Some((r, c))) => {
-                                map_state.action =
-                                    Some(ActionState::CommandPending(unit_id, (r, c)));
-                                let anchor = ContextMenu::anchor(map_instance, (2, 1), (r, c), 2);
-                                self.context_menu = Some(ContextMenu::new(
-                                    map_instance,
-                                    anchor,
-                                    &self.btn_prototype,
-                                    (r, c),
-                                    (selected_row, selected_column),
-                                    unit_id,
-                                ));
-                            }
                         }
+                    } else {
+                        assert!(
+                            self.context_menu.is_some(),
+                            "entered command pending state with no context menu options",
+                        );
                     }
-                    Some(ActionState::CommandPending(unit_id, (target_row, target_column))) => {
-                        if let Some(menu) = self.context_menu.as_mut() {
-                            match menu.update(ticks, game_context, unit_id) {
-                                Ok(None) => {}
-                                Ok(new_action) => {
-                                    self.context_menu = None;
-                                    map_state.action = new_action;
-                                    map_state.selectable_tiles = HashSet::new();
-                                    // If we were doing something like making the unit speak,
-                                    // then perhaps play it here like "I'm on my way!" And if
-                                    // we want to do animation of the character moving, then we
-                                    // could compute all of that here and then replay it back?
-                                    // or have it happen while processing that command perhaps
-                                }
-                                Err(_) => {
-                                    // Error is the cancel button signal
-                                    map_state.action = None;
-                                    map_state.selectable_tiles = HashSet::new();
-                                    self.context_menu = None;
-                                    self.current_portrait = None;
-                                }
-                            }
-                        } else {
-                            assert!(
-                                self.context_menu.is_some(),
-                                "entered command pending state with no context menu options",
-                            );
-                        }
-                    }
-                    Some(ActionState::Move(unit_id, from, to)) => {
-                        // For now, just move instantly.
-                        // TODO: advance the unit along a computed path
-                        // and when they reach the <to> then trigger move_unit_to
-                        // or something similar.
-                        map_instance.move_unit_to(unit_id, from, to)?;
-                        map_state.action = None;
-                        map_state.selectable_tiles = HashSet::new();
-                        self.current_portrait = None;
-                        // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
-                    }
-                    Some(ActionState::Attack(attacker, defender)) => {
-                        eprintln!("{:?} wants to attack {:?}", attacker, defender);
-
-                        // if !in_range(attacker, defender) {
-                        //     map_instance.move_unit_to(attacker_unit, from, to)
-                        // }
-                        // let attack = attacker.attack(defender);
-                        // defender.damage(amount);
-                        // if defender.is_dead() {
-                        //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
-                        // }
-                        // award_xp(attacker);
-
-                        map_state.action = None;
-                        map_state.selectable_tiles = HashSet::new();
-                        self.current_portrait = None;
-                    }
-                    _ => {}
                 }
+                Some(ActionState::Move(unit_id, from, to)) => {
+                    // For now, just move instantly.
+                    // TODO: advance the unit along a computed path
+                    // and when they reach the <to> then trigger move_unit_to
+                    // or something similar.
+                    map_instance.move_unit_to(unit_id, from, to)?;
+                    map_state.action = None;
+                    map_state.selectable_tiles = HashSet::new();
+                    self.current_portrait = None;
+                    // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
+                }
+                Some(ActionState::Attack(attacker, defender)) => {
+                    eprintln!("{:?} wants to attack {:?}", attacker, defender);
+
+                    // if !in_range(attacker, defender) {
+                    //     map_instance.move_unit_to(attacker_unit, from, to)
+                    // }
+                    // let attack = attacker.attack(defender);
+                    // defender.damage(amount);
+                    // if defender.is_dead() {
+                    //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
+                    // }
+                    // award_xp(attacker);
+
+                    map_state.action = None;
+                    map_state.selectable_tiles = HashSet::new();
+                    self.current_portrait = None;
+                }
+                _ => {}
             }
         };
 
