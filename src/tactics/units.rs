@@ -208,7 +208,7 @@ pub fn reachable_by_unit(
     for row in start_row - max_attack_range..=start_row + max_attack_range {
         for column in start_column - max_attack_range..=start_column + max_attack_range {
             let location = (row, column);
-            if start_row == column && start_column == row {
+            if start_row == row && start_column == column {
                 continue;
             }
             let Some(tile) = map_instance.get(location) else {
@@ -217,7 +217,7 @@ pub fn reachable_by_unit(
             if tile.occupant.is_none() {
                 continue;
             }
-            let manhatten_d = (start_row - column).abs() + (start_column - row).abs();
+            let manhatten_d = (start_row - row).abs() + (start_column - column).abs();
             if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                 reachable.insert(location);
             }
