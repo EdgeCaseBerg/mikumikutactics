@@ -528,7 +528,6 @@ mod tactics_units {
 
         eprintln!("should be able to hit vertically");
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
-        let expected = center_star_2();
         let mut expected = center_star_2();
         expected.insert((8, 5));
         eprintln!("in center 2 {:?}", {
@@ -548,7 +547,6 @@ mod tactics_units {
         // Only attackable via move then attack:
         m.get_mut((7, 8)).unwrap().occupant = Some(UnitId(4));
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
-        let expected = center_star_2();
         let mut expected = center_star_2();
 
         expected.insert((5, 2));
