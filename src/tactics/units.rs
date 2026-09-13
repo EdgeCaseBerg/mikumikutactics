@@ -203,9 +203,10 @@ pub fn reachable_by_unit(
     // we also need to work backwards from those tiles.
     let max_attack_range = *attack_range.end() as isize;
     let min_attack_range = *attack_range.start() as isize;
-    for destination in reachable.clone().iter() {
-        let (dr, dc) = destination;
-        let locations = attackable_from(&attack_range, *destination, map_instance);
+    for attacker_position in reachable.clone().iter() {
+        let (dr, dc) = attacker_position;
+        let locations =
+            destination_can_be_attacked_from(&attack_range, *attacker_position, map_instance);
         for location in locations {
             let (row, column) = location;
             if start_row == row && start_column == column {
@@ -218,13 +219,13 @@ pub fn reachable_by_unit(
     reachable
 }
 
-pub fn attackable_from(
+pub fn destination_can_be_attacked_from(
     attack_range: &RangeInclusive<usize>,
-    from: Coordinate,
+    attacker_position: Coordinate,
     map_instance: &MapInstance,
 ) -> HashSet<(isize, isize)> {
     let mut reachable = HashSet::new();
-    let (dr, dc) = from;
+    let (dr, dc) = attacker_position;
     let max_attack_range = *attack_range.end() as isize;
     let min_attack_range = *attack_range.start() as isize;
     for row in dr - max_attack_range..=dr + max_attack_range {
@@ -236,7 +237,40 @@ pub fn attackable_from(
             let Some(tile) = map_instance.get(location) else {
                 continue;
             };
+            // Only an occupied tile can be attacked
             if tile.occupant.is_none() {
+                continue;
+            }
+            let manhatten_d = (dr - row).abs() + (dc - column).abs();
+            if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
+                reachable.insert(location);
+            }
+        }
+    }
+
+    reachable
+}
+
+pub fn defender_can_be_attacked_from(
+    attack_range: &RangeInclusive<usize>,
+    defender_position: Coordinate,
+    map_instance: &MapInstance,
+) -> HashSet<(isize, isize)> {
+    let mut reachable = HashSet::new();
+    let (dr, dc) = defender_position;
+    let max_attack_range = *attack_range.end() as isize;
+    let min_attack_range = *attack_range.start() as isize;
+    for row in dr - max_attack_range..=dr + max_attack_range {
+        for column in dc - max_attack_range..=dc + max_attack_range {
+            let location = (row, column);
+            if dr == row && dc == column {
+                continue;
+            }
+            let Some(tile) = map_instance.get(location) else {
+                continue;
+            };
+            // Only an empty tile can be moved into for when we attack
+            if tile.occupant.is_some() {
                 continue;
             }
             let manhatten_d = (dr - row).abs() + (dc - column).abs();
@@ -264,9 +298,15 @@ pub fn choose_tile_to_attack_from(
     } else {
         return None;
     };
-    let engage_points = attackable_from(&attack_range, target, map_instance);
-    let reachable = reachable_by_unit(unit_data, at, map_instance, asset_catalog);
-    let mut potential: Vec<(isize, isize)> = engage_points.union(&reachable).cloned().collect();
+    let engage_points = defender_can_be_attacked_from(&attack_range, target, map_instance);
+    let mut reachable = reachable_by_unit(unit_data, at, map_instance, asset_catalog);
+    // 'reachable' considers an attackable unit in range as a reachable tile, but you obviously
+    // can't stand on top of a target when attacking.
+    reachable.remove(&target);
+    let mut potential: Vec<(isize, isize)> =
+        engage_points.intersection(&reachable).cloned().collect();
+    // try to find the closet to our current position place we can attack from so a range
+    // unit doesn't do something like attack from 2 spaces away when they can attack from 3 instead
     let (attacker_row, attacker_column) = at;
     potential.sort_by_key(|(pr, pc)| (attacker_row - pr).abs() + (attacker_column - pc).abs());
     potential.into_iter().next()
@@ -523,5 +563,63 @@ mod tactics_units {
             )
         });
         assert_eq!(expected, reachable);
+    }
+
+    #[test]
+    fn attackable_from_verify_min_range() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+
+        let attackable = defender_can_be_attacked_from(&(0..=0), (5, 5), &m);
+        assert_eq!(attackable.into_iter().count(), 0);
+
+        let attackable = defender_can_be_attacked_from(&(1..=1), (5, 5), &m);
+        let expected = HashSet::from([(5, 4), (5, 6), (6, 5), (4, 5)]);
+        assert_eq!(attackable, expected);
+
+        let attackable = defender_can_be_attacked_from(&(2..=2), (5, 5), &m);
+        let expected = HashSet::from([
+            (5, 3),
+            (4, 4),
+            (6, 4),
+            (3, 5),
+            (7, 5),
+            (4, 6),
+            (6, 6),
+            (5, 7),
+        ]);
+        assert_eq!(attackable, expected);
+
+        let attackable = defender_can_be_attacked_from(&(1..=3), (5, 5), &m);
+        let mut expected = center_star_3();
+        expected.remove(&(5, 5));
+        assert_eq!(attackable, expected, "{:?}", {
+            (
+                attackable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&attackable).collect::<Vec<_>>(),
+            )
+        });
+    }
+
+    #[test]
+    fn move_into_range_to_attack_moves_to_close_tile() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+        let target = (8, 5);
+        let unit = (5, 5);
+        m.get_mut(target).unwrap().occupant = Some(UnitId(1));
+        m.get_mut(unit).unwrap().occupant = Some(UnitId(0));
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(0)), // Sword with range 1..=1
+        };
+
+        let c = fake_catalog();
+
+        let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
+
+        eprintln!("should choose a walkable target with 1 range");
+        assert_eq!(Some((7, 5)), choice);
     }
 }
