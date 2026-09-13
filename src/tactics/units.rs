@@ -307,9 +307,14 @@ pub fn choose_tile_to_attack_from(
     // 'reachable' considers an attackable unit in range as a reachable tile, but you obviously
     // can't stand on top of a target when attacking.
     reachable.remove(&target);
-    reachable.insert(at);
+    // we can only insert ourselves if the weapon range allows for it (minimum > 1 means stand away)
+
+    if attack_range.contains(&(((at.0 - target.0).abs() + (at.1 - at.1).abs()) as usize)) {
+        reachable.insert(at);
+    }
     let mut potential: Vec<(isize, isize)> =
         engage_points.intersection(&reachable).cloned().collect();
+
     // try to find the closet to our current position place we can attack from so a range
     // unit doesn't do something like attack from 2 spaces away when they can attack from 3 instead
     let (attacker_row, attacker_column) = at;
@@ -647,5 +652,22 @@ mod tactics_units {
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
         eprintln!("should not bother moving when its already in range");
         assert_eq!(Some((5, 5)), choice);
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(1)), // Bow with range 2..=2
+        };
+        let mut m = MapInstance::empty_walkable(10, 10);
+        let target = (8, 5);
+        let unit = (7, 5);
+        m.get_mut(target).unwrap().occupant = Some(UnitId(1));
+        m.get_mut(unit).unwrap().occupant = Some(UnitId(0));
+        let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
+        eprintln!("should move if minimum range not satisfied");
+        let valid_moves = HashSet::from([(7, 4), (6, 5), (7, 6)]);
+        assert!(choice.is_some());
+        assert!(valid_moves.contains(&choice.unwrap()));
     }
 }
