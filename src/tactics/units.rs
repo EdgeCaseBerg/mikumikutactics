@@ -6,6 +6,7 @@ use crate::constants::{TextureId, WeaponId};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
+use std::ops::RangeInclusive;
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnitState {
@@ -204,22 +205,43 @@ pub fn reachable_by_unit(
     let min_attack_range = *attack_range.start() as isize;
     for destination in reachable.clone().iter() {
         let (dr, dc) = destination;
-        for row in dr - max_attack_range..=dr + max_attack_range {
-            for column in dc - max_attack_range..=dc + max_attack_range {
-                let location = (row, column);
-                if start_row == row && start_column == column {
-                    continue;
-                }
-                let Some(tile) = map_instance.get(location) else {
-                    continue;
-                };
-                if tile.occupant.is_none() {
-                    continue;
-                }
-                let manhatten_d = (dr - row).abs() + (dc - column).abs();
-                if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
-                    reachable.insert(location);
-                }
+        let locations = attackable_from(&attack_range, *destination, map_instance);
+        for location in locations {
+            let (row, column) = location;
+            if start_row == row && start_column == column {
+                continue;
+            }
+            reachable.insert(location);
+        }
+    }
+
+    reachable
+}
+
+pub fn attackable_from(
+    attack_range: &RangeInclusive<usize>,
+    from: Coordinate,
+    map_instance: &MapInstance,
+) -> HashSet<(isize, isize)> {
+    let mut reachable = HashSet::new();
+    let (dr, dc) = from;
+    let max_attack_range = *attack_range.end() as isize;
+    let min_attack_range = *attack_range.start() as isize;
+    for row in dr - max_attack_range..=dr + max_attack_range {
+        for column in dc - max_attack_range..=dc + max_attack_range {
+            let location = (row, column);
+            if dr == row && dc == column {
+                continue;
+            }
+            let Some(tile) = map_instance.get(location) else {
+                continue;
+            };
+            if tile.occupant.is_none() {
+                continue;
+            }
+            let manhatten_d = (dr - row).abs() + (dc - column).abs();
+            if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
+                reachable.insert(location);
             }
         }
     }
