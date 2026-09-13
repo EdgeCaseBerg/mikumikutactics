@@ -307,6 +307,7 @@ pub fn choose_tile_to_attack_from(
     // 'reachable' considers an attackable unit in range as a reachable tile, but you obviously
     // can't stand on top of a target when attacking.
     reachable.remove(&target);
+    reachable.insert(at);
     let mut potential: Vec<(isize, isize)> =
         engage_points.intersection(&reachable).cloned().collect();
     // try to find the closet to our current position place we can attack from so a range
