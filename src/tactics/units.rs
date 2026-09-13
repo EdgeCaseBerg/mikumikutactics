@@ -205,21 +205,24 @@ pub fn reachable_by_unit(
     if max_attack_range <= range {
         return reachable;
     }
-    for row in start_row - max_attack_range..=start_row + max_attack_range {
-        for column in start_column - max_attack_range..=start_column + max_attack_range {
-            let location = (row, column);
-            if start_row == row && start_column == column {
-                continue;
-            }
-            let Some(tile) = map_instance.get(location) else {
-                continue;
-            };
-            if tile.occupant.is_none() {
-                continue;
-            }
-            let manhatten_d = (start_row - row).abs() + (start_column - column).abs();
-            if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
-                reachable.insert(location);
+    for destination in reachable.clone().iter() {
+        let (dr, dc) = destination;
+        for row in dr - max_attack_range..=dr + max_attack_range {
+            for column in dc - max_attack_range..=dc + max_attack_range {
+                let location = (row, column);
+                if start_row == row && start_column == column {
+                    continue;
+                }
+                let Some(tile) = map_instance.get(location) else {
+                    continue;
+                };
+                if tile.occupant.is_none() {
+                    continue;
+                }
+                let manhatten_d = (dr - row).abs() + (dc - column).abs();
+                if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
+                    reachable.insert(location);
+                }
             }
         }
     }
@@ -449,10 +452,13 @@ mod tactics_units {
         assert_eq!(expected, reachable);
 
         eprintln!("should be able to hit horizontal");
+        // Just outside the move range
         m.get_mut((5, 2)).unwrap().occupant = Some(UnitId(1));
         m.get_mut((2, 5)).unwrap().occupant = Some(UnitId(2));
         m.get_mut((8, 5)).unwrap().occupant = Some(UnitId(3));
         m.get_mut((5, 8)).unwrap().occupant = Some(UnitId(4));
+        // Only attackable via move then attack:
+        m.get_mut((7, 8)).unwrap().occupant = Some(UnitId(4));
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_2();
         let mut expected = center_star_2();
@@ -461,6 +467,7 @@ mod tactics_units {
         expected.insert((2, 5));
         expected.insert((8, 5));
         expected.insert((5, 8));
+        expected.insert((7, 8));
         eprintln!("in center 2 {:?}", {
             (
                 reachable.difference(&expected).collect::<Vec<_>>(),
