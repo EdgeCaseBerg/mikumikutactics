@@ -614,10 +614,18 @@ mod tactics_units {
         };
 
         let c = fake_catalog();
-
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
-
         eprintln!("should choose a walkable target with 1 range");
         assert_eq!(Some((7, 5)), choice);
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(1)), // Bow with range 2..=2
+        };
+        let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
+        eprintln!("should choose a walkable target with 2 range");
+        assert_eq!(Some((6, 5)), choice);
     }
 }
