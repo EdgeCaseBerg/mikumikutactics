@@ -394,8 +394,8 @@ impl Scene for TestScene {
                             catalog.as_ref(),
                         );
                         if let Some(move_to) = move_to {
-                            map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
                             eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
+                            map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
                         }
                     }
 
