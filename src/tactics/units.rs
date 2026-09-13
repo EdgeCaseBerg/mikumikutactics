@@ -202,9 +202,6 @@ pub fn reachable_by_unit(
     // we also need to work backwards from those tiles.
     let max_attack_range = *attack_range.end() as isize;
     let min_attack_range = *attack_range.start() as isize;
-    if max_attack_range <= range {
-        return reachable;
-    }
     for destination in reachable.clone().iter() {
         let (dr, dc) = destination;
         for row in dr - max_attack_range..=dr + max_attack_range {
@@ -412,9 +409,15 @@ mod tactics_units {
         eprintln!("should not be able to hit");
         m.get_mut((4, 4)).unwrap().occupant = None;
         m.get_mut((4, 5)).unwrap().occupant = Some(UnitId(1));
-        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let mut expected = center_star_2();
+        for walled in &[(4, 4), (5, 4), (6, 4), (6, 5), (4, 6), (5, 6), (6, 6)] {
+            m.get_mut(*walled).unwrap().is_walkable = false;
+            expected.remove(walled);
+        }
+        // and shouldn't be able to hit the enemy standing 1 away from us with a bow of range 2..2
+        // if we can't walk around them at all
         expected.remove(&(4, 5));
+        let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         eprintln!("in center 2 {:?}", {
             (
                 reachable.difference(&expected).collect::<Vec<_>>(),
