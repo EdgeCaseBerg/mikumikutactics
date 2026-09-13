@@ -572,14 +572,19 @@ mod tactics_units {
     fn attackable_from_verify_min_range() {
         let mut m = MapInstance::empty_walkable(10, 10);
 
-        let attackable = defender_can_be_attacked_from(&(0..=0), (5, 5), (5, 6), &m);
+        let attackable = defender_can_be_attacked_from(&(0..=0), (5, 6), (5, 5), &m);
         assert_eq!(attackable.into_iter().count(), 0);
 
-        let attackable = defender_can_be_attacked_from(&(1..=1), (5, 5), (5, 6), &m);
+        let attackable = defender_can_be_attacked_from(&(1..=1), (5, 6), (5, 5), &m);
         let expected = HashSet::from([(5, 4), (5, 6), (6, 5), (4, 5)]);
-        assert_eq!(attackable, expected);
+        assert_eq!(attackable, expected, "{:?}", {
+            (
+                attackable.difference(&expected).collect::<Vec<_>>(),
+                expected.difference(&attackable).collect::<Vec<_>>(),
+            )
+        });
 
-        let attackable = defender_can_be_attacked_from(&(2..=2), (5, 5), (5, 7), &m);
+        let attackable = defender_can_be_attacked_from(&(2..=2), (5, 7), (5, 5), &m);
         let expected = HashSet::from([
             (5, 3),
             (4, 4),
@@ -592,7 +597,7 @@ mod tactics_units {
         ]);
         assert_eq!(attackable, expected);
 
-        let attackable = defender_can_be_attacked_from(&(1..=3), (5, 5), (5, 6), &m);
+        let attackable = defender_can_be_attacked_from(&(1..=3), (5, 6), (5, 5), &m);
         let mut expected = center_star_3();
         expected.remove(&(5, 5));
         assert_eq!(attackable, expected, "{:?}", {
