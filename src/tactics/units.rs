@@ -253,6 +253,7 @@ pub fn destination_can_be_attacked_from(
 
 pub fn defender_can_be_attacked_from(
     attack_range: &RangeInclusive<usize>,
+    attacker_position: Coordinate,
     defender_position: Coordinate,
     map_instance: &MapInstance,
 ) -> HashSet<(isize, isize)> {
@@ -269,6 +270,9 @@ pub fn defender_can_be_attacked_from(
             let Some(tile) = map_instance.get(location) else {
                 continue;
             };
+            if attacker_position == (row, column) {
+                reachable.insert(attacker_position);
+            }
             // Only an empty tile can be moved into for when we attack
             if tile.occupant.is_some() {
                 continue;
@@ -298,7 +302,7 @@ pub fn choose_tile_to_attack_from(
     } else {
         return None;
     };
-    let engage_points = defender_can_be_attacked_from(&attack_range, target, map_instance);
+    let engage_points = defender_can_be_attacked_from(&attack_range, at, target, map_instance);
     let mut reachable = reachable_by_unit(unit_data, at, map_instance, asset_catalog);
     // 'reachable' considers an attackable unit in range as a reachable tile, but you obviously
     // can't stand on top of a target when attacking.
@@ -567,14 +571,14 @@ mod tactics_units {
     fn attackable_from_verify_min_range() {
         let mut m = MapInstance::empty_walkable(10, 10);
 
-        let attackable = defender_can_be_attacked_from(&(0..=0), (5, 5), &m);
+        let attackable = defender_can_be_attacked_from(&(0..=0), (5, 5), (5, 6), &m);
         assert_eq!(attackable.into_iter().count(), 0);
 
-        let attackable = defender_can_be_attacked_from(&(1..=1), (5, 5), &m);
+        let attackable = defender_can_be_attacked_from(&(1..=1), (5, 5), (5, 6), &m);
         let expected = HashSet::from([(5, 4), (5, 6), (6, 5), (4, 5)]);
         assert_eq!(attackable, expected);
 
-        let attackable = defender_can_be_attacked_from(&(2..=2), (5, 5), &m);
+        let attackable = defender_can_be_attacked_from(&(2..=2), (5, 5), (5, 7), &m);
         let expected = HashSet::from([
             (5, 3),
             (4, 4),
@@ -587,7 +591,7 @@ mod tactics_units {
         ]);
         assert_eq!(attackable, expected);
 
-        let attackable = defender_can_be_attacked_from(&(1..=3), (5, 5), &m);
+        let attackable = defender_can_be_attacked_from(&(1..=3), (5, 5), (5, 6), &m);
         let mut expected = center_star_3();
         expected.remove(&(5, 5));
         assert_eq!(attackable, expected, "{:?}", {
@@ -627,5 +631,15 @@ mod tactics_units {
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
         eprintln!("should choose a walkable target with 2 range");
         assert_eq!(Some((6, 5)), choice);
+
+        let u = UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: Some(WeaponId(2)), // Bow with range 2..=3
+        };
+        let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
+        eprintln!("should not bother moving when its already in range");
+        assert_eq!(Some((5, 5)), choice);
     }
 }
