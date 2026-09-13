@@ -249,6 +249,29 @@ pub fn attackable_from(
     reachable
 }
 
+pub fn choose_tile_to_attack_from(
+    unit_data: &UnitData,
+    at: Coordinate,
+    target: Coordinate,
+    map_instance: &MapInstance,
+    asset_catalog: &AssetCatalog,
+) -> Option<(isize, isize)> {
+    let attack_range = if let Some(weapon) = unit_data
+        .weapon
+        .and_then(|wid| asset_catalog.id_to_weapon(wid).ok())
+    {
+        weapon.range
+    } else {
+        return None;
+    };
+    let engage_points = attackable_from(&attack_range, target, map_instance);
+    let reachable = reachable_by_unit(unit_data, at, map_instance, asset_catalog);
+    let mut potential: Vec<(isize, isize)> = engage_points.union(&reachable).cloned().collect();
+    let (attacker_row, attacker_column) = at;
+    potential.sort_by_key(|(pr, pc)| (attacker_row - pr).abs() + (attacker_column - pc).abs());
+    potential.into_iter().next()
+}
+
 #[cfg(test)]
 mod tactics_units {
     use super::*;

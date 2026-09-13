@@ -376,6 +376,28 @@ impl Scene for TestScene {
                 }
                 Some(ActionState::Attack(attacker, defender)) => {
                     eprintln!("{:?} wants to attack {:?}", attacker, defender);
+                    let (attacker_uid, attacker_position) = attacker;
+                    let (_defender_uid, defender_position) = defender;
+
+                    let catalog = game_context
+                        .asset_loader
+                        .as_ref()
+                        .map(|a| a.get_catalog())
+                        .expect("no catalog?");
+
+                    if let Some(unit_data) = map_state.units.get(&attacker_uid) {
+                        let move_to = choose_tile_to_attack_from(
+                            unit_data,
+                            attacker_position,
+                            defender_position,
+                            map_instance,
+                            catalog.as_ref(),
+                        );
+                        if let Some(move_to) = move_to {
+                            map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
+                            eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
+                        }
+                    }
 
                     // if !in_range(attacker, defender) {
                     //     map_instance.move_unit_to(attacker_unit, from, to)
