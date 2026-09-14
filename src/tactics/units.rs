@@ -185,7 +185,7 @@ pub fn reachable_by_unit(
             continue;
         }
         let (tr, tc) = location;
-        let manhatten_d = (start_row - tr).abs() + (start_column - tc).abs();
+        let manhatten_d = manhatten(at, location);
         if manhatten_d <= range {
             if tile.occupant.is_none() {
                 reachable.insert(location);
@@ -241,7 +241,7 @@ pub fn destination_can_be_attacked_from(
             if tile.occupant.is_none() {
                 continue;
             }
-            let manhatten_d = (dr - row).abs() + (dc - column).abs();
+            let manhatten_d = manhatten(location, attacker_position);
             if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                 reachable.insert(location);
             }
@@ -269,17 +269,17 @@ pub fn defender_can_be_attacked_from(
             let Some(tile) = map_instance.get(location) else {
                 continue;
             };
+            let manhatten_d = manhatten(defender_position, location);
             if attacker_position == (row, column) {
-                let manhatten_d = (dr - row).abs() + (dc - column).abs();
                 if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                     reachable.insert(attacker_position);
                 }
             }
             // Only an empty tile can be moved into for when we attack
+            // unless it's the above case where we're already in position and therefore occupy the space
             if tile.occupant.is_some() {
                 continue;
             }
-            let manhatten_d = (dr - row).abs() + (dc - column).abs();
             if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
                 reachable.insert(location);
             }
@@ -287,6 +287,10 @@ pub fn defender_can_be_attacked_from(
     }
 
     reachable
+}
+
+pub fn manhatten(p1: (isize, isize), p2: (isize, isize)) -> isize {
+    (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
 }
 
 pub fn choose_tile_to_attack_from(
@@ -310,8 +314,7 @@ pub fn choose_tile_to_attack_from(
     // can't stand on top of a target when attacking.
     reachable.remove(&target);
     // we can only insert ourselves if the weapon range allows for it (minimum > 1 means stand away)
-
-    if attack_range.contains(&(((at.0 - target.0).abs() + (at.1 - target.1).abs()) as usize)) {
+    if attack_range.contains(&(manhatten(at, target) as usize)) {
         reachable.insert(at);
         engage_points.insert(at);
     }
@@ -320,8 +323,7 @@ pub fn choose_tile_to_attack_from(
 
     // try to find the closet to our current position place we can attack from so a range
     // unit doesn't do something like attack from 2 spaces away when they can attack from 3 instead
-    let (attacker_row, attacker_column) = at;
-    potential.sort_by_key(|(pr, pc)| (attacker_row - pr).abs() + (attacker_column - pc).abs());
+    potential.sort_by_key(|p| manhatten(at, *p));
     potential.into_iter().next()
 }
 
