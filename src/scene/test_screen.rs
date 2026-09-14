@@ -397,17 +397,16 @@ impl Scene for TestScene {
                             eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
                             map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
                         }
+                        // if !in_range(attacker, defender) {
+                        //     map_instance.move_unit_to(attacker_unit, from, to)
+                        // }
+                        // let attack = attacker.attack(defender);
+                        // defender.damage(amount);
+                        // if defender.is_dead() {
+                        //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
+                        // }
+                        // award_xp(attacker);
                     }
-
-                    // if !in_range(attacker, defender) {
-                    //     map_instance.move_unit_to(attacker_unit, from, to)
-                    // }
-                    // let attack = attacker.attack(defender);
-                    // defender.damage(amount);
-                    // if defender.is_dead() {
-                    //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
-                    // }
-                    // award_xp(attacker);
 
                     map_state.action = None;
                     map_state.selectable_tiles = HashSet::new();
