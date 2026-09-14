@@ -201,10 +201,7 @@ pub fn reachable_by_unit(
 
     // In the case of a weapon having longer range than a unit's move
     // we also need to work backwards from those tiles.
-    let max_attack_range = *attack_range.end() as isize;
-    let min_attack_range = *attack_range.start() as isize;
     for attacker_position in reachable.clone().iter() {
-        let (dr, dc) = attacker_position;
         let locations =
             destination_can_be_attacked_from(&attack_range, *attacker_position, map_instance);
         for location in locations {
