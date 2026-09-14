@@ -247,7 +247,6 @@ pub fn destination_can_be_attacked_from(
             }
         }
     }
-
     reachable
 }
 
