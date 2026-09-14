@@ -396,9 +396,7 @@ impl Scene for TestScene {
                             eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
                             map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
                         }
-                        // if !in_range(attacker, defender) {
-                        //     map_instance.move_unit_to(attacker_unit, from, to)
-                        // }
+                        
                         // let attack = attacker.attack(defender);
                         // defender.damage(amount);
                         // if defender.is_dead() {
