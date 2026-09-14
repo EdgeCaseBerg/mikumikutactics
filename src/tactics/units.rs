@@ -271,7 +271,10 @@ pub fn defender_can_be_attacked_from(
                 continue;
             };
             if attacker_position == (row, column) {
-                reachable.insert(attacker_position);
+                let manhatten_d = (dr - row).abs() + (dc - column).abs();
+                if manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
+                    reachable.insert(attacker_position);
+                }
             }
             // Only an empty tile can be moved into for when we attack
             if tile.occupant.is_some() {
@@ -302,15 +305,16 @@ pub fn choose_tile_to_attack_from(
     } else {
         return None;
     };
-    let engage_points = defender_can_be_attacked_from(&attack_range, at, target, map_instance);
+    let mut engage_points = defender_can_be_attacked_from(&attack_range, at, target, map_instance);
     let mut reachable = reachable_by_unit(unit_data, at, map_instance, asset_catalog);
     // 'reachable' considers an attackable unit in range as a reachable tile, but you obviously
     // can't stand on top of a target when attacking.
     reachable.remove(&target);
     // we can only insert ourselves if the weapon range allows for it (minimum > 1 means stand away)
 
-    if attack_range.contains(&(((at.0 - target.0).abs() + (at.1 - at.1).abs()) as usize)) {
+    if attack_range.contains(&(((at.0 - target.0).abs() + (at.1 - target.1).abs()) as usize)) {
         reachable.insert(at);
+        engage_points.insert(at);
     }
     let mut potential: Vec<(isize, isize)> =
         engage_points.intersection(&reachable).cloned().collect();
