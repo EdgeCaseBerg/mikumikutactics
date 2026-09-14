@@ -69,7 +69,6 @@ impl ContextMenu {
         selected_unit_id: UnitId,
     ) -> ContextMenu {
         let (r, c) = clicked_position;
-        let (selected_row, selected_column) = selected_unit_position;
         let mut y_offset = 0;
         let mut next_rect = || {
             let mut rect = anchor.clone();
@@ -334,7 +333,7 @@ impl Scene for TestScene {
                         }
                     }
                 }
-                Some(ActionState::CommandPending(unit_id, (target_row, target_column))) => {
+                Some(ActionState::CommandPending(unit_id, _)) => {
                     if let Some(menu) = self.context_menu.as_mut() {
                         match menu.update(ticks, game_context, unit_id) {
                             Ok(None) => {}
@@ -412,7 +411,6 @@ impl Scene for TestScene {
                     map_state.selectable_tiles = HashSet::new();
                     self.current_portrait = None;
                 }
-                _ => {}
             }
         };
 
@@ -501,7 +499,7 @@ fn valid_selected_tile_clicked(
     }
 
     // Ensure that the click within range is on the map
-    let tile = map_instance.get((r as isize, c as isize))?;
+    let _tile = map_instance.get((r as isize, c as isize))?;
 
     Some(Some((r as isize, c as isize)))
 }
