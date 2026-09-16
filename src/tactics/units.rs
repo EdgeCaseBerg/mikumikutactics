@@ -487,12 +487,8 @@ mod tactics_units {
         let mut m = MapInstance::empty_walkable(10, 10);
         m.get_mut((4, 4)).unwrap().occupant = Some(UnitId(1));
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(1)), // Bow with range 2..2
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(1)); // Bow with range 2..2
 
         let c = fake_catalog();
 
@@ -527,12 +523,8 @@ mod tactics_units {
         let mut m = MapInstance::empty_walkable(10, 10);
         m.get_mut((8, 5)).unwrap().occupant = Some(UnitId(1));
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(2)), // Long Bow with range 2..3
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(2)); // Long Bow with range 2..3
 
         let c = fake_catalog();
 
@@ -621,44 +613,28 @@ mod tactics_units {
         m.get_mut(target).unwrap().occupant = Some(UnitId(1));
         m.get_mut(unit).unwrap().occupant = Some(UnitId(0));
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(0)), // Sword with range 1..=1
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(0)); // Sword with range 1..=1
 
         let c = fake_catalog();
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
         eprintln!("should choose a walkable target with 1 range");
         assert_eq!(Some((7, 5)), choice);
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(1)), // Bow with range 2..=2
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(1)); // Bow with range 2..=2
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
         eprintln!("should choose a walkable target with 2 range");
         assert_eq!(Some((6, 5)), choice);
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(2)), // Bow with range 2..=3
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(2)); // Bow with range 2..=3
         let choice = choose_tile_to_attack_from(&u, unit, target, &m, &c);
         eprintln!("should not bother moving when its already in range");
         assert_eq!(Some((5, 5)), choice);
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: Some(WeaponId(1)), // Bow with range 2..=2
-        };
+        let mut u = fake_unit();
+        u.weapon = Some(WeaponId(1)); // Bow with range 2..=2
         let mut m = MapInstance::empty_walkable(10, 10);
         let target = (8, 5);
         let unit = (7, 5);
