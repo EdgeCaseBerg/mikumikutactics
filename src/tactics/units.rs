@@ -443,12 +443,8 @@ mod tactics_units {
         let expected = bl_corner();
         assert_eq!(expected, reachable);
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 3,
-            weapon: None,
-        };
+        let mut u = fake_unit();
+        u.move_range = 3;
         let reachable = reachable_by_unit(&u, (5, 5), &m, &c);
         let expected = center_star_3();
         eprintln!("in center 3 {:?}", {

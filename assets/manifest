@@ -572,7 +572,7 @@
       "id": 1,
       "name": "bow",
       "min_range": 2,
-      "max_range": 3,
+      "max_range": 4,
       "attack": 1
     }
   ]
