@@ -328,6 +328,15 @@ pub fn choose_tile_to_attack_from(
 mod tactics_units {
     use super::*;
 
+    fn fake_unit() -> UnitData {
+        UnitData {
+            name: "".to_owned(),
+            sprite_data: fake_sprite_data(),
+            move_range: 2,
+            weapon: None,
+        }
+    }
+
     fn fake_catalog() -> AssetCatalog {
         let catalog = AssetCatalog::from_manifest_str(
             r#"{
@@ -421,12 +430,7 @@ mod tactics_units {
     #[test]
     fn reachable_by_unit_should_work_properly_on_fully_walkable_map() {
         let m = MapInstance::empty_walkable(10, 10);
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: None,
-        };
+        let u = fake_unit();
         let c = fake_catalog();
 
         eprintln!("in center 2");
@@ -462,13 +466,7 @@ mod tactics_units {
         m.get_mut((4, 4)).unwrap().is_walkable = false;
         m.get_mut((0, 8)).unwrap().is_walkable = false;
 
-        let u = UnitData {
-            name: "".to_owned(),
-            sprite_data: fake_sprite_data(),
-            move_range: 2,
-            weapon: None,
-        };
-
+        let u = fake_unit();
         let c = fake_catalog();
 
         eprintln!("in center");
