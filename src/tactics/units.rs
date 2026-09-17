@@ -8,18 +8,6 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::ops::RangeInclusive;
 
-#[derive(Debug, Clone, Copy)]
-pub enum UnitState {
-    Idle,
-    Selected,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Actions {
-    Select,
-    Deselect,
-}
-
 #[derive(Debug)]
 pub struct UnitSpriteData {
     pub sprite: (SpriteInfo, TextureId),
@@ -541,7 +529,7 @@ mod tactics_units {
 
     #[test]
     fn attackable_from_verify_min_range() {
-        let mut m = MapInstance::empty_walkable(10, 10);
+        let m = MapInstance::empty_walkable(10, 10);
 
         let attackable = defender_can_be_attacked_from(&(0..=0), (5, 6), (5, 5), &m);
         assert_eq!(attackable.into_iter().count(), 0);
