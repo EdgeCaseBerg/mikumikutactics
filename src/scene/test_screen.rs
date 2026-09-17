@@ -211,6 +211,7 @@ impl Scene for TestScene {
                         .expect("cannot load miku sprite");
                     let unit_data = UnitData {
                         name: name.to_owned(),
+                        health: 10,
                         sprite_data: UnitSpriteData {
                             sprite: s,
                             portrait: p,

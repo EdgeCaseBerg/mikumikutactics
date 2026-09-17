@@ -20,6 +20,7 @@ pub struct UnitData {
     // behavior: UnitBehavior, add this back when we actually need it
     pub sprite_data: UnitSpriteData, // load via name
     pub move_range: usize,
+    pub health: usize,
     pub weapon: Option<WeaponId>,
 }
 
@@ -299,6 +300,7 @@ mod tactics_units {
         UnitData {
             name: "".to_owned(),
             sprite_data: fake_sprite_data(),
+            health: 10,
             move_range: 2,
             weapon: None,
         }
