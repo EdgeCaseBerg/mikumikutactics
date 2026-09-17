@@ -71,7 +71,7 @@ impl ContextMenu {
         let (r, c) = clicked_position;
         let mut y_offset = 0;
         let mut next_rect = || {
-            let mut rect = anchor.clone();
+            let mut rect = anchor;
             rect.y += y_offset;
             y_offset += 1;
             rect
