@@ -20,28 +20,6 @@ pub enum Actions {
     Deselect,
 }
 
-// #[derive(Debug)]
-// pub struct UnitBehavior {
-//     pub state: UnitState,
-// }
-
-// impl UnitBehavior {
-//     fn act(&mut self, input: Actions) {
-//         match (self.state, input) {
-//             (UnitState::Idle, Actions::Select) => {
-//                 self.state = UnitState::Selected;
-//             }
-//             (UnitState::Selected, Actions::Deselect) => {
-//                 self.state = UnitState::Idle;
-//             }
-//             _ => {}
-//         }
-//     }
-//     fn current_state(&self) -> UnitState {
-//         self.state
-//     }
-// }
-
 #[derive(Debug)]
 pub struct UnitSpriteData {
     pub sprite: (SpriteInfo, TextureId),
