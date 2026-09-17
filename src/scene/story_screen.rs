@@ -489,10 +489,11 @@ impl Scene for StoryScene {
             for (choice, btn) in choices {
                 btn.update(ticks, game_context, &layout);
                 if btn.clicked
-                    && let Some(vn) = self.vn.as_mut() {
-                        clicked = true;
-                        vn.jump(&choice.label);
-                    }
+                    && let Some(vn) = self.vn.as_mut()
+                {
+                    clicked = true;
+                    vn.jump(&choice.label);
+                }
             }
             if clicked {
                 self.current_choices = None;

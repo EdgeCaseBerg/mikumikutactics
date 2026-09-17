@@ -234,9 +234,11 @@ pub fn defender_can_be_attacked_from(
             };
             let manhatten_d = manhatten(defender_position, location);
             if attacker_position == (row, column)
-                && manhatten_d <= max_attack_range && manhatten_d >= min_attack_range {
-                    reachable.insert(attacker_position);
-                }
+                && manhatten_d <= max_attack_range
+                && manhatten_d >= min_attack_range
+            {
+                reachable.insert(attacker_position);
+            }
             // Only an empty tile can be moved into for when we attack
             // unless it's the above case where we're already in position and therefore occupy the space
             if tile.occupant.is_some() {
