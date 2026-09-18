@@ -292,6 +292,21 @@ pub fn choose_tile_to_attack_from(
     potential.into_iter().next()
 }
 
+pub fn calculate_health_after_attack(
+    attacker: &UnitData,
+    defender: &UnitData,
+    asset_catalog: &AssetCatalog,
+) -> usize {
+    // TODO: include armor or similar such things once we have them
+    let attacker_weapon_power = attacker
+        .weapon
+        .and_then(|wid| asset_catalog.id_to_weapon(wid).ok())
+        .and_then(|weapon| Some(weapon.attack))
+        .unwrap_or(0);
+    let health = defender.health;
+    health.saturating_sub(attacker_weapon_power)
+}
+
 #[cfg(test)]
 mod tactics_units {
     use super::*;
