@@ -404,14 +404,13 @@ impl Scene for TestScene {
                         if let Some(defender) = map_state.units.get_mut(&defender_uid) {
                             defender.health = new_health.unwrap_or(defender.health);
                             eprintln!("defender now has health {:?}", defender.health);
+                            if defender.health == 0 {
+                                map_instance
+                                    .get_mut(defender_position)
+                                    .and_then(|tile| tile.occupant.take());
+                                eprintln!("unit {:?} defeated", defender_uid);
+                            }
                         }
-
-                        // let attack = attacker.attack(defender);
-                        // defender.damage(amount);
-                        // if defender.is_dead() {
-                        //     map_instance.get_mut().and_then(|tile| tile.occupant.take())
-                        // }
-                        // award_xp(attacker);
                     }
 
                     map_state.action = None;
