@@ -297,7 +297,7 @@ pub fn calculate_health_after_attack(
     defender: &UnitData,
     asset_catalog: &AssetCatalog,
 ) -> usize {
-    // TODO: include armor or similar such things once we have them
+    // TODO: include armor or similar such things once we have
     let attacker_weapon_power = attacker
         .weapon
         .and_then(|wid| asset_catalog.id_to_weapon(wid).ok())
