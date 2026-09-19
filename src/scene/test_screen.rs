@@ -386,25 +386,24 @@ impl Scene for TestScene {
                         .expect("no catalog?");
 
                     if let Some(attacker) = map_state.units.get(&attacker_uid) {
-                        let move_to = choose_tile_to_attack_from(
+                        if let Some(move_to) = choose_tile_to_attack_from(
                             attacker,
                             attacker_position,
                             defender_position,
                             map_instance,
                             catalog.as_ref(),
-                        );
-                        if let Some(move_to) = move_to {
+                        ) {
                             eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
                             map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
                         }
 
-                        if let Some(defender) = map_state.units.get(&defender_uid) {
-                            let new_health =
-                                calculate_health_after_attack(attacker, defender, catalog.as_ref());
-                            eprintln!("defender now has health {}", new_health);
-                            if let Some(d) = map_state.units.get_mut(&defender_uid) {
-                                d.health = new_health;
-                            }
+                        let new_health = map_state.units.get(&defender_uid).map(|defender| {
+                            calculate_health_after_attack(attacker, defender, catalog.as_ref())
+                        });
+
+                        if let Some(defender) = map_state.units.get_mut(&defender_uid) {
+                            defender.health = new_health.unwrap_or(defender.health);
+                            eprintln!("defender now has health {:?}", defender.health);
                         }
 
                         // let attack = attacker.attack(defender);
