@@ -377,7 +377,7 @@ impl Scene for TestScene {
                 Some(ActionState::Attack(attacker, defender)) => {
                     eprintln!("{:?} wants to attack {:?}", attacker, defender);
                     let (attacker_uid, attacker_position) = attacker;
-                    let (_defender_uid, defender_position) = defender;
+                    let (defender_uid, defender_position) = defender;
 
                     let catalog = game_context
                         .asset_loader
@@ -385,9 +385,9 @@ impl Scene for TestScene {
                         .map(|a| a.get_catalog())
                         .expect("no catalog?");
 
-                    if let Some(unit_data) = map_state.units.get(&attacker_uid) {
+                    if let Some(attacker) = map_state.units.get(&attacker_uid) {
                         let move_to = choose_tile_to_attack_from(
-                            unit_data,
+                            attacker,
                             attacker_position,
                             defender_position,
                             map_instance,
@@ -396,6 +396,15 @@ impl Scene for TestScene {
                         if let Some(move_to) = move_to {
                             eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
                             map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
+                        }
+
+                        if let Some(defender) = map_state.units.get(&defender_uid) {
+                            let new_health =
+                                calculate_health_after_attack(attacker, defender, catalog.as_ref());
+                            eprintln!("defender now has health {}", new_health);
+                            if let Some(d) = map_state.units.get_mut(&defender_uid) {
+                                d.health = new_health;
+                            }
                         }
 
                         // let attack = attacker.attack(defender);
