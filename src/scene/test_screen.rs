@@ -1,4 +1,5 @@
 use crate::GameResult;
+use crate::ReadyState;
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
@@ -10,6 +11,7 @@ use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::Button;
+use crate::tactics::commands::*;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
 use std::collections::HashSet;
@@ -23,8 +25,11 @@ pub struct TestScene {
     current_portrait: Option<(SpriteInfo, TextureId)>,
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
     btn_prototype: Option<Button>,
-    map: Option<(MapInstance, MapState)>,
+    map: Option<BattleData>,
     context_menu: Option<ContextMenu>,
+    command_log: Vec<Box<dyn Command>>,
+    command_tick: Option<ReadyState>,
+    command_idx: usize,
 }
 
 #[derive(Default)]
@@ -228,7 +233,10 @@ impl Scene for TestScene {
                 })
                 .collect(),
         };
-        self.map = Some((the_map, map_state));
+        self.map = Some(BattleData {
+            map_instance: the_map,
+            map_state,
+        });
 
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
 
@@ -297,7 +305,11 @@ impl Scene for TestScene {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
         }
-        if let Some((map_instance, map_state)) = self.map.as_mut() {
+        if let Some(battle_data) = self.map.as_mut() {
+            let BattleData {
+                map_instance,
+                map_state,
+            } = battle_data;
             match map_state.action {
                 None => {
                     if let Some((action, unit_data, reachable_positions)) =
@@ -351,10 +363,7 @@ impl Scene for TestScene {
                             }
                             Err(_) => {
                                 // Error is the cancel button signal
-                                map_state.action = None;
-                                map_state.selectable_tiles = HashSet::new();
-                                self.context_menu = None;
-                                self.current_portrait = None;
+                                map_state.action = Some(ActionState::ClearAction);
                             }
                         }
                     } else {
@@ -369,11 +378,12 @@ impl Scene for TestScene {
                     // TODO: advance the unit along a computed path
                     // and when they reach the <to> then trigger move_unit_to
                     // or something similar.
-                    map_instance.move_unit_to(unit_id, from, to)?;
-                    map_state.action = None;
-                    map_state.selectable_tiles = HashSet::new();
-                    self.current_portrait = None;
+                    // map_instance.move_unit_to(unit_id, from, to)?;
+                    let command = MoveCommand { unit_id, from, to };
+                    self.command_log.push(Box::new(command));
                     // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
+                    // that'd probably be a separate action from ClearAction
+                    map_state.action = Some(ActionState::DrainCommandQueue);
                 }
                 Some(ActionState::Attack(attacker, defender)) => {
                     eprintln!("{:?} wants to attack {:?}", attacker, defender);
@@ -405,9 +415,45 @@ impl Scene for TestScene {
                             update_defender_health(defender, new_health, map_instance, map_state)?;
                         }
                     }
+
+                    map_state.action = Some(ActionState::ClearAction);
+                }
+                Some(ActionState::ClearAction) => {
                     map_state.action = None;
                     map_state.selectable_tiles = HashSet::new();
+                    self.context_menu = None;
                     self.current_portrait = None;
+                }
+                Some(ActionState::DrainCommandQueue) => {
+                    match self.command_log.get(self.command_idx) {
+                        None => {
+                            // There is no ticking command, so reset ui state
+                            eprintln!("reset ui state");
+                            map_state.action = Some(ActionState::ClearAction);
+                        }
+                        Some(command) => {
+                            // Have we started this command yet?
+                            match self.command_tick.as_mut() {
+                                None => {
+                                    // Nope. Set it up.
+                                    self.command_tick = Some(ReadyState::Cooldown {
+                                        wait_for: command.as_ref().tick_duration(),
+                                        ticks_waited: 0,
+                                    });
+                                    eprintln!("{:?} tick tick ", self.command_tick);
+                                }
+                                Some(ready_state) => {
+                                    *ready_state = ready_state.advance(ticks);
+                                    if matches!(ready_state, ReadyState::Ready) {
+                                        eprintln!("{:?} tick tock ", ready_state);
+                                        let _ = command.apply(battle_data)?;
+                                        self.command_tick = None;
+                                        self.command_idx += 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         };
@@ -579,7 +625,11 @@ fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Rend
 }
 
 fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
-    let Some((map_instance, map_state)) = scene.map.as_ref() else {
+    let Some(BattleData {
+        map_instance,
+        map_state,
+    }) = scene.map.as_ref()
+    else {
         return;
     };
     for row in 0..map_instance.height {

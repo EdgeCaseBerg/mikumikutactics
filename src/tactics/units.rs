@@ -32,11 +32,14 @@ pub type ToThere = Coordinate;
 pub type Attacker = (UnitId, Coordinate);
 pub type Defender = (UnitId, Coordinate);
 
+#[derive(Debug)]
 pub enum ActionState {
     UnitSelected(UnitId, Coordinate),   // 1. Click a unit
     CommandPending(UnitId, Coordinate), // 2. Click a tile around that unit, ask what to do
     Move(UnitId, FromHere, ToThere),    // 3. If tile empty -> check in range?
     Attack(Attacker, Defender),         // 4. If tile has empty -> check in range?
+    ClearAction,
+    DrainCommandQueue,
 }
 
 pub fn reachable_by_unit(
