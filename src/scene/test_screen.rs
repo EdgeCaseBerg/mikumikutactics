@@ -439,6 +439,56 @@ impl Scene for TestScene {
     }
 }
 
+fn determine_move_to_and_new_health(
+    attacker: Attacker,
+    defender: Defender,
+    map_instance: &MapInstance,
+    map_state: &MapState,
+    asset_catalog: &AssetCatalog,
+) -> Option<(Option<Coordinate>, usize)> {
+    eprintln!("{:?} wants to attack {:?}", attacker, defender);
+    let (attacker_uid, attacker_position) = attacker;
+    let (defender_uid, defender_position) = defender;
+
+    let attacker = map_state.units.get(&attacker_uid)?;
+    let move_to = choose_tile_to_attack_from(
+        attacker,
+        attacker_position,
+        defender_position,
+        map_instance,
+        asset_catalog,
+    );
+
+    let new_health = map_state
+        .units
+        .get(&defender_uid)
+        .map(|defender| calculate_health_after_attack(attacker, defender, asset_catalog))
+        .unwrap_or(0);
+
+    Some((move_to, new_health))
+}
+
+fn update_defender_health(
+    defender: Defender,
+    new_health: usize,
+    map_instance: &mut MapInstance,
+    map_state: &mut MapState,
+) -> GameResult<()> {
+    let (defender_uid, defender_position) = defender;
+    let Some(defender) = map_state.units.get_mut(&defender_uid) else {
+        return Err(format!("defending unit does not exist in units list {defender_uid:?}").into());
+    };
+    defender.health = new_health;
+    eprintln!("defender now has health {:?}", defender.health);
+    if defender.health == 0 {
+        map_instance
+            .get_mut(defender_position)
+            .and_then(|tile| tile.occupant.take());
+        eprintln!("unit {:?} defeated", defender_uid);
+    }
+    Ok(())
+}
+
 fn check_if_unit_selected_action<'a>(
     game_context: &GameContext,
     map_instance: &MapInstance,
