@@ -10,6 +10,7 @@ use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::Button;
+use crate::tactics::map::*;
 use crate::tactics::units::*;
 use std::collections::HashSet;
 
