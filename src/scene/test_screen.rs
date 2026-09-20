@@ -2,7 +2,7 @@ use crate::GameResult;
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
-use crate::asset_loader::{AssetLoader, ensure_texture_by_name};
+use crate::asset_loader::{AssetCatalog, AssetLoader, ensure_texture_by_name};
 use crate::constants::{FontId, TEXTURE_UI};
 use crate::constants::{TextureId, WeaponId};
 use crate::game::GameContext;
