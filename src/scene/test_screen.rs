@@ -304,6 +304,12 @@ impl Scene for TestScene {
         if let Some(btn) = self.btn_prototype.as_mut() {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                if let Some(battle_data) = self.map.as_mut() {
+                    eprintln!("{:?}", self.command_log.len());
+                    battle_data.map_state.action = Some(ActionState::RewindCommandQueue(0));
+                }
+            }
         }
         if let Some(battle_data) = self.map.as_mut() {
             let BattleData {
@@ -452,6 +458,20 @@ impl Scene for TestScene {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+                Some(ActionState::RewindCommandQueue(to)) => {
+                    map_state.action = Some(ActionState::ClearAction);
+                    assert!(to <= self.command_idx);
+                    while self.command_idx >= to {
+                        self.command_idx = self.command_idx.saturating_sub(1);
+                        if let Some(command) = self.command_log.pop() {
+                            let _ = command.undo(battle_data)?;
+                        }
+
+                        if self.command_idx == 0 || self.command_idx < to {
+                            break;
                         }
                     }
                 }

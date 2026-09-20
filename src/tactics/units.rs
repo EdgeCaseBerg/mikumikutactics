@@ -39,7 +39,8 @@ pub enum ActionState {
     Move(UnitId, FromHere, ToThere),    // 3. If tile empty -> check in range?
     Attack(Attacker, Defender),         // 4. If tile has empty -> check in range?
     ClearAction,
-    DrainCommandQueue,
+    DrainCommandQueue,         // Process commands not yet applied
+    RewindCommandQueue(usize), // Rewind to idx in command log
 }
 
 pub fn reachable_by_unit(
