@@ -377,42 +377,33 @@ impl Scene for TestScene {
                 Some(ActionState::Attack(attacker, defender)) => {
                     eprintln!("{:?} wants to attack {:?}", attacker, defender);
                     let (attacker_uid, attacker_position) = attacker;
-                    let (defender_uid, defender_position) = defender;
-
                     let catalog = game_context
                         .asset_loader
                         .as_ref()
                         .map(|a| a.get_catalog())
                         .expect("no catalog?");
 
-                    if let Some(attacker) = map_state.units.get(&attacker_uid) {
-                        if let Some(move_to) = choose_tile_to_attack_from(
-                            attacker,
-                            attacker_position,
-                            defender_position,
-                            map_instance,
-                            catalog.as_ref(),
-                        ) {
-                            eprintln!("{:?} attacks {:?} from {:?}", attacker, defender, move_to);
-                            map_instance.move_unit_to(attacker_uid, attacker_position, move_to)?;
+                    match determine_move_to_and_new_health(
+                        attacker,
+                        defender,
+                        map_instance,
+                        map_state,
+                        catalog.as_ref(),
+                    ) {
+                        None => { /* Weird state. The attacker or defender dont exist */ }
+                        Some((Some(required_move), new_health)) => {
+                            /* Lazy player, requested attack that requires a unit to move first */
+                            map_instance.move_unit_to(
+                                attacker_uid,
+                                attacker_position,
+                                required_move,
+                            )?;
+                            update_defender_health(defender, new_health, map_instance, map_state)?;
                         }
-
-                        let new_health = map_state.units.get(&defender_uid).map(|defender| {
-                            calculate_health_after_attack(attacker, defender, catalog.as_ref())
-                        });
-
-                        if let Some(defender) = map_state.units.get_mut(&defender_uid) {
-                            defender.health = new_health.unwrap_or(defender.health);
-                            eprintln!("defender now has health {:?}", defender.health);
-                            if defender.health == 0 {
-                                map_instance
-                                    .get_mut(defender_position)
-                                    .and_then(|tile| tile.occupant.take());
-                                eprintln!("unit {:?} defeated", defender_uid);
-                            }
+                        Some((None, new_health)) => {
+                            update_defender_health(defender, new_health, map_instance, map_state)?;
                         }
                     }
-
                     map_state.action = None;
                     map_state.selectable_tiles = HashSet::new();
                     self.current_portrait = None;
