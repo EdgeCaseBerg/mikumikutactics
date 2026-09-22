@@ -408,7 +408,7 @@ impl Scene for TestScene {
                         catalog.as_ref(),
                     ) {
                         None => { /* Weird state. The attacker or defender dont exist */ }
-                        Some((Some(required_move), new_health)) => {
+                        Some((Some(required_move), (new_health, old_health))) => {
                             let command = MoveCommand {
                                 unit_id: attacker_uid,
                                 from: attacker_position,
@@ -419,16 +419,16 @@ impl Scene for TestScene {
                             /* Lazy player, requested attack that requires a unit to move first */
                             let command = AttackCommand {
                                 defender,
-                                old_health: new_health + 1,
+                                old_health,
                                 new_health,
                             };
                             self.command_log.push(Box::new(command));
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
-                        Some((None, new_health)) => {
-                           let command = AttackCommand {
+                        Some((None, (new_health, old_health))) => {
+                            let command = AttackCommand {
                                 defender,
-                                old_health: new_health + 1,
+                                old_health,
                                 new_health,
                             };
                             self.command_log.push(Box::new(command));
@@ -515,7 +515,7 @@ fn determine_move_to_and_new_health(
     map_instance: &MapInstance,
     map_state: &MapState,
     asset_catalog: &AssetCatalog,
-) -> Option<(Option<Coordinate>, usize)> {
+) -> Option<(Option<Coordinate>, (usize, usize))> {
     eprintln!("{:?} wants to attack {:?}", attacker, defender);
     let (attacker_uid, attacker_position) = attacker;
     let (defender_uid, defender_position) = defender;
@@ -532,8 +532,13 @@ fn determine_move_to_and_new_health(
     let new_health = map_state
         .units
         .get(&defender_uid)
-        .map(|defender| calculate_health_after_attack(attacker, defender, asset_catalog))
-        .unwrap_or(0);
+        .map(|defender| {
+            (
+                calculate_health_after_attack(attacker, defender, asset_catalog),
+                defender.health,
+            )
+        })
+        .unwrap_or((0, 0));
 
     Some((move_to, new_health))
 }
