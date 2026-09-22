@@ -409,20 +409,32 @@ impl Scene for TestScene {
                     ) {
                         None => { /* Weird state. The attacker or defender dont exist */ }
                         Some((Some(required_move), new_health)) => {
+                            let command = MoveCommand {
+                                unit_id: attacker_uid,
+                                from: attacker_position,
+                                to: required_move,
+                            };
+                            self.command_log.push(Box::new(command));
+
                             /* Lazy player, requested attack that requires a unit to move first */
-                            map_instance.move_unit_to(
-                                attacker_uid,
-                                attacker_position,
-                                required_move,
-                            )?;
-                            update_defender_health(defender, new_health, map_instance, map_state)?;
+                            let command = AttackCommand {
+                                defender,
+                                old_health: new_health + 1,
+                                new_health,
+                            };
+                            self.command_log.push(Box::new(command));
+                            map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                         Some((None, new_health)) => {
-                            update_defender_health(defender, new_health, map_instance, map_state)?;
+                           let command = AttackCommand {
+                                defender,
+                                old_health: new_health + 1,
+                                new_health,
+                            };
+                            self.command_log.push(Box::new(command));
+                            map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                     }
-
-                    map_state.action = Some(ActionState::ClearAction);
                 }
                 Some(ActionState::ClearAction) => {
                     map_state.action = None;
