@@ -84,4 +84,7 @@ impl MapInstance {
         }
         Ok(())
     }
+
+pub fn manhatten(p1: (isize, isize), p2: (isize, isize)) -> isize {
+    (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
 }

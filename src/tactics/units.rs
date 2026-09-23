@@ -177,10 +177,6 @@ pub fn defender_can_be_attacked_from(
     reachable
 }
 
-pub fn manhatten(p1: (isize, isize), p2: (isize, isize)) -> isize {
-    (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
-}
-
 pub fn choose_tile_to_attack_from(
     unit_data: &UnitData,
     at: Coordinate,
