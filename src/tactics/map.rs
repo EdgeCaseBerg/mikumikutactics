@@ -1,5 +1,6 @@
 use crate::GameResult;
 use crate::tactics::units::*;
+use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -98,11 +99,15 @@ impl MapInstance {
         let mut g_score = HashMap::new();
         let mut f_score = HashMap::new();
         const INFINITY: isize = isize::MAX;
-        open_set.push(from);
+        open_set.push(std::cmp::Reverse(MapTile {
+            coordinate: from,
+            f_score: 0,
+        }));
         g_score.insert(from, 0);
         f_score.insert(from, 0);
 
-        while let Some(current) = open_set.pop() {
+        while let Some(Reverse(MapTile { coordinate, .. })) = open_set.pop() {
+            let current = coordinate;
             if current == to {
                 // construct the path
                 break;
@@ -114,6 +119,9 @@ impl MapInstance {
                 let Some(node) = self.get(neighbor) else {
                     continue;
                 };
+                if node.occupant.is_some() {
+                    continue;
+                }
                 let cost = if node.is_walkable { 0 } else { INFINITY };
                 // TODO: Check for occupied nodes we have to walk around
                 // since other faction units can't be traversed.
@@ -122,6 +130,7 @@ impl MapInstance {
                 let g = g_score.get(&current).unwrap_or(&INFINITY);
                 let g_neighbor = g_score.get(&neighbor).unwrap_or(&INFINITY);
                 let tentative_g_score = g.saturating_add(h).saturating_add(cost);
+                let f_value = tentative_g_score + h;
                 eprintln!("{:?}", (tentative_g_score, g));
                 if tentative_g_score < *g_neighbor {
                     came_from
@@ -132,8 +141,19 @@ impl MapInstance {
                         .entry(neighbor)
                         .and_modify(|v| *v = tentative_g_score)
                         .or_insert(tentative_g_score);
-                    if open_set.iter().find(|v| **v == neighbor).is_none() {
-                        open_set.push(neighbor);
+                    f_score
+                        .entry(neighbor)
+                        .and_modify(|v| *v = tentative_g_score + h)
+                        .or_insert(tentative_g_score);
+                    if open_set
+                        .iter()
+                        .find(|m| m.0.coordinate == neighbor)
+                        .is_none()
+                    {
+                        open_set.push(Reverse(MapTile {
+                            coordinate: neighbor,
+                            f_score: f_value,
+                        }));
                     }
                 }
             }
@@ -148,6 +168,33 @@ impl MapInstance {
         Ok(path.into_iter().collect())
     }
 }
+
+use std::cmp::Ordering;
+
+struct MapTile {
+    f_score: isize,
+    coordinate: Coordinate,
+}
+
+impl Ord for MapTile {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.f_score.cmp(&other.f_score)
+    }
+}
+
+impl PartialOrd for MapTile {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for MapTile {
+    fn eq(&self, other: &Self) -> bool {
+        self.f_score == other.f_score
+    }
+}
+
+impl Eq for MapTile {}
 
 pub fn manhatten(p1: (isize, isize), p2: (isize, isize)) -> isize {
     (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
@@ -166,20 +213,20 @@ mod map_unit_tests {
             (1, 0),
             (2, 0),
             (3, 0),
-            (4, 0),
-            (5, 0),
-            (6, 0),
-            (7, 0),
-            (8, 0),
-            (9, 0),
-            (9, 1),
-            (9, 2),
-            (9, 3),
-            (9, 4),
-            (9, 5),
-            (9, 6),
-            (9, 7),
-            (9, 8),
+            (3, 1),
+            (3, 2),
+            (4, 2),
+            (5, 2),
+            (5, 3),
+            (5, 4),
+            (5, 5),
+            (5, 6),
+            (5, 7),
+            (6, 7),
+            (7, 7),
+            (7, 8),
+            (7, 9),
+            (8, 9),
             (9, 9),
         ];
         if let Ok(path) = path {
