@@ -188,4 +188,16 @@ mod map_unit_tests {
             assert!(false, "Expected an Ok, got a {:?}", path);
         }
     }
+
+    #[test]
+    fn takes_the_optimal_path() {
+        let m = MapInstance::empty_walkable(10, 10);
+        let path = m.path_between(UnitId(0), (3, 3), (3, 8));
+        let expected_path = vec![(3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8)];
+        if let Ok(path) = path {
+            assert_eq!(expected_path, path);
+        } else {
+            assert!(false, "Expected an Ok, got a {:?}", path);
+        }
+    }
 }
