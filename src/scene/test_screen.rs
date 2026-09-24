@@ -380,13 +380,16 @@ impl Scene for TestScene {
                     }
                 }
                 Some(ActionState::Move(unit_id, from, to)) => {
-                    // For now, just move instantly.
                     // TODO: advance the unit along a computed path
                     // and when they reach the <to> then trigger move_unit_to
                     // or something similar.
-                    // map_instance.move_unit_to(unit_id, from, to)?;
-                    let command = MoveCommand { unit_id, from, to };
-                    self.command_log.push(Box::new(command));
+                    let path = map_instance.path_between(unit_id, from, to)?;
+                    let mut pairs = path.windows(2);
+                    while let Some(&[from, to]) = pairs.next() {
+                        let command = MoveCommand { unit_id, from, to };
+                        eprintln!("add move command");
+                        self.command_log.push(Box::new(command));
+                    }
                     // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
                     // that'd probably be a separate action from ClearAction
                     map_state.action = Some(ActionState::DrainCommandQueue);
