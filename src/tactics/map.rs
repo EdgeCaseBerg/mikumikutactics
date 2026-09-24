@@ -92,7 +92,7 @@ impl MapInstance {
         from: Coordinate,
         to: Coordinate,
     ) -> GameResult<Vec<Coordinate>> {
-        // just do a djikstra
+        // djikstra basically but also https://en.wikipedia.org/wiki/A*_search_algorithm
         let mut open_set = BinaryHeap::new();
         let mut came_from = HashMap::new();
         let mut g_score = HashMap::new();
