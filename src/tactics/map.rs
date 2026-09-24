@@ -106,15 +106,24 @@ impl MapInstance {
         g_score.insert(from, 0);
         f_score.insert(from, 0);
 
-        while let Some(Reverse(PathTile { coordinate, .. })) = open_set.pop() {
+        while let Some(Reverse(PathTile {
+            coordinate,
+            f_score: last_seen_f_score,
+        })) = open_set.pop()
+        {
             let current = coordinate;
+            // Avoid looking at a node thats worse scoring than its best score
+            let g = g_score.get(&current).unwrap_or(&INFINITY);
+            if *g > last_seen_f_score {
+                continue;
+            }
+
             if current == to {
                 // construct the path
                 break;
             }
 
             let (r, c) = current;
-            eprintln!("look at {:?}", current);
             for neighbor in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
                 let Some(node) = self.get(neighbor) else {
                     continue;
@@ -131,7 +140,6 @@ impl MapInstance {
                 let g_neighbor = g_score.get(&neighbor).unwrap_or(&INFINITY);
                 let tentative_g_score = g.saturating_add(h).saturating_add(cost);
                 let f_value = tentative_g_score + h;
-                eprintln!("{:?}", (tentative_g_score, g));
                 if tentative_g_score < *g_neighbor {
                     came_from
                         .entry(neighbor)
@@ -145,16 +153,10 @@ impl MapInstance {
                         .entry(neighbor)
                         .and_modify(|v| *v = tentative_g_score + h)
                         .or_insert(tentative_g_score);
-                    if open_set
-                        .iter()
-                        .find(|m| m.0.coordinate == neighbor)
-                        .is_none()
-                    {
-                        open_set.push(Reverse(PathTile {
-                            coordinate: neighbor,
-                            f_score: f_value,
-                        }));
-                    }
+                    open_set.push(Reverse(PathTile {
+                        coordinate: neighbor,
+                        f_score: f_value,
+                    }));
                 }
             }
         }
