@@ -99,14 +99,14 @@ impl MapInstance {
         let mut g_score = HashMap::new();
         let mut f_score = HashMap::new();
         const INFINITY: isize = isize::MAX;
-        open_set.push(std::cmp::Reverse(MapTile {
+        open_set.push(std::cmp::Reverse(PathTile {
             coordinate: from,
             f_score: 0,
         }));
         g_score.insert(from, 0);
         f_score.insert(from, 0);
 
-        while let Some(Reverse(MapTile { coordinate, .. })) = open_set.pop() {
+        while let Some(Reverse(PathTile { coordinate, .. })) = open_set.pop() {
             let current = coordinate;
             if current == to {
                 // construct the path
@@ -150,7 +150,7 @@ impl MapInstance {
                         .find(|m| m.0.coordinate == neighbor)
                         .is_none()
                     {
-                        open_set.push(Reverse(MapTile {
+                        open_set.push(Reverse(PathTile {
                             coordinate: neighbor,
                             f_score: f_value,
                         }));
@@ -171,30 +171,30 @@ impl MapInstance {
 
 use std::cmp::Ordering;
 
-struct MapTile {
+struct PathTile {
     f_score: isize,
     coordinate: Coordinate,
 }
 
-impl Ord for MapTile {
+impl Ord for PathTile {
     fn cmp(&self, other: &Self) -> Ordering {
         self.f_score.cmp(&other.f_score)
     }
 }
 
-impl PartialOrd for MapTile {
+impl PartialOrd for PathTile {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl PartialEq for MapTile {
+impl PartialEq for PathTile {
     fn eq(&self, other: &Self) -> bool {
         self.f_score == other.f_score
     }
 }
 
-impl Eq for MapTile {}
+impl Eq for PathTile {}
 
 pub fn manhatten(p1: (isize, isize), p2: (isize, isize)) -> isize {
     (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
