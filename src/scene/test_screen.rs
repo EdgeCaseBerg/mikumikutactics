@@ -380,9 +380,6 @@ impl Scene for TestScene {
                     }
                 }
                 Some(ActionState::Move(unit_id, from, to)) => {
-                    // TODO: advance the unit along a computed path
-                    // and when they reach the <to> then trigger move_unit_to
-                    // or something similar.
                     let path = map_instance.path_between(unit_id, from, to)?;
                     let mut pairs = path.windows(2);
                     while let Some(&[from, to]) = pairs.next() {
@@ -413,12 +410,21 @@ impl Scene for TestScene {
                         None => { /* Weird state. The attacker or defender dont exist */ }
                         Some((Some(required_move), damage)) => {
                             /* Lazy player, requested attack that requires a unit to move first */
-                            let command = MoveCommand {
-                                unit_id: attacker_uid,
-                                from: attacker_position,
-                                to: required_move,
-                            };
-                            self.command_log.push(Box::new(command));
+                            let path = map_instance.path_between(
+                                attacker_uid,
+                                attacker_position,
+                                required_move,
+                            )?;
+                            let mut pairs = path.windows(2);
+                            while let Some(&[from, to]) = pairs.next() {
+                                let command = MoveCommand {
+                                    unit_id: attacker_uid,
+                                    from,
+                                    to,
+                                };
+                                eprintln!("add move command");
+                                self.command_log.push(Box::new(command));
+                            }
 
                             let command = AttackCommand { defender, damage };
                             self.command_log.push(Box::new(command));
