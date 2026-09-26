@@ -135,10 +135,11 @@ impl MapInstance {
                 // TODO: Check for occupied nodes we have to walk around
                 // since other faction units can't be traversed.
 
-                let h = manhatten(current, neighbor);
+                let h = manhatten(neighbor, to);
+                let d = manhatten(current, neighbor);
                 let g = g_score.get(&current).unwrap_or(&INFINITY);
                 let g_neighbor = g_score.get(&neighbor).unwrap_or(&INFINITY);
-                let tentative_g_score = g.saturating_add(h).saturating_add(cost);
+                let tentative_g_score = g.saturating_add(d).saturating_add(cost);
                 let f_value = tentative_g_score + h;
                 if tentative_g_score < *g_neighbor {
                     came_from
@@ -151,8 +152,8 @@ impl MapInstance {
                         .or_insert(tentative_g_score);
                     f_score
                         .entry(neighbor)
-                        .and_modify(|v| *v = tentative_g_score + h)
-                        .or_insert(tentative_g_score);
+                        .and_modify(|v| *v = f_value)
+                        .or_insert(f_value);
                     open_set.push(Reverse(PathTile {
                         coordinate: neighbor,
                         f_score: f_value,
@@ -218,14 +219,14 @@ mod map_unit_tests {
             (3, 1),
             (3, 2),
             (4, 2),
-            (5, 2),
-            (5, 3),
-            (5, 4),
+            (4, 3),
+            (4, 4),
+            (4, 5),
             (5, 5),
-            (5, 6),
-            (5, 7),
+            (6, 5),
+            (6, 6),
             (6, 7),
-            (7, 7),
+            (6, 8),
             (7, 8),
             (7, 9),
             (8, 9),
