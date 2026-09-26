@@ -335,7 +335,7 @@ mod tactics_units {
     fn tl_corner() -> HashSet<(isize, isize)> {
         HashSet::from(
             [
-                (0,0), (0,2), (0,3),
+                (0,0), (0,1), (0,2),
                 (0,1), (1,1),
                 (0,2),
             ],
@@ -398,7 +398,7 @@ mod tactics_units {
         // this will probably be a pain when we do factions...
         let mut m = MapInstance::empty_walkable(10, 10);
         m.get_mut((0, 0)).unwrap().occupant = Some(UnitId(0));
-        m.get_mut((0, 2)).unwrap().occupant = Some(UnitId(1));
+        m.get_mut((0, 1)).unwrap().occupant = Some(UnitId(1));
 
         let c = fake_catalog();
         let mut u = fake_unit();
@@ -407,7 +407,7 @@ mod tactics_units {
         eprintln!("cant walk by enemy");
         let reachable = reachable_by_unit(&u, (0, 0), &m, &c);
         let mut expected = tl_corner();
-        expected.remove(&(0, 3)); // enemy is at 0,2 can't walk through
+        expected.remove(&(0, 2)); // enemy is at 0,1 can't walk through
         assert_eq!(expected, reachable);
     }
 
