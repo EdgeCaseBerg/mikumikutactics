@@ -76,12 +76,10 @@ pub fn reachable_by_unit(
         }
         let (tr, tc) = location;
         let manhatten_d = manhatten(at, location);
-        if manhatten_d <= range {
-            if tile.occupant.is_none() {
-                reachable.insert(location);
-            } else if attack_range.contains(&(manhatten_d as usize)) {
-                reachable.insert(location);
-            }
+        if manhatten_d <= range
+            && (tile.occupant.is_none() || attack_range.contains(&(manhatten_d as usize)))
+        {
+            reachable.insert(location);
         }
         queue.push_front((tr + 1, tc));
         queue.push_front((tr - 1, tc));
