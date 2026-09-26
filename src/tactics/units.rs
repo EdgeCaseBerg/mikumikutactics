@@ -390,6 +390,7 @@ mod tactics_units {
         let reachable = reachable_by_unit(&u, (0, 9), &m, &c);
         let mut expected = bl_corner();
         expected.remove(&(0, 8));
+        expected.remove(&(0, 7)); // can't walk around and still be in move range
         assert_eq!(expected, reachable);
     }
 
