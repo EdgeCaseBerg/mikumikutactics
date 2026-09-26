@@ -74,11 +74,14 @@ pub fn reachable_by_unit(
         if !tile.is_walkable {
             continue;
         }
+        let manhatten_d = manhatten(at, location);
+        if manhatten_d > range {
+            continue;
+        }
         let (tr, tc) = location;
         // BUG: we're accidentally saying we can reach PAST meiko even though we're not allowed to travel _through_ her
         // we could limit this by A*ing over to the path, but that is VERY inefficent
         // let manhatten_d = map_instance.path_between(u, at, location).unwrap().len() as isize; // manhatten(at, location);
-        let manhatten_d = manhatten(at, location);
         if manhatten_d <= range
             && (tile.occupant.is_none() || attack_range.contains(&(manhatten_d as usize)))
         {
