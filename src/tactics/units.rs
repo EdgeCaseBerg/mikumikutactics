@@ -331,6 +331,17 @@ mod tactics_units {
         )
     }
 
+    #[rustfmt::skip]
+    fn tl_corner() -> HashSet<(isize, isize)> {
+        HashSet::from(
+            [
+                (0,0), (0,2), (0,3),
+                (0,1), (1,1),
+                (0,2),
+            ],
+        )
+    }
+
     #[test]
     fn reachable_by_unit_should_work_properly_on_fully_walkable_map() {
         let m = MapInstance::empty_walkable(10, 10);
@@ -379,6 +390,24 @@ mod tactics_units {
         let reachable = reachable_by_unit(&u, (0, 9), &m, &c);
         let mut expected = bl_corner();
         expected.remove(&(0, 8));
+        assert_eq!(expected, reachable);
+    }
+
+    #[test]
+    fn reachable_by_unit_should_not_let_one_walk_through_enemies() {
+        // this will probably be a pain when we do factions...
+        let mut m = MapInstance::empty_walkable(10, 10);
+        m.get_mut((0, 0)).unwrap().occupant = Some(UnitId(0));
+        m.get_mut((0, 2)).unwrap().occupant = Some(UnitId(1));
+
+        let c = fake_catalog();
+        let mut u = fake_unit();
+        u.move_range = 2;
+
+        eprintln!("cant walk by enemy");
+        let reachable = reachable_by_unit(&u, (0, 0), &m, &c);
+        let mut expected = tl_corner();
+        expected.remove(&(0, 3)); // enemy is at 0,2 can't walk through
         assert_eq!(expected, reachable);
     }
 
