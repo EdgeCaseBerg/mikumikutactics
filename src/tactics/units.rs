@@ -60,14 +60,14 @@ pub fn reachable_by_unit(
         0..=0
     };
     let (start_row, start_column) = at;
-    let mut queue = VecDeque::from([at]); // FIFO
+    let mut queue = VecDeque::from([(at, 0)]); // FIFO
     let mut seen = HashSet::new();
     let mut reachable = HashSet::new();
-    while let Some(location) = queue.pop_front() {
-        if seen.contains(&location) {
+    while let Some((location, distance)) = queue.pop_front() {
+        if seen.contains(&(location, distance)) {
             continue;
         }
-        seen.insert(location);
+        seen.insert((location, distance));
         let Some(tile) = map_instance.get(location) else {
             continue;
         };
@@ -76,6 +76,9 @@ pub fn reachable_by_unit(
         }
         let manhatten_d = manhatten(at, location);
         if manhatten_d > range {
+            continue;
+        }
+        if distance > range {
             continue;
         }
         let (tr, tc) = location;
@@ -87,10 +90,14 @@ pub fn reachable_by_unit(
         {
             reachable.insert(location);
         }
-        queue.push_front((tr + 1, tc));
-        queue.push_front((tr - 1, tc));
-        queue.push_front((tr, tc + 1));
-        queue.push_front((tr, tc - 1));
+        // You cannot stand on top of another unit to walk elsewhere, so don't consider the next frontier
+        if tile.occupant.is_some() && location != at {
+            continue;
+        }
+        queue.push_front(((tr + 1, tc), distance + 1));
+        queue.push_front(((tr - 1, tc), distance + 1));
+        queue.push_front(((tr, tc + 1), distance + 1));
+        queue.push_front(((tr, tc - 1), distance + 1));
     }
 
     // In the case of a weapon having longer range than a unit's move
