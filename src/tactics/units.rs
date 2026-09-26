@@ -406,11 +406,13 @@ mod tactics_units {
 
         let c = fake_catalog();
         let mut u = fake_unit();
+        u.weapon = Some(WeaponId(0)); // sword with range 1
         u.move_range = 2;
 
         eprintln!("cant walk by enemy");
         let reachable = reachable_by_unit(&u, (0, 0), &m, &c);
         let mut expected = tl_corner();
+        expected.remove(&(0, 0)); // we are standing at 0,0
         expected.remove(&(0, 2)); // enemy is at 0,1 can't walk through
         assert_eq!(expected, reachable);
     }
