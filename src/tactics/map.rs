@@ -140,7 +140,7 @@ impl MapInstance {
                 let g = g_score.get(&current).unwrap_or(&INFINITY);
                 let g_neighbor = g_score.get(&neighbor).unwrap_or(&INFINITY);
                 let tentative_g_score = g.saturating_add(d).saturating_add(cost);
-                let f_value = tentative_g_score + h;
+                let f_value = tentative_g_score.saturating_add(h);
                 if tentative_g_score < *g_neighbor {
                     came_from
                         .entry(neighbor)
@@ -246,6 +246,20 @@ mod map_unit_tests {
         let expected_path = vec![(3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8)];
         if let Ok(path) = path {
             assert_eq!(expected_path, path);
+        } else {
+            assert!(false, "Expected an Ok, got a {:?}", path);
+        }
+    }
+
+    #[test]
+    fn respects_walkable_flags_when_finding_path() {
+        let mut m = MapInstance::empty_walkable(10, 10);
+        m.get_mut((0, 1)).unwrap().is_walkable = false;
+        m.get_mut((1, 0)).unwrap().is_walkable = false;
+
+        let path = m.path_between(UnitId(0), (0, 0), (1, 1));
+        if let Ok(path) = path {
+            assert!(path.is_empty());
         } else {
             assert!(false, "Expected an Ok, got a {:?}", path);
         }
