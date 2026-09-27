@@ -1,6 +1,7 @@
 use crate::GameResult;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
+use std::collections::HashSet;
 
 pub mod attack_command;
 pub mod move_command;
@@ -18,4 +19,14 @@ pub trait Command {
     fn tick_duration(&self) -> u32;
     fn apply(&self, state: &mut BattleData) -> GameResult<()>;
     fn undo(&self, state: &mut BattleData) -> GameResult<()>;
+}
+
+pub struct UnitActions {
+    unit_id: UnitId,
+    commands: Vec<Box<dyn Command>>,
+}
+
+pub struct PlayerTurn {
+    units_tapped: HashSet<UnitId>,
+    unit_actions: Vec<UnitActions>,
 }
