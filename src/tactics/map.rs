@@ -131,7 +131,9 @@ impl MapInstance {
                 if node.occupant.is_some() {
                     continue;
                 }
-                let cost = if node.is_walkable { 0 } else { INFINITY };
+                if !node.is_walkable {
+                    continue;
+                };
                 // TODO: Check for occupied nodes we have to walk around
                 // since other faction units can't be traversed.
 
@@ -139,7 +141,7 @@ impl MapInstance {
                 let d = manhatten(current, neighbor);
                 let g = g_score.get(&current).unwrap_or(&INFINITY);
                 let g_neighbor = g_score.get(&neighbor).unwrap_or(&INFINITY);
-                let tentative_g_score = g.saturating_add(d).saturating_add(cost);
+                let tentative_g_score = g.saturating_add(d);
                 let f_value = tentative_g_score.saturating_add(h);
                 if tentative_g_score < *g_neighbor {
                     came_from
@@ -162,6 +164,9 @@ impl MapInstance {
             }
         }
         let mut path: VecDeque<Coordinate> = VecDeque::new();
+        if let None = came_from.get(&to) {
+            return Ok(vec![]);
+        }
         path.push_front(to);
         let mut current = to;
         while let Some(prev) = came_from.get(&current) {
@@ -259,7 +264,7 @@ mod map_unit_tests {
 
         let path = m.path_between(UnitId(0), (0, 0), (1, 1));
         if let Ok(path) = path {
-            assert!(path.is_empty());
+            assert!(path.is_empty(), "expected empty but got {:?}", path);
         } else {
             assert!(false, "Expected an Ok, got a {:?}", path);
         }
