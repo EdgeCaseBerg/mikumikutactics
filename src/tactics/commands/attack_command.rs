@@ -3,6 +3,7 @@ use crate::tactics::commands::{BattleData, Command};
 use crate::tactics::map::*;
 use crate::tactics::units::*;
 
+#[derive(Debug, Clone)]
 pub struct AttackCommand {
     pub defender: Defender,
     pub damage: usize,

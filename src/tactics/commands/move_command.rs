@@ -3,6 +3,7 @@ use crate::tactics::commands::{BattleData, Command};
 use crate::tactics::map::*;
 use crate::tactics::units::*;
 
+#[derive(Debug, Clone)]
 pub struct MoveCommand {
     pub unit_id: UnitId,
     pub from: Coordinate,
