@@ -1,4 +1,5 @@
 use crate::GameResult;
+use crate::ReadyState;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
 use std::collections::HashSet;
@@ -29,4 +30,58 @@ pub struct UnitActions {
 pub struct PlayerTurn {
     units_tapped: HashSet<UnitId>,
     unit_actions: Vec<UnitActions>,
+}
+
+pub struct ActionRunner {
+    action: UnitActions,
+    index: usize,
+    tick: Option<ReadyState>,
+}
+#[derive(Debug)]
+pub enum ActionRunnerState {
+    Exhausted,
+    Running,
+}
+
+impl ActionRunner {
+    fn has_next(&self) -> bool {
+        self.action.commands.get(self.index).is_some()
+    }
+    fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<ActionRunnerState> {
+        if !self.has_next() {
+            return Ok(ActionRunnerState::Exhausted);
+        }
+        let command = self.action.commands.get(self.index).expect("has_next lied");
+        match self.tick.as_mut() {
+            None => {
+                self.tick = Some(ReadyState::Cooldown {
+                    wait_for: command.tick_duration(),
+                    ticks_waited: 0,
+                });
+            }
+            Some(ready_state) => {
+                *ready_state = ready_state.advance(ticks);
+                if matches!(ready_state, ReadyState::Ready) {
+                    self.apply(state);
+                }
+            }
+        }
+        Ok(ActionRunnerState::Running)
+    }
+    fn apply(&mut self, state: &mut BattleData) -> GameResult<()> {
+        if let Some(command) = self.action.commands.get(self.index).as_ref() {
+            let _ = command.apply(state)?;
+            self.index = self.index.saturating_add(1);
+        }
+        Ok(())
+    }
+    // should we call this undo_one because it doesn't undo the whole thing after all
+    // should we maybe have a rewind that runs an update loop in reverse? should it tick?
+    fn undo(&mut self, state: &mut BattleData) -> GameResult<()> {
+        if let Some(command) = self.action.commands.get(self.index).as_ref() {
+            let _ = command.undo(state)?;
+            self.index = self.index.saturating_sub(1);
+        }
+        Ok(())
+    }
 }
