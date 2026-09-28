@@ -35,7 +35,7 @@ pub struct PlayerTurn {
 pub struct ActionRunner {
     pub action: UnitActions,
     index: usize,
-    tick: Option<ReadyState>,
+    ticker: Option<ReadyState>,
 }
 
 impl ActionRunner {
@@ -55,17 +55,17 @@ pub enum ActionRunnerState {
 }
 
 impl ActionRunner {
-    fn has_next(&self) -> bool {
+    pub fn has_next(&self) -> bool {
         self.action.commands.get(self.index).is_some()
     }
-    fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<ActionRunnerState> {
+    pub fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<ActionRunnerState> {
         if !self.has_next() {
             return Ok(ActionRunnerState::Exhausted);
         }
         let command = self.action.commands.get(self.index).expect("has_next lied");
-        match self.tick.as_mut() {
+        match self.ticker.as_mut() {
             None => {
-                self.tick = Some(ReadyState::Cooldown {
+                self.ticker = Some(ReadyState::Cooldown {
                     wait_for: command.tick_duration(),
                     ticks_waited: 0,
                 });
