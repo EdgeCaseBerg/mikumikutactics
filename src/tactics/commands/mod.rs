@@ -23,20 +23,31 @@ pub trait Command {
 }
 
 pub struct UnitActions {
-    unit_id: UnitId,
-    commands: Vec<Box<dyn Command>>,
+    pub unit_id: UnitId,
+    pub commands: Vec<Box<dyn Command>>,
 }
 
 pub struct PlayerTurn {
-    units_tapped: HashSet<UnitId>,
-    unit_actions: Vec<UnitActions>,
+    pub units_tapped: HashSet<UnitId>,
+    pub unit_actions: Vec<UnitActions>,
 }
 
 pub struct ActionRunner {
-    action: UnitActions,
+    pub action: UnitActions,
     index: usize,
     tick: Option<ReadyState>,
 }
+
+impl ActionRunner {
+    pub fn new(action: UnitActions) -> Self {
+        ActionRunner {
+            action,
+            index: 0,
+            ticker: None,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum ActionRunnerState {
     Exhausted,
