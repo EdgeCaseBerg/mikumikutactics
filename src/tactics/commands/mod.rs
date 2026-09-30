@@ -32,37 +32,39 @@ pub struct PlayerTurn {
     pub unit_actions: Vec<UnitActions>,
 }
 
-pub struct ActionRunner {
-    pub action: UnitActions,
+#[derive(Default)]
+pub struct CommandLog {
+    commands: Vec<Box<dyn Command>>,
+    unit_actions: Vec<(UnitId, usize)>, // stack to undo
     index: usize,
     ticker: Option<ReadyState>,
 }
 
-impl ActionRunner {
-    pub fn new(action: UnitActions) -> Self {
-        ActionRunner {
-            action,
-            index: 0,
-            ticker: None,
-        }
-    }
-}
-
 #[derive(Debug)]
-pub enum ActionRunnerState {
+pub enum CommandLogState {
     Exhausted,
     Running,
 }
 
-impl ActionRunner {
-    pub fn has_next(&self) -> bool {
-        self.action.commands.get(self.index).is_some()
-    }
-    pub fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<ActionRunnerState> {
-        if !self.has_next() {
-            return Ok(ActionRunnerState::Exhausted);
+impl CommandLog {
+    pub fn add_unit_actions(&mut self, unit_id: UnitId, commands: Vec<Box<dyn Command>>) {
+        let offset = self.index;
+        for c in commands {
+            self.commands.push(c);
         }
-        let command = self.action.commands.get(self.index).expect("has_next lied");
+        self.unit_actions.push((unit_id, offset));
+    }
+    pub fn get_unit_actions(&self) -> std::slice::Iter<'_, (UnitId, usize)> {
+        self.unit_actions.iter()
+    }
+    pub fn has_next(&self) -> bool {
+        self.commands.get(self.index).is_some()
+    }
+    pub fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<CommandLogState> {
+        if !self.has_next() {
+            return Ok(CommandLogState::Exhausted);
+        }
+        let command = self.commands.get(self.index).expect("has_next lied");
         match self.ticker.as_mut() {
             None => {
                 self.ticker = Some(ReadyState::Cooldown {
@@ -73,26 +75,55 @@ impl ActionRunner {
             Some(ready_state) => {
                 *ready_state = ready_state.advance(ticks);
                 if matches!(ready_state, ReadyState::Ready) {
-                    self.apply(state);
+                    let _ = command.apply(state);
+                    self.index = self.index.saturating_add(1);
                 }
             }
         }
-        Ok(ActionRunnerState::Running)
+        Ok(CommandLogState::Running)
     }
-    fn apply(&mut self, state: &mut BattleData) -> GameResult<()> {
-        if let Some(command) = self.action.commands.get(self.index).as_ref() {
-            let _ = command.apply(state)?;
-            self.index = self.index.saturating_add(1);
-        }
-        Ok(())
-    }
-    // should we call this undo_one because it doesn't undo the whole thing after all
-    // should we maybe have a rewind that runs an update loop in reverse? should it tick?
-    fn undo(&mut self, state: &mut BattleData) -> GameResult<()> {
-        if let Some(command) = self.action.commands.get(self.index).as_ref() {
-            let _ = command.undo(state)?;
+    pub fn rewind(&mut self, to: usize, state: &mut BattleData) -> GameResult<CommandLogState> {
+        // instant rewind for now.
+        while self.index >= to {
             self.index = self.index.saturating_sub(1);
+            if let Some(command) = self.commands.pop() {
+                let _ = command.undo(state)?;
+            }
+
+            self.unit_actions
+                .pop_if(|(uid, offset)| *offset == self.index);
+
+            if self.index == 0 || self.index < to {
+                break;
+            }
         }
-        Ok(())
+        Ok(CommandLogState::Exhausted)
+    }
+}
+
+#[cfg(test)]
+mod command_log_units {
+    use super::*;
+
+    fn move_command(id: usize) -> MoveCommand {
+        MoveCommand {
+            unit_id: UnitId(id),
+            from: (0, 0),
+            to: (0, 1),
+        }
+    }
+
+    #[test]
+    fn empty_command_log_has_no_next_item() {
+        let cl = CommandLog::default();
+        assert_eq!(false, cl.has_next());
+        assert_eq!(0, cl.get_unit_actions().len());
+    }
+
+    #[test]
+    fn command_log_can_be_added_and_ticked() {
+        let mut cl = CommandLog::default();
+        cl.add_unit_actions(UnitId(0), vec![Box::new(move_command(0))]);
+        assert_eq!(true, cl.has_next());
     }
 }
