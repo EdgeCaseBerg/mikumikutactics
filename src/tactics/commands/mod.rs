@@ -48,7 +48,7 @@ pub enum CommandLogState {
 
 impl CommandLog {
     pub fn add_unit_actions(&mut self, unit_id: UnitId, commands: Vec<Box<dyn Command>>) {
-        let offset = self.index;
+        let offset = self.commands.len();
         for c in commands {
             self.commands.push(c);
         }
@@ -121,9 +121,23 @@ mod command_log_units {
     }
 
     #[test]
-    fn command_log_can_be_added_and_ticked() {
+    fn command_log_can_be_added_at_correct_offsets() {
         let mut cl = CommandLog::default();
-        cl.add_unit_actions(UnitId(0), vec![Box::new(move_command(0))]);
+        cl.add_unit_actions(
+            UnitId(0),
+            vec![Box::new(move_command(0)), Box::new(move_command(0))],
+        );
         assert_eq!(true, cl.has_next());
+        cl.add_unit_actions(UnitId(1), vec![Box::new(move_command(0))]);
+        let mut actions = cl.get_unit_actions();
+        eprintln!("{:?}", actions);
+        assert_eq!(
+            &(UnitId(0), 0),
+            actions.next().expect("unexpected empty option")
+        );
+        assert_eq!(
+            &(UnitId(1), 2),
+            actions.next().expect("unexpected empty option")
+        );
     }
 }
