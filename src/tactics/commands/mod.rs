@@ -61,6 +61,7 @@ impl CommandLog {
         self.commands.get(self.index).is_some()
     }
     pub fn update(&mut self, ticks: u32, state: &mut BattleData) -> GameResult<CommandLogState> {
+        // note that the update command must be called at least once per command, you can't process multiple commands in a single step
         if !self.has_next() {
             return Ok(CommandLogState::Exhausted);
         }
@@ -77,6 +78,7 @@ impl CommandLog {
                 if matches!(ready_state, ReadyState::Ready) {
                     let _ = command.apply(state);
                     self.index = self.index.saturating_add(1);
+                    self.ticker = None;
                 }
             }
         }
@@ -105,12 +107,23 @@ impl CommandLog {
 mod command_log_units {
     use super::*;
 
-    fn move_command(id: usize) -> MoveCommand {
-        MoveCommand {
-            unit_id: UnitId(id),
-            from: (0, 0),
-            to: (0, 1),
+    struct FakeCommand {}
+    impl Command for FakeCommand {
+        fn tick_duration(&self) -> u32 {
+            1
         }
+        fn apply(&self, state: &mut BattleData) -> GameResult<()> {
+            eprintln!("apply");
+            Ok(())
+        }
+        fn undo(&self, state: &mut BattleData) -> GameResult<()> {
+            eprintln!("undo");
+            Ok(())
+        }
+    }
+
+    fn fake_command() -> FakeCommand {
+        FakeCommand {}
     }
 
     #[test]
@@ -125,10 +138,10 @@ mod command_log_units {
         let mut cl = CommandLog::default();
         cl.add_unit_actions(
             UnitId(0),
-            vec![Box::new(move_command(0)), Box::new(move_command(0))],
+            vec![Box::new(fake_command()), Box::new(fake_command())],
         );
         assert_eq!(true, cl.has_next());
-        cl.add_unit_actions(UnitId(1), vec![Box::new(move_command(0))]);
+        cl.add_unit_actions(UnitId(1), vec![Box::new(fake_command())]);
         let mut actions = cl.get_unit_actions();
         eprintln!("{:?}", actions);
         assert_eq!(
@@ -139,5 +152,109 @@ mod command_log_units {
             &(UnitId(1), 2),
             actions.next().expect("unexpected empty option")
         );
+    }
+
+    #[test]
+    fn command_log_applys_commands_correctly() {
+        let mut state = BattleData {
+            map_state: MapState::default(),
+            map_instance: MapInstance::empty_walkable(10, 10),
+        };
+        let mut cl = CommandLog::default();
+        cl.add_unit_actions(
+            UnitId(0),
+            vec![Box::new(fake_command()), Box::new(fake_command())],
+        );
+        // Prime the None -> Some
+        cl.update(1, &mut state).unwrap();
+        // Consume the command:
+        match cl.update(1, &mut state) {
+            Ok(CommandLogState::Running) => {}
+            other => {
+                panic!("Expected running command log bug got {:?}", other);
+            }
+        }
+        // Prime the None -> Some
+        cl.update(1, &mut state).unwrap();
+        // Consume the command
+        match cl.update(1, &mut state) {
+            Ok(CommandLogState::Running) => {}
+            other => {
+                panic!("Expected running command log bug got {:?}", other);
+            }
+        }
+        match cl.update(2, &mut state) {
+            Ok(CommandLogState::Exhausted) => {}
+            other => {
+                panic!("Expected exhausted command log bug got {:?}", other);
+            }
+        }
+        cl.add_unit_actions(UnitId(0), vec![Box::new(fake_command())]);
+        // Prime the None -> Some
+        cl.update(1, &mut state).unwrap();
+        // Consume the command
+        match cl.update(2, &mut state) {
+            Ok(CommandLogState::Running) => {}
+            other => {
+                panic!("Expected running command log bug got {:?}", other);
+            }
+        }
+        // Prime the None -> Some
+        cl.update(1, &mut state).unwrap();
+        // Consume the command
+        match cl.update(2, &mut state) {
+            Ok(CommandLogState::Exhausted) => {}
+            other => {
+                panic!("Expected exhausted command log bug got {:?}", other);
+            }
+        }
+    }
+
+    #[test]
+    fn command_log_offsets_rewind_correctly() {
+        let mut state = BattleData {
+            map_state: MapState::default(),
+            map_instance: MapInstance::empty_walkable(10, 10),
+        };
+        let mut cl = CommandLog::default();
+        cl.add_unit_actions(
+            UnitId(0),
+            vec![Box::new(fake_command()), Box::new(fake_command())],
+        );
+        cl.add_unit_actions(
+            UnitId(1),
+            vec![
+                Box::new(fake_command()),
+                Box::new(fake_command()),
+                Box::new(fake_command()),
+            ],
+        );
+        cl.add_unit_actions(UnitId(2), vec![Box::new(fake_command())]);
+
+        eprintln!("ticking actions forward");
+        for _ in 0..10 {
+            cl.update(1, &mut state).unwrap();
+        }
+
+        let actions = cl.get_unit_actions();
+        assert_eq!(3, actions.len(), "actions are {:?}", actions);
+        let (_, offset) = actions.last().unwrap();
+        eprintln!("told to rewind to {}", offset);
+        cl.rewind(*offset, &mut state).unwrap();
+
+        let actions = cl.get_unit_actions();
+        assert_eq!(2, actions.len(), "actions are {:?}", actions);
+        let (_, offset) = actions.last().unwrap();
+        eprintln!("told to rewind to {}", offset);
+        cl.rewind(*offset, &mut state).unwrap();
+
+        let actions = cl.get_unit_actions();
+        let (_, offset) = actions.last().unwrap();
+        eprintln!("told to rewind to {}", offset);
+        cl.rewind(*offset, &mut state).unwrap();
+        let actions = cl.get_unit_actions();
+        assert_eq!(0, actions.len(), "actions are {:?}", actions);
+
+        assert_eq!(false, cl.has_next());
     }
 }

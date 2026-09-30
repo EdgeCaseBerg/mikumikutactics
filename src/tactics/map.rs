@@ -21,7 +21,7 @@ pub struct Tile {
     pub occupant: Option<UnitId>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MapState {
     pub units: HashMap<UnitId, UnitData>,
     pub selectable_tiles: HashSet<(isize, isize)>,
