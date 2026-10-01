@@ -89,7 +89,7 @@ impl MapInstance {
     }
     pub fn path_between(
         &self,
-        unit_id: UnitId,
+        _unit_id: UnitId,
         from: Coordinate,
         to: Coordinate,
     ) -> GameResult<Vec<Coordinate>> {
