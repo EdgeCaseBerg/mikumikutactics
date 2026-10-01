@@ -27,9 +27,7 @@ pub struct TestScene {
     btn_prototype: Option<Button>,
     map: Option<BattleData>,
     context_menu: Option<ContextMenu>,
-    command_log: Vec<Box<dyn Command>>,
-    command_tick: Option<ReadyState>,
-    command_idx: usize,
+    command_log: CommandLog,
 }
 
 #[derive(Default)]
@@ -306,7 +304,6 @@ impl Scene for TestScene {
             btn.update(ticks, game_context, &layout);
             if btn.clicked {
                 if let Some(battle_data) = self.map.as_mut() {
-                    eprintln!("{:?}", self.command_log.len());
                     battle_data.map_state.action = Some(ActionState::RewindCommandQueue(0));
                 }
             }
@@ -382,11 +379,13 @@ impl Scene for TestScene {
                 Some(ActionState::Move(unit_id, from, to)) => {
                     let path = map_instance.path_between(unit_id, from, to)?;
                     let mut pairs = path.windows(2);
+                    let mut commands: Vec<Box<dyn Command>> = vec![];
                     while let Some(&[from, to]) = pairs.next() {
                         let command = MoveCommand { unit_id, from, to };
                         eprintln!("add move command");
-                        self.command_log.push(Box::new(command));
+                        commands.push(Box::new(command));
                     }
+                    self.command_log.add_unit_actions(unit_id, commands);
                     // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
                     // that'd probably be a separate action from ClearAction
                     map_state.action = Some(ActionState::DrainCommandQueue);
@@ -416,6 +415,7 @@ impl Scene for TestScene {
                                 required_move,
                             )?;
                             let mut pairs = path.windows(2);
+                            let mut commands: Vec<Box<dyn Command>> = vec![];
                             while let Some(&[from, to]) = pairs.next() {
                                 let command = MoveCommand {
                                     unit_id: attacker_uid,
@@ -423,16 +423,18 @@ impl Scene for TestScene {
                                     to,
                                 };
                                 eprintln!("add move command");
-                                self.command_log.push(Box::new(command));
+                                commands.push(Box::new(command));
                             }
 
                             let command = AttackCommand { defender, damage };
-                            self.command_log.push(Box::new(command));
+                            commands.push(Box::new(command));
+                            self.command_log.add_unit_actions(attacker_uid, commands);
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                         Some((None, damage)) => {
                             let command = AttackCommand { defender, damage };
-                            self.command_log.push(Box::new(command));
+                            self.command_log
+                                .add_unit_actions(attacker_uid, vec![Box::new(command)]);
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                     }
@@ -444,49 +446,19 @@ impl Scene for TestScene {
                     self.current_portrait = None;
                 }
                 Some(ActionState::DrainCommandQueue) => {
-                    match self.command_log.get(self.command_idx) {
-                        None => {
-                            // There is no ticking command, so reset ui state
+                    match self.command_log.update(ticks, battle_data) {
+                        Ok(CommandLogState::Exhausted) => {
                             eprintln!("reset ui state");
-                            map_state.action = Some(ActionState::ClearAction);
+                            battle_data.map_state.action = Some(ActionState::ClearAction);
                         }
-                        Some(command) => {
-                            // Have we started this command yet?
-                            match self.command_tick.as_mut() {
-                                None => {
-                                    // Nope. Set it up.
-                                    self.command_tick = Some(ReadyState::Cooldown {
-                                        wait_for: command.as_ref().tick_duration(),
-                                        ticks_waited: 0,
-                                    });
-                                    eprintln!("{:?} tick tick ", self.command_tick);
-                                }
-                                Some(ready_state) => {
-                                    *ready_state = ready_state.advance(ticks);
-                                    if matches!(ready_state, ReadyState::Ready) {
-                                        eprintln!("{:?} tick tock ", ready_state);
-                                        let _ = command.apply(battle_data)?;
-                                        self.command_tick = None;
-                                        self.command_idx += 1;
-                                    }
-                                }
-                            }
+                        other => {
+                            other?;
                         }
                     }
                 }
                 Some(ActionState::RewindCommandQueue(to)) => {
                     map_state.action = Some(ActionState::ClearAction);
-                    assert!(to <= self.command_idx);
-                    while self.command_idx >= to {
-                        self.command_idx = self.command_idx.saturating_sub(1);
-                        if let Some(command) = self.command_log.pop() {
-                            let _ = command.undo(battle_data)?;
-                        }
-
-                        if self.command_idx == 0 || self.command_idx < to {
-                            break;
-                        }
-                    }
+                    self.command_log.rewind(to, battle_data)?;
                 }
             }
         };
