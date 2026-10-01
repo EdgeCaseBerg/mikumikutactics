@@ -10,6 +10,9 @@ pub struct AttackCommand {
 }
 
 impl Command for AttackCommand {
+    fn description(&self) -> &str {
+        "attacked"
+    }
     fn tick_duration(&self) -> u32 {
         15
     }

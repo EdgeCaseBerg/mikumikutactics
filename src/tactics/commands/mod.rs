@@ -20,6 +20,7 @@ pub trait Command {
     fn tick_duration(&self) -> u32;
     fn apply(&self, state: &mut BattleData) -> GameResult<()>;
     fn undo(&self, state: &mut BattleData) -> GameResult<()>;
+    fn description(&self) -> &str;
 }
 
 pub struct UnitActions {
@@ -119,6 +120,9 @@ mod command_log_units {
         fn undo(&self, state: &mut BattleData) -> GameResult<()> {
             eprintln!("undo");
             Ok(())
+        }
+        fn description(&self) -> &str {
+            "fake"
         }
     }
 

@@ -11,6 +11,9 @@ pub struct MoveCommand {
 }
 
 impl Command for MoveCommand {
+    fn description(&self) -> &str {
+        "moved"
+    }
     fn tick_duration(&self) -> u32 {
         15
     }
