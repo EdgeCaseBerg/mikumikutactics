@@ -28,6 +28,7 @@ pub struct TestScene {
     map: Option<BattleData>,
     context_menu: Option<ContextMenu>,
     command_log: CommandLog,
+    undo_buttons: Vec<(Button, usize)>,
 }
 
 #[derive(Default)]
@@ -155,6 +156,44 @@ impl TestScene {
             columns: 32,
             cell_gap: 0,
         }
+    }
+    fn compute_undo_buttons(&self, anchor: Rect) -> Vec<(Button, usize)> {
+        let actions = self.command_log.get_unit_actions();
+        let strings = actions.map(|(uid, cmd_offset)| {
+            let name = self.map.as_ref().and_then(|battle_data| {
+                battle_data
+                    .map_state
+                    .units
+                    .get(uid)
+                    .map(|unit| unit.name.clone())
+            });
+            let action = self
+                .command_log
+                .get_command_at(*cmd_offset)
+                .map(|cmd| cmd.description());
+            eprintln!("DEBUG {:?}", (&name, &action));
+            (
+                format!(
+                    "{} {}",
+                    name.expect("name to exist"),
+                    action.expect("action to exist")
+                ),
+                cmd_offset,
+            )
+        });
+        let mut y_offset = 0;
+        let mut next_rect = || {
+            let mut rect = anchor;
+            rect.y += y_offset;
+            y_offset += 1;
+            rect
+        };
+        eprintln!("compute_undo_buttons! {:?}", (&strings));
+        strings
+            .filter_map(|(btn_text, cmd_offset)| {
+                new_btn(&self.btn_prototype, btn_text, next_rect()).map(|btn| (btn, *cmd_offset))
+            })
+            .collect()
     }
 }
 fn new_btn(btn_prototype: &Option<Button>, text: String, rect: Rect) -> Option<Button> {
@@ -308,6 +347,18 @@ impl Scene for TestScene {
                 }
             }
         }
+        for (btn, rewind_to) in &mut self.undo_buttons {
+            let layout = TestScene::layout(game_context);
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked {
+                // trigger rewind
+                eprintln!("rewind to offset...");
+                if let Some(battle_data) = self.map.as_mut() {
+                    battle_data.map_state.action =
+                        Some(ActionState::RewindCommandQueue(*rewind_to));
+                }
+            }
+        }
         if let Some(battle_data) = self.map.as_mut() {
             let BattleData {
                 map_instance,
@@ -444,6 +495,9 @@ impl Scene for TestScene {
                     map_state.selectable_tiles = HashSet::new();
                     self.context_menu = None;
                     self.current_portrait = None;
+                    let layout = TestScene::layout(game_context);
+                    let anchor = Rect::new(10, 2, 4, 1);
+                    self.undo_buttons = self.compute_undo_buttons(anchor);
                 }
                 Some(ActionState::DrainCommandQueue) => {
                     match self.command_log.update(ticks, battle_data) {
@@ -476,6 +530,9 @@ impl Scene for TestScene {
             menu.draw(&layout, game_context);
         }
         if let Some(btn) = self.btn_prototype.as_ref() {
+            btn.draw(game_context, &layout);
+        }
+        for (btn, _) in &self.undo_buttons {
             btn.draw(game_context, &layout);
         }
         Ok(())

@@ -29,6 +29,9 @@ impl CommandLog {
     pub fn get_unit_actions(&self) -> std::slice::Iter<'_, (UnitId, usize)> {
         self.unit_actions.iter()
     }
+    pub fn get_command_at(&self, position: usize) -> Option<&Box<dyn Command>> {
+        self.commands.get(position)
+    }
     pub fn has_next(&self) -> bool {
         self.commands.get(self.index).is_some()
     }
