@@ -232,7 +232,7 @@ mod command_log_units {
         cl.add_unit_actions(UnitId(2), vec![Box::new(fake_command())]);
 
         eprintln!("ticking actions forward");
-        for _ in 0..10 {
+        for _ in 0..12 {
             cl.update(1, &mut state).unwrap();
         }
 
