@@ -1,6 +1,5 @@
 use crate::GameResult;
 use crate::tactics::commands::{BattleData, Command};
-use crate::tactics::map::*;
 use crate::tactics::units::*;
 
 #[derive(Debug, Clone)]
