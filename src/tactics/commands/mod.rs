@@ -10,6 +10,7 @@ pub mod move_command;
 pub use self::attack_command::AttackCommand;
 pub use self::command_log::CommandLog;
 pub use self::command_log::CommandLogState;
+pub use self::command_log::UnitAction;
 pub use self::move_command::MoveCommand;
 
 #[derive(Debug)]

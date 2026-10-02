@@ -159,17 +159,22 @@ impl TestScene {
     }
     fn compute_undo_buttons(&self, anchor: Rect) -> Vec<(Button, usize)> {
         let actions = self.command_log.get_unit_actions();
-        let strings = actions.map(|(uid, (cmd_offset, last_cmd))| {
+        let strings = actions.map(|unit_action| {
+            let UnitAction {
+                unit_id,
+                start_offset,
+                end_offset,
+            } = unit_action;
             let name = self.map.as_ref().and_then(|battle_data| {
                 battle_data
                     .map_state
                     .units
-                    .get(uid)
+                    .get(unit_id)
                     .map(|unit| unit.name.clone())
             });
             let action = self
                 .command_log
-                .get_command_at(*last_cmd)
+                .get_command_at(*end_offset)
                 .map(|cmd| cmd.description());
             eprintln!("DEBUG {:?}", (&name, &action));
             (
@@ -178,7 +183,7 @@ impl TestScene {
                     name.expect("name to exist"),
                     action.expect("action to exist")
                 ),
-                cmd_offset,
+                start_offset,
             )
         });
         let mut y_offset = 0;

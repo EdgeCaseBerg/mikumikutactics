@@ -7,9 +7,16 @@ use crate::tactics::units::*;
 #[derive(Default)]
 pub struct CommandLog {
     commands: Vec<Box<dyn Command>>,
-    unit_actions: Vec<(UnitId, (usize, usize))>, // stack to undo
+    unit_actions: Vec<UnitAction>,
     index: usize,
     ticker: Option<ReadyState>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct UnitAction {
+    pub unit_id: UnitId,
+    pub start_offset: usize,
+    pub end_offset: usize,
 }
 
 #[derive(Debug)]
@@ -20,14 +27,18 @@ pub enum CommandLogState {
 
 impl CommandLog {
     pub fn add_unit_actions(&mut self, unit_id: UnitId, commands: Vec<Box<dyn Command>>) {
-        let offset = self.commands.len();
-        let last_cmd_offset = offset + commands.len() - 1;
+        let start_offset = self.commands.len();
+        let end_offset = start_offset + commands.len() - 1;
         for c in commands {
             self.commands.push(c);
         }
-        self.unit_actions.push((unit_id, (offset, last_cmd_offset)));
+        self.unit_actions.push(UnitAction {
+            unit_id,
+            start_offset,
+            end_offset,
+        });
     }
-    pub fn get_unit_actions(&self) -> std::slice::Iter<'_, (UnitId, (usize, usize))> {
+    pub fn get_unit_actions(&self) -> std::slice::Iter<'_, UnitAction> {
         self.unit_actions.iter()
     }
     pub fn get_command_at(&self, position: usize) -> Option<&Box<dyn Command>> {
@@ -69,7 +80,7 @@ impl CommandLog {
             }
 
             self.unit_actions
-                .pop_if(|(_, (offset, _))| *offset == self.index);
+                .pop_if(|UnitAction { start_offset, .. }| *start_offset == self.index);
 
             if self.index == 0 || self.index < to {
                 break;
@@ -124,11 +135,19 @@ mod command_log_units {
         let mut actions = cl.get_unit_actions();
         eprintln!("{:?}", actions);
         assert_eq!(
-            &(UnitId(0), (0, 1)),
+            &UnitAction {
+                unit_id: UnitId(0),
+                start_offset: 0,
+                end_offset: 1
+            },
             actions.next().expect("unexpected empty option")
         );
         assert_eq!(
-            &(UnitId(1), (2, 2)),
+            &UnitAction {
+                unit_id: UnitId(1),
+                start_offset: 2,
+                end_offset: 2
+            },
             actions.next().expect("unexpected empty option")
         );
     }
@@ -218,20 +237,20 @@ mod command_log_units {
         let actions = cl.get_unit_actions();
         assert_eq!(3, actions.len(), "actions are {:?}", actions);
         eprintln!("{:?}", actions);
-        let (_, (offset, _)) = actions.last().unwrap();
-        eprintln!("told to rewind to {}", offset);
-        cl.rewind(*offset, &mut state).unwrap();
+        let UnitAction { start_offset, .. } = actions.last().unwrap();
+        eprintln!("told to rewind to {}", start_offset);
+        cl.rewind(*start_offset, &mut state).unwrap();
 
         let actions = cl.get_unit_actions();
         assert_eq!(2, actions.len(), "actions are {:?}", actions);
-        let (_, (offset, _)) = actions.last().unwrap();
-        eprintln!("told to rewind to {}", offset);
-        cl.rewind(*offset, &mut state).unwrap();
+        let UnitAction { start_offset, .. } = actions.last().unwrap();
+        eprintln!("told to rewind to {}", start_offset);
+        cl.rewind(*start_offset, &mut state).unwrap();
 
         let actions = cl.get_unit_actions();
-        let (_, (offset, _)) = actions.last().unwrap();
-        eprintln!("told to rewind to {}", offset);
-        cl.rewind(*offset, &mut state).unwrap();
+        let UnitAction { start_offset, .. } = actions.last().unwrap();
+        eprintln!("told to rewind to {}", start_offset);
+        cl.rewind(*start_offset, &mut state).unwrap();
         let actions = cl.get_unit_actions();
         assert_eq!(0, actions.len(), "actions are {:?}", actions);
 
