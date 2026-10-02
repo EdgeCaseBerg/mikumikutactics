@@ -159,7 +159,7 @@ impl TestScene {
     }
     fn compute_undo_buttons(&self, anchor: Rect) -> Vec<(Button, usize)> {
         let actions = self.command_log.get_unit_actions();
-        let strings = actions.map(|(uid, cmd_offset)| {
+        let strings = actions.map(|(uid, (cmd_offset, last_cmd))| {
             let name = self.map.as_ref().and_then(|battle_data| {
                 battle_data
                     .map_state
@@ -169,7 +169,7 @@ impl TestScene {
             });
             let action = self
                 .command_log
-                .get_command_at(*cmd_offset)
+                .get_command_at(*last_cmd)
                 .map(|cmd| cmd.description());
             eprintln!("DEBUG {:?}", (&name, &action));
             (
