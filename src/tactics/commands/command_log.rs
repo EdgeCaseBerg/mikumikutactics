@@ -12,6 +12,8 @@ pub struct CommandLog {
     ticker: Option<ReadyState>,
 }
 
+// Note that offsets are inclusive. So 1..=1 for a single action like move to x
+// and something like 1..=2 for something like move, then attack
 #[derive(Debug, PartialEq)]
 pub struct UnitAction {
     pub unit_id: UnitId,
