@@ -74,7 +74,7 @@ impl CommandLog {
     }
     pub fn rewind(&mut self, to: usize, state: &mut BattleData) -> GameResult<CommandLogState> {
         // instant rewind for now.
-        while self.index >= to {
+        while self.index > to {
             self.index = self.index.saturating_sub(1);
             if let Some(command) = self.commands.pop() {
                 command.undo(state)?;
