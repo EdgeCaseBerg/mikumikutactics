@@ -78,7 +78,7 @@ impl CommandLog {
         while self.index >= to {
             self.index = self.index.saturating_sub(1);
             if let Some(command) = self.commands.pop() {
-                let _ = command.undo(state)?;
+                command.undo(state)?;
             }
 
             self.unit_actions
