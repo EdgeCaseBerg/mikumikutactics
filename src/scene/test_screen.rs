@@ -9,7 +9,7 @@ use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
-use crate::scene::button::Button;
+use crate::scene::button::{Button, new_btn};
 use crate::tactics::commands::*;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
@@ -199,12 +199,6 @@ impl TestScene {
             })
             .collect()
     }
-}
-fn new_btn(btn_prototype: &Option<Button>, text: String, rect: Rect) -> Option<Button> {
-    let mut btn = btn_prototype.clone()?;
-    btn.text = text;
-    btn.rect = rect;
-    Some(btn)
 }
 
 fn sprite_tuple(

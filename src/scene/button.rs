@@ -26,6 +26,15 @@ pub struct Button {
     pub waiting_for_release: bool,
 }
 
+// Helper Factory method for basing buttons off others
+// Generally should be used after btn_prototype has been init'd so that all the new buttons dont have to be
+pub fn new_btn(btn_prototype: &Option<Button>, text: String, rect: Rect) -> Option<Button> {
+    let mut btn = btn_prototype.clone()?;
+    btn.text = text;
+    btn.rect = rect;
+    Some(btn)
+}
+
 // TODO idea:
 //
 // what if Button { text, rect, hovered, clicked } -> as_drawable(game_content) -> DrawableButton { b: Button, bg, highlight, font, texture }
