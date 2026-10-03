@@ -500,7 +500,6 @@ impl Scene for TestScene {
                     map_state.selectable_tiles = HashSet::new();
                     self.context_menu = None;
                     self.current_portrait = None;
-                    let layout = TestScene::layout(game_context);
                     let anchor = Rect::new(10, 2, 4, 1);
                     self.undo_buttons = self.compute_undo_buttons(anchor);
                 }
