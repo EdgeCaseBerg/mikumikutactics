@@ -94,6 +94,7 @@ impl CommandLog {
 #[cfg(test)]
 mod command_log_units {
     use super::*;
+    use crate::tactics::map::*;
 
     struct FakeCommand {}
     impl Command for FakeCommand {
