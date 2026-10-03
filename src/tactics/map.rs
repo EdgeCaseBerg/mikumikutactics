@@ -164,7 +164,7 @@ impl MapInstance {
             }
         }
         let mut path: VecDeque<Coordinate> = VecDeque::new();
-        if let None = came_from.get(&to) {
+        if !came_from.contains_key(&to) {
             return Ok(vec![]);
         }
         path.push_front(to);
