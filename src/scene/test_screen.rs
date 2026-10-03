@@ -259,6 +259,11 @@ impl Scene for TestScene {
                         },
                         move_range: 3,
                         weapon: Some(WeaponId(uid % 2)),
+                        faction: if uid % 2 == 0 {
+                            Faction::Player
+                        } else {
+                            Faction::Computer
+                        },
                     };
                     let tile = the_map
                         .get_mut((3, 3 + uid as isize))
