@@ -346,10 +346,10 @@ impl Scene for TestScene {
         if let Some(btn) = self.btn_prototype.as_mut() {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
-            if btn.clicked {
-                if let Some(battle_data) = self.map.as_mut() {
-                    battle_data.map_state.action = Some(ActionState::RewindCommandQueue(0));
-                }
+            if btn.clicked
+                && let Some(battle_data) = self.map.as_mut()
+            {
+                battle_data.map_state.action = Some(ActionState::RewindCommandQueue(0));
             }
         }
         for (btn, rewind_to) in &mut self.undo_buttons {
