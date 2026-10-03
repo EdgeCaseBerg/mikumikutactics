@@ -348,7 +348,7 @@ impl Scene for TestScene {
             if btn.clicked
                 && let Some(battle_data) = self.map.as_mut()
             {
-                battle_data.map_state.action = Some(ActionState::RewindCommandQueue(0));
+                battle_data.untapped_units = units_of(&battle_data.map_state, Faction::Player);
             }
         }
         for (btn, rewind_to) in &mut self.undo_buttons {
@@ -372,7 +372,12 @@ impl Scene for TestScene {
             match map_state.action {
                 None => {
                     if let Some((action, unit_data, reachable_positions)) =
-                        check_if_unit_selected_action(game_context, map_instance, map_state)
+                        check_if_unit_selected_action(
+                            game_context,
+                            map_instance,
+                            map_state,
+                            untapped_units,
+                        )
                     {
                         self.current_portrait = selected_portrait_from(unit_data);
                         map_state.selectable_tiles = reachable_positions;
@@ -442,8 +447,7 @@ impl Scene for TestScene {
                         commands.push(Box::new(command));
                     }
                     self.command_log.add_unit_actions(unit_id, commands);
-                    // TODO: suppose we also need to mark the unit not-selectable for the rest of their turn?
-                    // that'd probably be a separate action from ClearAction
+                    untapped_units.remove(&unit_id);
                     map_state.action = Some(ActionState::DrainCommandQueue);
                 }
                 Some(ActionState::Attack(attacker, defender)) => {
@@ -485,12 +489,14 @@ impl Scene for TestScene {
                             let command = AttackCommand { defender, damage };
                             commands.push(Box::new(command));
                             self.command_log.add_unit_actions(attacker_uid, commands);
+                            untapped_units.remove(&attacker_uid);
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                         Some((None, damage)) => {
                             let command = AttackCommand { defender, damage };
                             self.command_log
                                 .add_unit_actions(attacker_uid, vec![Box::new(command)]);
+                            untapped_units.remove(&attacker_uid);
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                     }
@@ -579,6 +585,7 @@ fn check_if_unit_selected_action<'a>(
     game_context: &GameContext,
     map_instance: &MapInstance,
     map_state: &'a MapState,
+    untapped_units: &HashSet<UnitId>,
 ) -> Option<(
     Option<ActionState>,
     Option<&'a UnitData>,
@@ -596,6 +603,13 @@ fn check_if_unit_selected_action<'a>(
     let (r, c, _) = layout.cell_for_mouse(game_context.mouse_context.position)?;
     let tile = map_instance.get((r as isize, c as isize))?;
     if let Some(uid) = tile.occupant {
+        // Clicking on a spent unit does nothing.
+        if tile
+            .occupant
+            .is_some_and(|uid| !untapped_units.contains(&uid))
+        {
+            return None;
+        }
         if let Some(unit_data) = map_state.units.get(&uid) {
             let position = (r as isize, c as isize);
             let action = Some(ActionState::UnitSelected(uid, position));
