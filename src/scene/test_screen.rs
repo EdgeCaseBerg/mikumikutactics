@@ -274,6 +274,7 @@ impl Scene for TestScene {
                 .collect(),
         };
         self.map = Some(BattleData {
+            untapped_units: units_of(&map_state, Faction::Player),
             map_instance: the_map,
             map_state,
         });
@@ -366,6 +367,7 @@ impl Scene for TestScene {
             let BattleData {
                 map_instance,
                 map_state,
+                untapped_units,
             } = battle_data;
             match map_state.action {
                 None => {
@@ -674,6 +676,7 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
     let Some(BattleData {
         map_instance,
         map_state,
+        untapped_units, // TODO do something with this to indicate units are done or not
     }) = scene.map.as_ref()
     else {
         return;

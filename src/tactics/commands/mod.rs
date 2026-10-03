@@ -17,6 +17,17 @@ pub use self::move_command::MoveCommand;
 pub struct BattleData {
     pub map_instance: MapInstance,
     pub map_state: MapState,
+    pub untapped_units: HashSet<UnitId>,
+}
+
+pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {
+    let mut set = HashSet::new();
+    for (unit_id, unit_data) in &map_state.units {
+        if matches!(unit_data.faction, faction) {
+            set.insert(*unit_id);
+        }
+    }
+    set
 }
 
 pub trait Command {
@@ -24,14 +35,4 @@ pub trait Command {
     fn apply(&self, state: &mut BattleData) -> GameResult<()>;
     fn undo(&self, state: &mut BattleData) -> GameResult<()>;
     fn description(&self) -> &str;
-}
-
-pub struct UnitActions {
-    pub unit_id: UnitId,
-    pub commands: Vec<Box<dyn Command>>,
-}
-
-pub struct PlayerTurn {
-    pub units_tapped: HashSet<UnitId>,
-    pub unit_actions: Vec<UnitActions>,
 }

@@ -95,6 +95,7 @@ impl CommandLog {
 mod command_log_units {
     use super::*;
     use crate::tactics::map::*;
+    use std::collections::HashSet;
 
     struct FakeCommand {}
     impl Command for FakeCommand {
@@ -159,6 +160,7 @@ mod command_log_units {
         let mut state = BattleData {
             map_state: MapState::default(),
             map_instance: MapInstance::empty_walkable(10, 10),
+            untapped_units: HashSet::from([UnitId(0)]),
         };
         let mut cl = CommandLog::default();
         cl.add_unit_actions(
@@ -215,6 +217,7 @@ mod command_log_units {
         let mut state = BattleData {
             map_state: MapState::default(),
             map_instance: MapInstance::empty_walkable(10, 10),
+            untapped_units: HashSet::from([UnitId(0), UnitId(1), UnitId(2)]),
         };
         let mut cl = CommandLog::default();
         cl.add_unit_actions(
