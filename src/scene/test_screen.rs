@@ -576,27 +576,6 @@ fn determine_move_to_and_damage(
     Some((move_to, damage))
 }
 
-fn update_defender_health(
-    defender: Defender,
-    new_health: usize,
-    map_instance: &mut MapInstance,
-    map_state: &mut MapState,
-) -> GameResult<()> {
-    let (defender_uid, defender_position) = defender;
-    let Some(defender) = map_state.units.get_mut(&defender_uid) else {
-        return Err(format!("defending unit does not exist in units list {defender_uid:?}").into());
-    };
-    defender.health = new_health;
-    eprintln!("defender now has health {:?}", defender.health);
-    if defender.health == 0 {
-        map_instance
-            .get_mut(defender_position)
-            .and_then(|tile| tile.occupant.take());
-        eprintln!("unit {:?} defeated", defender_uid);
-    }
-    Ok(())
-}
-
 fn check_if_unit_selected_action<'a>(
     game_context: &GameContext,
     map_instance: &MapInstance,
