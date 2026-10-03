@@ -43,8 +43,8 @@ impl CommandLog {
     pub fn get_unit_actions(&self) -> std::slice::Iter<'_, UnitAction> {
         self.unit_actions.iter()
     }
-    pub fn get_command_at(&self, position: usize) -> Option<&Box<dyn Command>> {
-        self.commands.get(position)
+    pub fn get_command_at(&self, position: usize) -> Option<&dyn Command> {
+        self.commands.get(position).map(|c| c.as_ref())
     }
     pub fn has_next(&self) -> bool {
         self.commands.get(self.index).is_some()
