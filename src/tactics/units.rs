@@ -228,7 +228,7 @@ pub fn calculate_health_after_attack(
     let attacker_weapon_power = attacker
         .weapon
         .and_then(|wid| asset_catalog.id_to_weapon(wid).ok())
-        .and_then(|weapon| Some(weapon.attack))
+        .map(|weapon| weapon.attack)
         .unwrap_or(0);
     let health = defender.health;
     health.saturating_sub(attacker_weapon_power)
