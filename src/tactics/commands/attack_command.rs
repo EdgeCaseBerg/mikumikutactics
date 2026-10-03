@@ -39,11 +39,13 @@ impl Command for AttackCommand {
             );
         };
         let new_health = defender.health.saturating_add(self.damage);
-        if defender.health == 0 && new_health > 0 {
-            state.map_instance.get_mut(defender_position).map(|tile| {
-                tile.occupant = Some(defender_uid);
-            });
-        }
+        if defender.health == 0
+            && new_health > 0
+            && let Some(tile) = state.map_instance.get_mut(defender_position)
+        {
+            tile.occupant = Some(defender_uid);
+        };
+
         defender.health = new_health;
         Ok(())
     }
