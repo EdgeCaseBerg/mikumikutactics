@@ -1,4 +1,3 @@
-use crate::GameResult;
 use crate::SpriteInfo;
 use crate::asset_loader::AssetCatalog;
 use crate::constants::{TextureId, WeaponId};
