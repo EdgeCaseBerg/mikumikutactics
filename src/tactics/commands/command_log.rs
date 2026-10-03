@@ -29,10 +29,10 @@ pub enum CommandLogState {
 impl CommandLog {
     pub fn add_unit_actions(&mut self, unit_id: UnitId, commands: Vec<Box<dyn Command>>) {
         let start_offset = self.commands.len();
-        let end_offset = start_offset + commands.len() - 1;
         for c in commands {
             self.commands.push(c);
         }
+        let end_offset = self.commands.len() - 1;
         self.unit_actions.push(UnitAction {
             unit_id,
             start_offset,
