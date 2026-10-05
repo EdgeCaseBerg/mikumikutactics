@@ -22,12 +22,14 @@ impl Command for MoveCommand {
         state
             .map_instance
             .move_unit_to(self.unit_id, self.from, self.to)?;
+        state.untapped_units.remove(&self.unit_id);
         Ok(())
     }
     fn undo(&self, state: &mut BattleData) -> GameResult<()> {
         state
             .map_instance
             .move_unit_to(self.unit_id, self.to, self.from)?;
+        state.untapped_units.insert(self.unit_id);
         Ok(())
     }
 }
