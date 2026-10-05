@@ -30,6 +30,14 @@ impl Color {
             a: 1.0,
         }
     }
+    pub const fn white() -> Color {
+        Color {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+            a: 1.0,
+        }
+    }
 }
 
 // Generic trait that we'll make an SDL version of for fun.
