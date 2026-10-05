@@ -19,6 +19,25 @@ pub enum Faction {
     Computer,
 }
 
+impl Faction {
+    pub fn to_string(&self) -> &str {
+        match self {
+            Faction::Player => "Player",
+            Faction::Computer => "Computer",
+        }
+    }
+    pub fn swap_command(&self) -> ChangeTurnCommand {
+        let to = match self {
+            Faction::Player => Faction::Computer,
+            Faction::Computer => Faction::Player,
+        };
+        ChangeTurnCommand {
+            to_faction: to,
+            from_faction: *self,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct UnitData {
     pub name: String,

@@ -18,6 +18,7 @@ pub struct BattleData {
     pub map_instance: MapInstance,
     pub map_state: MapState,
     pub untapped_units: HashSet<UnitId>,
+    pub active_faction: Faction,
 }
 
 pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {

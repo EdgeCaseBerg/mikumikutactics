@@ -158,6 +158,7 @@ mod command_log_units {
     #[test]
     fn command_log_applys_commands_correctly() {
         let mut state = BattleData {
+            active_faction: Faction::Player,
             map_state: MapState::default(),
             map_instance: MapInstance::empty_walkable(10, 10),
             untapped_units: HashSet::from([UnitId(0)]),
@@ -215,6 +216,7 @@ mod command_log_units {
     #[test]
     fn command_log_offsets_rewind_correctly() {
         let mut state = BattleData {
+            active_faction: Faction::Player,
             map_state: MapState::default(),
             map_instance: MapInstance::empty_walkable(10, 10),
             untapped_units: HashSet::from([UnitId(0), UnitId(1), UnitId(2)]),
