@@ -160,6 +160,51 @@ pub fn draw_text_anchored(
     }
 }
 
+pub fn draw_text_anchored_with_bg(
+    text: &str,
+    anchor: &Rect,
+    font: &LoadedFont,
+    renderer: &mut dyn Renderer,
+    align: FontAlign,
+    color: Color,
+) {
+    let glyphs = font.glyphs_for(text);
+    let glyph_display_height = font.line_height() as isize;
+    let align_offset = match align {
+        FontAlign::Left => 0,
+        FontAlign::Center => {
+            let fw = font.measure_width(text) as isize;
+            let center = anchor.width / 2;
+            center - fw / 2
+        }
+        FontAlign::Right => {
+            // [ offset | --- text width --- ] right side of anchor
+            let fw = font.measure_width(text) as isize;
+            anchor.width - fw
+        }
+    };
+
+    for (c, src) in glyphs.iter().enumerate() {
+        let glyph_display_width = (src.width as f32 * font.scale) as isize;
+        let x_offset = align_offset + c as isize * glyph_display_width;
+        let cell = Rect {
+            x: anchor.x + x_offset,
+            y: anchor.y,
+            width: glyph_display_width,
+            height: glyph_display_height,
+        };
+        renderer.send_command(RenderCommand::FillRect {
+            color,
+            destination: cell,
+        });
+        renderer.send_command(RenderCommand::DrawRect {
+            texture_id: font.texture_id,
+            source: *src,
+            destination: cell,
+        });
+    }
+}
+
 pub const FONTSHEET_LAYOUT: GridLayout = {
     GridLayout {
         area: Rect {
