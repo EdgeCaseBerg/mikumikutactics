@@ -4,10 +4,12 @@ use crate::tactics::units::*;
 use std::collections::HashSet;
 
 pub mod attack_command;
+pub mod change_turn_command;
 pub mod command_log;
 pub mod move_command;
 // re-export for easier use.
 pub use self::attack_command::AttackCommand;
+pub use self::change_turn_command::ChangeTurnCommand;
 pub use self::command_log::CommandLog;
 pub use self::command_log::CommandLogState;
 pub use self::command_log::UnitAction;
