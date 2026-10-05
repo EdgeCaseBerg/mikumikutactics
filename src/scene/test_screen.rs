@@ -443,7 +443,7 @@ impl Scene for TestScene {
                         commands.push(Box::new(command));
                     }
                     self.command_log.add_unit_actions(unit_id, commands);
-                    untapped_units.remove(&unit_id);
+                    // queue up turn change
                     map_state.action = Some(ActionState::DrainCommandQueue);
                 }
                 Some(ActionState::Attack(attacker, defender)) => {
