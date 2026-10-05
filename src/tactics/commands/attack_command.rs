@@ -6,6 +6,7 @@ use crate::tactics::units::*;
 pub struct AttackCommand {
     pub defender: Defender,
     pub damage: usize,
+    pub attacker_uid: UnitId,
 }
 
 impl Command for AttackCommand {
@@ -29,6 +30,7 @@ impl Command for AttackCommand {
                 .get_mut(defender_position)
                 .and_then(|tile| tile.occupant.take());
         }
+        state.untapped_units.remove(&self.attacker_uid);
         Ok(())
     }
     fn undo(&self, state: &mut BattleData) -> GameResult<()> {
@@ -47,6 +49,7 @@ impl Command for AttackCommand {
         };
 
         defender.health = new_health;
+        state.untapped_units.insert(self.attacker_uid);
         Ok(())
     }
 }

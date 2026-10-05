@@ -482,17 +482,25 @@ impl Scene for TestScene {
                                 commands.push(Box::new(command));
                             }
 
-                            let command = AttackCommand { defender, damage };
+                            let command = AttackCommand {
+                                defender,
+                                damage,
+                                attacker_uid,
+                            };
                             commands.push(Box::new(command));
                             self.command_log.add_unit_actions(attacker_uid, commands);
-                            untapped_units.remove(&attacker_uid);
+                            // queue up turn change
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                         Some((None, damage)) => {
-                            let command = AttackCommand { defender, damage };
+                            let command = AttackCommand {
+                                defender,
+                                damage,
+                                attacker_uid,
+                            };
                             self.command_log
                                 .add_unit_actions(attacker_uid, vec![Box::new(command)]);
-                            untapped_units.remove(&attacker_uid);
+                            // queue up turn change
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                     }
