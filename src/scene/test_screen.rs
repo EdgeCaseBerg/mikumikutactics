@@ -272,6 +272,7 @@ impl Scene for TestScene {
             untapped_units: units_of(&map_state, Faction::Player),
             map_instance: the_map,
             map_state,
+            active_faction: Faction::Player,
         });
 
         let ui_texture_id = ensure_texture_by_name(TEXTURE_UI, asset_loader.as_mut())?;
@@ -516,13 +517,22 @@ impl Scene for TestScene {
                 Some(ActionState::DrainCommandQueue) => {
                     match self.command_log.update(ticks, battle_data) {
                         Ok(CommandLogState::Exhausted) => {
-                            eprintln!("reset ui state");
-                            battle_data.map_state.action = Some(ActionState::ClearAction);
+                            if battle_data.untapped_units.is_empty() {
+                                battle_data.map_state.action = Some(ActionState::SwapFaction);
+                            } else {
+                                battle_data.map_state.action = Some(ActionState::ClearAction);
+                            }
                         }
                         other => {
                             other?;
                         }
                     }
+                }
+                Some(ActionState::SwapFaction) => {
+                    self.command_log
+                        .add_command(Box::new(active_faction.swap_command()));
+                    map_state.action = Some(ActionState::DrainCommandQueue);
+                    // TODO: show text saying we're swapping turns, clear on clear action
                 }
                 Some(ActionState::RewindCommandQueue(to)) => {
                     map_state.action = Some(ActionState::ClearAction);

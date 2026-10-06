@@ -67,6 +67,7 @@ pub enum ActionState {
     ClearAction,
     DrainCommandQueue,         // Process commands not yet applied
     RewindCommandQueue(usize), // Rewind to idx in command log
+    SwapFaction,
 }
 
 pub fn reachable_by_unit(
