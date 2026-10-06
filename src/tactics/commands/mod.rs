@@ -26,7 +26,7 @@ pub struct BattleData {
 pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {
     let mut set = HashSet::new();
     for (unit_id, unit_data) in &map_state.units {
-        if unit_data.faction == faction {
+        if unit_data.faction == faction && unit_data.health > 0 {
             set.insert(*unit_id);
         }
     }
