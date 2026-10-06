@@ -756,7 +756,7 @@ fn draw_faction_status(scene: &mut TestScene, game_context: &mut GameContext) ->
     };
     let Some(BattleData {
         map_instance,
-        untapped_units, // TODO do something with this to indicate units are done or not
+        untapped_units,
         active_faction,
         ..
     }) = scene.map.as_ref()
