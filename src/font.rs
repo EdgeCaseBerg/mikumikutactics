@@ -2,6 +2,7 @@ use crate::Rect;
 use crate::asset_loader::AssetLoader;
 use crate::constants::{FontId, TextureId};
 use crate::grid_layout::GridLayout;
+use crate::renderer::Color;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use std::collections::HashMap;
