@@ -557,6 +557,7 @@ impl Scene for TestScene {
         for (btn, _) in &self.undo_buttons {
             btn.draw(game_context, &layout);
         }
+        draw_faction_status(self, game_context);
         Ok(())
     }
 }
@@ -743,4 +744,40 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
             }
         }
     }
+}
+
+fn draw_faction_status(scene: &mut TestScene, game_context: &mut GameContext) -> GameResult<()> {
+    let layout = TestScene::layout(game_context);
+    let Some(renderer) = game_context.renderer.as_mut() else {
+        return Err("no renderer defined in game context, not faction status.".into());
+    };
+    let Some(font_id) = scene.btn_prototype.as_ref().map(|b| b.font_id) else {
+        return Err("no font id to use for displaying faction status.".into());
+    };
+    let Some(BattleData {
+        map_instance,
+        untapped_units, // TODO do something with this to indicate units are done or not
+        active_faction,
+        ..
+    }) = scene.map.as_ref()
+    else {
+        return Err("no battle data defined to display faction status.".into());
+    };
+    let anchor = layout.cell_rect(1, map_instance.width as usize - 5);
+    let units_left = untapped_units.len();
+    let faction = active_faction.to_string();
+
+    if let Some(font_library) = game_context.font_library.as_mut() {
+        if let Some(font) = font_library.get(font_id) {
+            crate::font::draw_text_anchored_with_bg(
+                &format!("{}: {} left", faction, units_left),
+                &anchor,
+                font,
+                renderer.as_mut(),
+                crate::font::FontAlign::Left,
+                crate::renderer::Color::white(),
+            );
+        }
+    }
+    Ok(())
 }
