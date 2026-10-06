@@ -490,7 +490,6 @@ impl Scene for TestScene {
                             };
                             commands.push(Box::new(command));
                             self.command_log.add_unit_actions(attacker_uid, commands);
-                            // queue up turn change
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                         Some((None, damage)) => {
@@ -501,7 +500,6 @@ impl Scene for TestScene {
                             };
                             self.command_log
                                 .add_unit_actions(attacker_uid, vec![Box::new(command)]);
-                            // queue up turn change
                             map_state.action = Some(ActionState::DrainCommandQueue);
                         }
                     }
