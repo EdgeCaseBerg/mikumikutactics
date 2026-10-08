@@ -33,6 +33,25 @@ pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {
     set
 }
 
+pub fn loser(map_state: &MapState) -> Option<Faction> {
+    let mut player_health = 0;
+    let mut computer_health = 0;
+    for (unit_id, unit_data) in &map_state.units {
+        match (unit_data.health, unit_data.faction) {
+            (h, Faction::Player) => player_health += h,
+            (h, Faction::Computer) => computer_health += h,
+        }
+    }
+    // Bias towards being nicer to the human by returning cpu first
+    if computer_health == 0 {
+        return Some(Faction::Computer);
+    }
+    if player_health == 0 {
+        return Some(Faction::Player);
+    }
+    None
+}
+
 pub trait Command {
     fn tick_duration(&self) -> u32;
     fn apply(&self, state: &mut BattleData) -> GameResult<()>;
