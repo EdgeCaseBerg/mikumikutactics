@@ -34,14 +34,14 @@ pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {
 }
 
 pub fn loser(map_state: &MapState) -> Option<Faction> {
-    let (player_health, computer_health) =
-        map_state
-            .units
-            .values()
-            .fold((0, 0), |(p, c), unit| match unit.faction {
-                Faction::Player => (p + unit.health, c),
-                Faction::Computer => (p, c + unit.health),
-            });
+    let mut player_health = 0;
+    let mut computer_health = 0;
+    for (unit_id, unit_data) in &map_state.units {
+        match (unit_data.health, unit_data.faction) {
+            (h, Faction::Player) => player_health += h,
+            (h, Faction::Computer) => computer_health += h,
+        }
+    }
     // Bias towards being nicer to the human by returning cpu first
     match (computer_health == 0, player_health == 0) {
         (true, _) => Some(Faction::Computer),
