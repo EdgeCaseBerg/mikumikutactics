@@ -68,6 +68,7 @@ pub enum ActionState {
     DrainCommandQueue,         // Process commands not yet applied
     RewindCommandQueue(usize), // Rewind to idx in command log
     SwapFaction,
+    GameOver(Faction),
 }
 
 pub fn reachable_by_unit(

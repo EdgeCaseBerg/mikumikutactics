@@ -520,6 +520,10 @@ impl Scene for TestScene {
                             } else {
                                 battle_data.map_state.action = Some(ActionState::ClearAction);
                             }
+                            if let Some(losing_faction) = loser(&battle_data.map_state) {
+                                battle_data.map_state.action =
+                                    Some(ActionState::GameOver(losing_faction))
+                            }
                         }
                         other => {
                             other?;
@@ -535,6 +539,10 @@ impl Scene for TestScene {
                 Some(ActionState::RewindCommandQueue(to)) => {
                     map_state.action = Some(ActionState::ClearAction);
                     self.command_log.rewind(to, battle_data)?;
+                }
+                Some(ActionState::GameOver(losing_faction)) => {
+                    eprintln!("{:?} loses", losing_faction);
+                    // game_context.queue_story_scene(whatever scene up next);
                 }
             }
         };
