@@ -28,6 +28,9 @@ pub struct TestScene {
     context_menu: Option<ContextMenu>,
     command_log: CommandLog,
     undo_buttons: Vec<(Button, usize)>,
+    quit_btn: Option<Button>,
+    continue_btn: Option<Button>,
+    retry_btn: Option<Button>,
 }
 
 #[derive(Default)]
@@ -359,6 +362,43 @@ impl Scene for TestScene {
                 }
             }
         }
+        if let Some(btn) = self.continue_btn.as_mut() {
+            let layout = TestScene::layout(game_context);
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked
+                && let Some(battle_data) = self.map.as_mut()
+            {
+                eprintln!("continue...");
+            }
+        }
+        if let Some(btn) = self.continue_btn.as_mut() {
+            let layout = TestScene::layout(game_context);
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked
+                && let Some(battle_data) = self.map.as_mut()
+            {
+                eprintln!("continue...");
+            }
+        }
+        if let Some(btn) = self.retry_btn.as_mut() {
+            let layout = TestScene::layout(game_context);
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked
+                && let Some(battle_data) = self.map.as_mut()
+            {
+                eprintln!("retry...");
+            }
+        }
+        if let Some(btn) = self.quit_btn.as_mut() {
+            let layout = TestScene::layout(game_context);
+            btn.update(ticks, game_context, &layout);
+            if btn.clicked
+                && let Some(battle_data) = self.map.as_mut()
+            {
+                eprintln!("quit!");
+            }
+        }
+
         if let Some(battle_data) = self.map.as_mut() {
             let BattleData {
                 map_instance,
@@ -541,8 +581,27 @@ impl Scene for TestScene {
                     self.command_log.rewind(to, battle_data)?;
                 }
                 Some(ActionState::GameOver(losing_faction)) => {
-                    eprintln!("{:?} loses", losing_faction);
-                    // game_context.queue_story_scene(whatever scene up next);
+                    let mut y_offset = 0;
+                    let anchor =
+                        Rect::new(map_instance.width / 2 - 1, map_instance.height / 2, 3, 1);
+                    let mut next_rect = || {
+                        let mut rect = anchor;
+                        rect.y += y_offset;
+                        y_offset += 1;
+                        rect
+                    };
+                    match losing_faction {
+                        Faction::Computer => {
+                            self.continue_btn =
+                                new_btn(&self.btn_prototype, "Continue".to_owned(), next_rect());
+                        }
+                        Faction::Player => {
+                            self.retry_btn =
+                                new_btn(&self.btn_prototype, "Retry".to_owned(), next_rect());
+                        }
+                    }
+                    self.quit_btn = new_btn(&self.btn_prototype, "Quit".to_owned(), next_rect());
+                    map_state.action = Some(ActionState::ClearAction);
                 }
             }
         };
@@ -563,6 +622,15 @@ impl Scene for TestScene {
             btn.draw(game_context, &layout);
         }
         for (btn, _) in &self.undo_buttons {
+            btn.draw(game_context, &layout);
+        }
+        if let Some(btn) = self.continue_btn.as_ref() {
+            btn.draw(game_context, &layout);
+        }
+        if let Some(btn) = self.retry_btn.as_ref() {
+            btn.draw(game_context, &layout);
+        }
+        if let Some(btn) = self.quit_btn.as_ref() {
             btn.draw(game_context, &layout);
         }
         draw_faction_status(self, game_context);
