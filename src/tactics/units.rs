@@ -302,7 +302,8 @@ mod tactics_units {
                 "attack": 1,
                 "min_range": 2,
                 "max_range": 3
-            }]
+            }],
+            "maps": []
         }"#,
         );
         let Ok(catalog) = catalog else {

@@ -447,7 +447,8 @@ mod transition_scene_tests {
             "sounds": [],
             "music": [],
             "scenes": [],
-            "weapons": []
+            "weapons": [],
+            "maps": []
         }"#,
         );
         let Ok(catalog) = catalog else {

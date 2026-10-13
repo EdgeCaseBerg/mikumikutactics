@@ -107,7 +107,6 @@ pub struct TerrainMap {
 
 #[derive(Debug, Clone)]
 pub struct TerrainTile {
-    pub key: String, // could do just a char here if we wanted to.
     pub tag_name: String,
     pub flags: usize, // 1 for walkable, 0 for not for now
 }
@@ -121,6 +120,7 @@ impl From<Manifest> for JsonValue {
             music: val.music,
             scenes: val.scenes,
             weapons: val.weapons,
+            maps: val.maps,
         }
     }
 }
@@ -177,6 +177,26 @@ impl From<Weapon> for JsonValue {
     }
 }
 
+impl From<TerrainMap> for JsonValue {
+    fn from(val: TerrainMap) -> Self {
+        jzon::object! {
+            name: val.name,
+            sheet: val.sheet,
+            tile_definitions: val.tile_definitions,
+            grid: val.grid,
+        }
+    }
+}
+
+impl From<TerrainTile> for JsonValue {
+    fn from(val: TerrainTile) -> Self {
+        jzon::object! {
+            tag_name: val.tag_name,
+            flags: val.flags,
+        }
+    }
+}
+
 // Reads are a little more complicated:
 
 impl TryFrom<JsonValue> for Manifest {
@@ -212,6 +232,10 @@ impl TryFrom<JsonValue> for Manifest {
             return Err(
                 "unexpected shape of manifest file, root object missing weapons list".into(),
             );
+        };
+
+        let Some(maps) = root["maps"].as_array() else {
+            return Err("unexpected shape of manifest file, root object missing maps list".into());
         };
 
         let mut errors = vec![];
@@ -285,7 +309,19 @@ impl TryFrom<JsonValue> for Manifest {
             })
             .collect();
 
-        let maps = vec![]; // TODO
+        let maps: Vec<TerrainMap> = maps
+            .iter()
+            .filter_map(|json_val| {
+                let f: AssetResult<TerrainMap> = json_val.try_into();
+                match f {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        errors.push(e);
+                        None
+                    }
+                }
+            })
+            .collect();
 
         if !errors.is_empty() {
             return Err(errors
@@ -490,6 +526,55 @@ impl TryFrom<&JsonValue> for Weapon {
             name: name.to_owned(),
             range: RangeInclusive::new(min_range, max_range),
             attack,
+        })
+    }
+}
+
+impl TryFrom<&JsonValue> for TerrainMap {
+    type Error = Box<dyn Error>;
+    fn try_from(obj: &JsonValue) -> AssetResult<TerrainMap> {
+        let Some(name) = obj["name"].as_str() else {
+            return Err("missing or invalid name field in file asset".into());
+        };
+        let Some(sheet) = obj["sheet"].as_str() else {
+            return Err("missing or invalid sheet field in file asset".into());
+        };
+        let Some(grid) = obj["grid"].as_str() else {
+            return Err("missing or invalid grid field in file asset".into());
+        };
+        let Some(tile_definitions) = obj["tile_definitions"].as_object() else {
+            return Err("missing or invalid tile_definitions field in file asset".into());
+        };
+        let tile_definitions: HashMap<String, TerrainTile> = obj["tile_definitions"]
+            .entries()
+            .filter_map(|(key, value)| {
+                let v: Option<TerrainTile> = value.try_into().ok();
+                v.map(|v| (key.to_owned(), v))
+            })
+            .collect();
+
+        Ok(TerrainMap {
+            name: name.to_owned(),
+            sheet: sheet.to_owned(),
+            grid: grid.to_owned(),
+            tile_definitions,
+        })
+    }
+}
+
+impl TryFrom<&JsonValue> for TerrainTile {
+    type Error = Box<dyn Error>;
+    fn try_from(obj: &JsonValue) -> AssetResult<TerrainTile> {
+        let Some(flags) = obj["flags"].as_usize() else {
+            return Err("missing or invalid flags field in file asset".into());
+        };
+        let Some(tag_name) = obj["tag_name"].as_str() else {
+            return Err("missing or invalid tag_name field in file asset".into());
+        };
+
+        Ok(TerrainTile {
+            tag_name: tag_name.to_owned(),
+            flags,
         })
     }
 }
