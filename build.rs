@@ -61,6 +61,7 @@ fn main() {
         sounds,
         music,
         weapons,
+        maps: vec![], // TODO
     };
     let j: jzon::JsonValue = manifest.into();
     let string = j.pretty(2);

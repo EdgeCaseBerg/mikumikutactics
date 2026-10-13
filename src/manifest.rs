@@ -1,4 +1,5 @@
 use jzon::JsonValue;
+use std::collections::HashMap;
 use std::error::Error;
 use std::ops::RangeInclusive;
 
@@ -53,6 +54,7 @@ pub struct Manifest {
     pub music: Vec<FileAsset>,
     pub scenes: Vec<FileAsset>,
     pub weapons: Vec<Weapon>,
+    pub maps: Vec<TerrainMap>,
 }
 
 #[derive(Debug)]
@@ -93,6 +95,21 @@ pub struct Weapon {
     pub name: String,
     pub range: RangeInclusive<usize>,
     pub attack: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct TerrainMap {
+    pub name: String,
+    pub sheet: String,
+    pub tile_definitions: HashMap<String, TerrainTile>, // wonder if we should just do a list since this will be small.
+    pub grid: String,                                   // should we parse it into a giant list?
+}
+
+#[derive(Debug, Clone)]
+pub struct TerrainTile {
+    pub key: String, // could do just a char here if we wanted to.
+    pub tag_name: String,
+    pub flags: usize, // 1 for walkable, 0 for not for now
 }
 
 // Writes are simple:
@@ -268,6 +285,8 @@ impl TryFrom<JsonValue> for Manifest {
             })
             .collect();
 
+        let maps = vec![]; // TODO
+
         if !errors.is_empty() {
             return Err(errors
                 .into_iter()
@@ -283,6 +302,7 @@ impl TryFrom<JsonValue> for Manifest {
             music,
             scenes,
             weapons,
+            maps,
         })
     }
 }
