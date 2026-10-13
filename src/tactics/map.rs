@@ -1,4 +1,5 @@
 use crate::GameResult;
+use crate::constants::TextureId;
 use crate::tactics::units::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -19,6 +20,7 @@ pub struct MapInstance {
 pub struct Tile {
     pub is_walkable: bool,
     pub occupant: Option<UnitId>,
+    pub texture_id: Option<TextureId>,
 }
 
 #[derive(Debug, Default)]
@@ -35,6 +37,7 @@ impl MapInstance {
                 (0..width).map(|_column| Tile {
                     is_walkable: true,
                     occupant: None,
+                    texture_id: None,
                 })
             })
             .collect();
