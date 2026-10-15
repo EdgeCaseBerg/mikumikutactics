@@ -52,6 +52,7 @@ fn main() {
     let sounds = load_file_assets(&assets_dir, "sounds");
     let music = load_file_assets(&assets_dir, "music");
     let weapons = load_weapon_assets(&assets_dir);
+    let maps = load_map_assets(&assets_dir, &spritesheets);
 
     // I? I am the monument to all of your sins. t. Gravemind - Halo 2.
     let manifest_path = assets_dir.join("manifest");
@@ -61,7 +62,7 @@ fn main() {
         sounds,
         music,
         weapons,
-        maps: vec![], // TODO
+        maps,
     };
     let j: jzon::JsonValue = manifest.into();
     let string = j.pretty(2);
