@@ -286,3 +286,106 @@ fn load_weapon_assets(assets_dir: &Path) -> Vec<Weapon> {
         )
         .collect()
 }
+
+fn load_map_assets(assets_dir: &Path, spritesheets: &Vec<Spritesheet>) -> Vec<TerrainMap> {
+    let in_dir = assets_dir.join("maps");
+    let mut map_files = vec![];
+    let entries = fs::read_dir(&in_dir).unwrap_or_else(|_| {
+        panic!(
+            "could not read input directory for read_dir {}",
+            in_dir.display()
+        )
+    });
+    for result in entries {
+        let Ok(entry) = result else {
+            continue;
+        };
+        if let Ok(metadata) = entry.metadata()
+            && metadata.is_dir()
+        {
+            let entries = load_map_assets(&entry.path(), spritesheets);
+            for map in entries {
+                map_files.push(map);
+            }
+        } else {
+            if !entry.file_name().to_string_lossy().ends_with("map") {
+                continue;
+            }
+            let path = entry.path();
+            let map = parse_map_file(&path);
+            map_files.push(map);
+        }
+    }
+    map_files
+}
+
+fn parse_map_file(path: &Path) -> TerrainMap {
+    let terrain_name = path.file_name().expect("no filename?");
+    let terrain_name = terrain_name.to_string_lossy().to_string();
+    let raw = fs::read_to_string(path).expect("could not load map file to string");
+    let mut lines = raw.lines();
+    let pallette_line = lines
+        .next()
+        .expect("expected palette to start map file line");
+    let mut defs = HashMap::new();
+    loop {
+        let line = lines.next();
+        if line.is_none() {
+            break;
+        }
+        // Stop at first empty line (the line before the grid)
+        if line.unwrap().is_empty() {
+            break;
+        }
+        let line = line.unwrap();
+        let key_and_rest: Vec<_> = line.split_terminator(':').collect();
+        let key = &key_and_rest[0];
+        let rest = &key_and_rest[1];
+        let tag_name = &rest[0..rest.len() - 2];
+        let flag_str = &rest
+            .chars()
+            .last()
+            .expect("missing flag at end of definition");
+        let flags: usize = flag_str
+            .to_digit(10)
+            .expect("could not parse flags to number") as usize;
+        eprintln!("{:?}", (key, tag_name, flags));
+        defs.insert(
+            key.to_string().to_owned(),
+            TerrainTile {
+                tag_name: tag_name.to_owned(),
+                flags,
+            },
+        );
+    }
+
+    let spritesheet_name = pallette_line
+        .split_terminator(':')
+        .skip(1)
+        .take(1)
+        .into_iter()
+        .next()
+        .expect("palette line incorrect");
+
+    let mut grid = String::with_capacity(raw.len());
+    for (line_number, line) in lines.enumerate() {
+        for (char_number, c) in line.chars().enumerate() {
+            let key = String::from(c);
+            assert!(
+                defs.contains_key(&key),
+                "key {c} at line {line_number}, column {char_number} not found in definitions",
+            );
+            grid.push(c);
+        }
+        grid.push('\n');
+    }
+
+    // eprintln!("{:?}", (pallette_line, spritesheet_name, defs));
+
+    TerrainMap {
+        name: terrain_name,
+        sheet: spritesheet_name.to_owned(),
+        tile_definitions: defs,
+        grid,
+    }
+}
