@@ -331,11 +331,8 @@ fn parse_map_file(path: &Path) -> TerrainMap {
     let spritesheet_name = lines
         .next()
         .expect("expected palette to start map file line")
-        .split_terminator(':')
-        .skip(1)
-        .take(1)
-        .into_iter()
-        .next()
+        .split_once(':')
+        .map(|(_, name)| name.trim())
         .expect("palette line incorrect");
 
     let mut defs = HashMap::new();
@@ -348,9 +345,7 @@ fn parse_map_file(path: &Path) -> TerrainMap {
         let (tag_name, flag_str) = rest
             .rsplit_once(' ')
             .expect("could not parse flag and tag name");
-        let flags: usize = flag_str
-            .parse::<usize>()
-            .expect("could not parse flags to number") as usize;
+        let flags: usize = flag_str.parse().expect("could not parse flags to number");
         defs.insert(
             key.to_owned(),
             TerrainTile {
@@ -361,11 +356,12 @@ fn parse_map_file(path: &Path) -> TerrainMap {
     }
 
     let mut grid = String::with_capacity(raw.len());
+    let mut buf = [0; 4]; // avoid str allocation per character
     for (line_number, line) in lines.enumerate() {
         for (char_number, c) in line.chars().enumerate() {
-            let key = String::from(c);
+            let key = c.encode_utf8(&mut buf);
             assert!(
-                defs.contains_key(&key),
+                defs.contains_key(key),
                 "key {c} at line {line_number}, column {char_number} not found in definitions",
             );
             grid.push(c);
