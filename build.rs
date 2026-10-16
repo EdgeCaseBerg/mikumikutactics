@@ -5,6 +5,8 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+pub type BuildResult<T> = Result<T, Box<dyn Error>>;
+
 /* The goal of the build script is to process the .ase files in the spritesheets
  * folder, as well as any other assets that need to be assigned ids for the catalog
  * and then create the manifest file that the game will use to resolve those assets
@@ -375,4 +377,36 @@ fn parse_map_file(path: &Path) -> TerrainMap {
         tile_definitions: defs,
         grid,
     }
+}
+
+fn validate_map(map: &TerrainMap, spritesheets: &Vec<Spritesheet>) -> BuildResult<()> {
+    let Some(sheet) = spritesheets.iter().find(|sheet| sheet.name == map.sheet) else {
+        return Err("map spritesheet does not exist in manifest".into());
+    };
+
+    let mut unique_tiles: std::collections::HashSet<char> = map.grid.chars().collect();
+    unique_tiles.remove(&'\n');
+    let expected_count = unique_tiles.len();
+    let actual_acount = map.tile_definitions.len();
+    assert_eq!(
+        expected_count, actual_acount,
+        "count of tile definitions and found grid tiles does not match"
+    );
+
+    let mut confirmed_exists_in_sheet = 0;
+    let mut buf = [0; 4];
+    for c in unique_tiles {
+        let key = c.encode_utf8(&mut buf);
+        let def = map
+            .tile_definitions
+            .get(key)
+            .expect("impossible? cant find tile definition for key");
+        sheet
+            .tags
+            .iter()
+            .find(|tag| tag.name == def.tag_name)
+            .expect("key did not match a tag in spritesheet");
+    }
+
+    Ok(())
 }
