@@ -364,7 +364,7 @@ fn parse_map_file(path: &Path) -> TerrainMap {
             let key = c.encode_utf8(&mut buf);
             assert!(
                 defs.contains_key(key),
-                "key {c} at line {line_number}, column {char_number} not found in definitions",
+                "key '{c}' at grid row {line_number}, column {char_number} not found in definitions",
             );
             grid.push(c);
         }
@@ -388,24 +388,31 @@ fn validate_map(map: &TerrainMap, spritesheets: &Vec<Spritesheet>) -> BuildResul
     unique_tiles.remove(&'\n');
     let expected_count = unique_tiles.len();
     let actual_acount = map.tile_definitions.len();
-    assert_eq!(
-        expected_count, actual_acount,
-        "count of tile definitions and found grid tiles does not match"
-    );
+    if expected_count < actual_acount {
+        return Err(format!(
+            "expected to have at least {expected_count} definitions but had {actual_acount}"
+        )
+        .into());
+    }
 
     let mut confirmed_exists_in_sheet = 0;
     let mut buf = [0; 4];
     for c in unique_tiles {
         let key = c.encode_utf8(&mut buf);
-        let def = map
-            .tile_definitions
-            .get(key)
-            .expect("impossible? cant find tile definition for key");
-        sheet
-            .tags
-            .iter()
-            .find(|tag| tag.name == def.tag_name)
-            .expect("key did not match a tag in spritesheet");
+        let Some(def) = map.tile_definitions.get(key) else {
+            return Err(format!("cant find tile definition for key {key}").into());
+        };
+        let Some(_) = sheet.tags.iter().find(|tag| tag.name == def.tag_name) else {
+            return Err(format!("key {key} did not match a tag in spritesheet").into());
+        };
+        confirmed_exists_in_sheet += 1;
+    }
+
+    if confirmed_exists_in_sheet != expected_count {
+        return Err(format!(
+            "expected to have at least {expected_count} definitions but had {confirmed_exists_in_sheet}"
+        )
+        .into());
     }
 
     Ok(())
