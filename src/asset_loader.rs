@@ -1,6 +1,6 @@
 use crate::SpriteInfo;
 use crate::constants::{MusicId, SceneId, SfxId, TextureId, WeaponId};
-use crate::manifest::{Manifest, SpriteFrame, Weapon};
+use crate::manifest::{Manifest, SpriteFrame, TerrainMap, Weapon};
 use crate::scene::story::visual_novel::SceneLoadingContext;
 use jzon::parse;
 use std::collections::HashMap;
@@ -35,6 +35,7 @@ pub struct AssetCatalog {
     sound_to_sfx_idx: HashMap<String, usize>,
     scene_to_scene_idx: HashMap<String, usize>,
     weapon_to_weapon_idx: HashMap<String, usize>,
+    map_to_map_idx: HashMap<String, usize>,
     character_id_to_sprite_idx: HashMap<usize, usize>,
     music_id_to_music_idx: HashMap<usize, usize>,
     sound_id_to_sfx_idx: HashMap<usize, usize>,
@@ -91,6 +92,12 @@ impl AssetCatalog {
             .enumerate()
             .map(|(idx, weapon)| (weapon.name.to_owned(), idx))
             .collect();
+        let map_to_map_idx = manifest
+            .maps
+            .iter()
+            .enumerate()
+            .map(|(idx, map)| (map.name.to_owned(), idx))
+            .collect();
 
         let character_id_to_sprite_idx = manifest
             .spritesheets
@@ -130,6 +137,7 @@ impl AssetCatalog {
             sound_to_sfx_idx,
             scene_to_scene_idx,
             weapon_to_weapon_idx,
+            map_to_map_idx,
             character_id_to_sprite_idx,
             music_id_to_music_idx,
             sound_id_to_sfx_idx,
@@ -351,6 +359,18 @@ impl AssetCatalog {
             .into());
         };
         Ok(weapon.clone())
+    }
+    pub fn name_to_terrain_map(&self, name: &str) -> AssetResult<TerrainMap> {
+        let Some(idx) = self.weapon_to_weapon_idx.get(name) else {
+            return Err(format!("could not find map id with name {name}").into());
+        };
+        let Some(map) = self.manifest.maps.get(*idx) else {
+            return Err(format!(
+                "manifest corrupted, no map for name {name} exists at index {idx}"
+            )
+            .into());
+        };
+        Ok(map.clone())
     }
 }
 
