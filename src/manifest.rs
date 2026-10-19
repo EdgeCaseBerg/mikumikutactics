@@ -111,6 +111,45 @@ pub struct TerrainTile {
     pub flags: usize, // 1 for walkable, 0 for not for now
 }
 
+pub fn validate_map(map: &TerrainMap, spritesheets: &Vec<Spritesheet>) -> AssetResult<()> {
+    let Some(sheet) = spritesheets.iter().find(|sheet| sheet.name == map.sheet) else {
+        return Err("map spritesheet does not exist in manifest".into());
+    };
+
+    let mut unique_tiles: std::collections::HashSet<char> = map.grid.chars().collect();
+    unique_tiles.remove(&'\n');
+    let expected_count = unique_tiles.len();
+    let actual_acount = map.tile_definitions.len();
+    if expected_count < actual_acount {
+        return Err(format!(
+            "expected to have at least {expected_count} definitions but had {actual_acount}"
+        )
+        .into());
+    }
+
+    let mut confirmed_exists_in_sheet = 0;
+    let mut buf = [0; 4];
+    for c in unique_tiles {
+        let key = c.encode_utf8(&mut buf);
+        let Some(def) = map.tile_definitions.get(key) else {
+            return Err(format!("cant find tile definition for key {key}").into());
+        };
+        let Some(_) = sheet.tags.iter().find(|tag| tag.name == def.tag_name) else {
+            return Err(format!("key {key} did not match a tag in spritesheet").into());
+        };
+        confirmed_exists_in_sheet += 1;
+    }
+
+    if confirmed_exists_in_sheet != expected_count {
+        return Err(format!(
+            "expected to have at least {expected_count} definitions but had {confirmed_exists_in_sheet}"
+        )
+        .into());
+    }
+
+    Ok(())
+}
+
 // Writes are simple:
 impl From<Manifest> for JsonValue {
     fn from(val: Manifest) -> Self {
