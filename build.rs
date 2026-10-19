@@ -316,6 +316,7 @@ fn load_map_assets(assets_dir: &Path, spritesheets: &Vec<Spritesheet>) -> Vec<Te
             }
             let path = entry.path();
             let map = parse_map_file(&path);
+            validate_map(&map, spritesheets).expect("invalid map");
             map_files.push(map);
         }
     }
