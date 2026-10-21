@@ -361,7 +361,7 @@ impl AssetCatalog {
         Ok(weapon.clone())
     }
     pub fn name_to_terrain_map(&self, name: &str) -> AssetResult<TerrainMap> {
-        let Some(idx) = self.weapon_to_weapon_idx.get(name) else {
+        let Some(idx) = self.map_to_map_idx.get(name) else {
             return Err(format!("could not find map id with name {name}").into());
         };
         let Some(map) = self.manifest.maps.get(*idx) else {
