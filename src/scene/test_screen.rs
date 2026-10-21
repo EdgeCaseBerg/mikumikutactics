@@ -633,7 +633,7 @@ impl Scene for TestScene {
         if let Some(btn) = self.quit_btn.as_ref() {
             btn.draw(game_context, &layout);
         }
-        draw_faction_status(self, game_context);
+        draw_faction_status(self, game_context)?;
         Ok(())
     }
 }
