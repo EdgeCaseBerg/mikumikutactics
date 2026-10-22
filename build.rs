@@ -328,7 +328,11 @@ fn parse_map_file(path: &Path) -> TerrainMap {
         .file_name()
         .expect("no filename?")
         .to_string_lossy()
-        .into_owned();
+        .into_owned()
+        .split_once('.')
+        .map(|(name, _)| name.trim())
+        .expect("palette line incorrect")
+        .to_owned();
     let raw = fs::read_to_string(path).expect("could not load map file to string");
     let mut lines = raw.lines();
     let spritesheet_name = lines
