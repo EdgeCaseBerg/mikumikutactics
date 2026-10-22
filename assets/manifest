@@ -815,10 +815,6 @@
       "name": "grassland",
       "sheet": "grassland",
       "tile_definitions": {
-        "w": {
-          "tag_name": "water",
-          "flags": 0
-        },
         "O": {
           "tag_name": "rock",
           "flags": 0
@@ -826,6 +822,10 @@
         ".": {
           "tag_name": "grass",
           "flags": 1
+        },
+        "w": {
+          "tag_name": "water",
+          "flags": 0
         }
       },
       "grid": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\nOOOOOOOOOOOOOOOwwOOOOOOOOOOOOOOO\nO..............ww............OOO\nO..............ww............OOO\nO..............ww............OOO\nO..............ww.............OO\nO...............w..............O\nO...............w..............O\nO...............wwww...........O\nO..............................O\nO..................w...........O\nO..................ww..........O\nO...................w..........O\nO...................ww.........O\nO....................www......OO\nO............................OOO\nOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\nwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\n"
