@@ -111,6 +111,12 @@ pub struct TerrainTile {
     pub flags: usize, // 1 for walkable, 0 for not for now
 }
 
+impl TerrainTile {
+    pub fn is_walkable(&self) -> bool {
+        self.flags == 1
+    }
+}
+
 pub fn validate_map(map: &TerrainMap, spritesheets: &Vec<Spritesheet>) -> AssetResult<()> {
     let Some(sheet) = spritesheets.iter().find(|sheet| sheet.name == map.sheet) else {
         return Err("map spritesheet does not exist in manifest".into());
