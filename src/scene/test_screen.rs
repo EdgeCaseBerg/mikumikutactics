@@ -7,12 +7,14 @@ use crate::constants::{FontId, TEXTURE_UI};
 use crate::constants::{TextureId, WeaponId};
 use crate::game::GameContext;
 use crate::grid_layout::GridLayout;
+use crate::manifest::TerrainMap;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::{Button, new_btn};
 use crate::tactics::commands::*;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -23,6 +25,7 @@ pub struct TestScene {
     danger_sprite: Option<(SpriteInfo, TextureId)>,
     current_portrait: Option<(SpriteInfo, TextureId)>,
     current_portrait_bg: Option<(SpriteInfo, TextureId)>,
+    terrain: Option<(TerrainMap, HashMap<String, (SpriteInfo, TextureId)>)>,
     btn_prototype: Option<Button>,
     map: Option<BattleData>,
     context_menu: Option<ContextMenu>,
@@ -221,10 +224,24 @@ fn sprite_tuple(
     Ok((sprite_info, id))
 }
 
-fn make_map() -> MapInstance {
-    let rows = 18;
-    let columns = 32;
-    MapInstance::empty_walkable(columns, rows)
+fn make_map(asset_loader: &dyn AssetLoader, terrain_map: &str) -> GameResult<MapInstance> {
+    let catalog = asset_loader.get_catalog();
+    let map = catalog.name_to_terrain_map(terrain_map)?;
+    MapInstance::from_terrain(asset_loader, &map)
+}
+
+fn make_terrain(
+    asset_loader: &mut dyn AssetLoader,
+    terrain_map: &str,
+) -> GameResult<(TerrainMap, HashMap<String, (SpriteInfo, TextureId)>)> {
+    let catalog = asset_loader.get_catalog();
+    let map = catalog.name_to_terrain_map(terrain_map)?;
+    let mut hashmap = HashMap::new();
+    for (k, v) in map.tile_definitions.iter() {
+        let tuple = sprite_tuple(&map.sheet, Some(&[&v.tag_name]), asset_loader)?;
+        hashmap.insert(k.clone(), tuple);
+    }
+    Ok((map, hashmap))
 }
 
 impl Scene for TestScene {
@@ -232,7 +249,11 @@ impl Scene for TestScene {
         let Some(asset_loader) = game_context.asset_loader.as_mut() else {
             return Err("cannot init scene if asset_loader is not set".into());
         };
-        let mut the_map = make_map();
+
+        let terrain_map_name = "grassland";
+        let mut the_map = make_map(asset_loader.as_ref(), "grassland")?;
+        self.terrain = Some(make_terrain(asset_loader.as_mut(), "grassland")?);
+
         let map_state = MapState {
             action: None,
             selectable_tiles: HashSet::new(),
@@ -606,6 +627,11 @@ impl Scene for TestScene {
             }
         };
 
+        if let Some((_, terrain_sprites)) = self.terrain.as_mut() {
+            for (_, (sprite_info, _)) in terrain_sprites.into_iter() {
+                sprite_info.advance(ticks);
+            }
+        }
         Ok(())
     }
     fn draw(&mut self, game_context: &mut GameContext) -> GameResult<()> {
@@ -784,11 +810,33 @@ fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer)
     else {
         return;
     };
+
+    let Some((terrain_map, terrain_sprite_map)) = scene.terrain.as_ref() else {
+        return;
+    };
+    let mut tile_key = terrain_map.grid.chars().filter(|c| !c.is_whitespace());
+    let mut key_buf = [0; 4];
     for row in 0..map_instance.height {
         for column in 0..map_instance.width {
             let Some(tile) = map_instance.get((row, column)) else {
                 continue;
             };
+            let tile_key = tile_key
+                .next()
+                .expect("loaded terrain does not align to map");
+            // Background texture
+            let key = tile_key.encode_utf8(&mut key_buf);
+            if let Some((sprite_info, texture_id)) = terrain_sprite_map.get(key) {
+                let src = sprite_info.get_rect();
+                let dst = layout.cell_rect(row as usize, column as usize);
+                renderer.send_command(RenderCommand::DrawRect {
+                    texture_id: *texture_id,
+                    source: src,
+                    destination: dst,
+                });
+            }
+
+            // Occupant
             let sprite_info = if tile.occupant.is_none() {
                 scene.walkable_sprite.as_ref()
             } else {
