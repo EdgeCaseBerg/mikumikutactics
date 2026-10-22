@@ -1,5 +1,7 @@
 use crate::GameResult;
+use crate::asset_loader::AssetLoader;
 use crate::constants::TextureId;
+use crate::manifest::{TerrainMap, TerrainTile};
 use crate::tactics::units::*;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -31,6 +33,47 @@ pub struct MapState {
 }
 
 impl MapInstance {
+    pub fn from_terrain(
+        asset_loader: &dyn AssetLoader,
+        terrain_map: &TerrainMap,
+    ) -> GameResult<MapInstance> {
+        let catalog = asset_loader.get_catalog();
+        let texture_id = catalog.get_texture_id_for_sprite(&terrain_map.sheet)?;
+
+        let rows = terrain_map.grid.lines();
+        let mut height = 0;
+        let mut width = 0;
+        let mut buf = [0; 4];
+        let mut tiles = vec![];
+        for row in rows {
+            width = 0;
+            height += 1;
+            for c in row.chars() {
+                width += 1;
+                let key = c.encode_utf8(&mut buf);
+                let Some(def) = terrain_map.tile_definitions.get(key) else {
+                    return Err(format!("cant find tile definition for key {key}").into());
+                };
+                let is_walkable = def.is_walkable();
+                tiles.push(Tile {
+                    is_walkable,
+                    occupant: None,
+                    texture_id: Some(texture_id),
+                });
+            }
+            if width == 0 {
+                return Err("map had missing columns in grid".into());
+            }
+        }
+        if height == 0 {
+            return Err("map had no rows in grid".into());
+        }
+        Ok(MapInstance {
+            width,
+            height,
+            tiles,
+        })
+    }
     pub fn empty_walkable(width: isize, height: isize) -> Self {
         let tiles = (0..height)
             .flat_map(|_row| {
