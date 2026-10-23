@@ -37,6 +37,9 @@ pub struct TestScene {
 }
 
 // TODO: Refactor to use list of buttons and tuple of (button, command) instead since Err for cancel can be nixed for clear
+// although commands might not work because of the whole selectable thing unless we push some of the scene state down into the
+// command itself or something weird. Tricky, but we should figure it out since that'll make it easier to make menus and we can
+// move the rewind menu into a context menu or something similar.
 #[derive(Default)]
 pub struct ContextMenu {
     move_btn: Option<(Button, FromHere, ToThere)>,
