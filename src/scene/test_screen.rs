@@ -36,6 +36,7 @@ pub struct TestScene {
     retry_btn: Option<Button>,
 }
 
+// TODO: Refactor to use list of buttons and tuple of (button, command) instead since Err for cancel can be nixed for clear
 #[derive(Default)]
 pub struct ContextMenu {
     move_btn: Option<(Button, FromHere, ToThere)>,
