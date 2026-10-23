@@ -1,4 +1,5 @@
 use crate::GameResult;
+use crate::ReadyState;
 use crate::Rect;
 use crate::Scene;
 use crate::SpriteInfo;
@@ -11,6 +12,9 @@ use crate::manifest::TerrainMap;
 use crate::renderer::RenderCommand;
 use crate::renderer::Renderer;
 use crate::scene::button::{Button, new_btn};
+use crate::scene::story::text::LineSpeed;
+use crate::scene::story::text::TextBox;
+use crate::scene::story::text::text_box_bounds_on_grid;
 use crate::tactics::commands::*;
 use crate::tactics::map::*;
 use crate::tactics::units::*;
@@ -34,6 +38,7 @@ pub struct TestScene {
     quit_btn: Option<Button>,
     continue_btn: Option<Button>,
     retry_btn: Option<Button>,
+    text_box: Option<(TextBox, ReadyState)>,
 }
 
 // TODO: Refactor to use list of buttons and tuple of (button, command) instead since Err for cancel can be nixed for clear
