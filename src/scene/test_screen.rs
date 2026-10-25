@@ -396,16 +396,7 @@ impl Scene for TestScene {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
             if btn.clicked
-                && let Some(battle_data) = self.map.as_mut()
-            {
-                eprintln!("continue...");
-            }
-        }
-        if let Some(btn) = self.continue_btn.as_mut() {
-            let layout = TestScene::layout(game_context);
-            btn.update(ticks, game_context, &layout);
-            if btn.clicked
-                && let Some(battle_data) = self.map.as_mut()
+                && let Some(_battle_data) = self.map.as_mut()
             {
                 eprintln!("continue...");
             }
@@ -414,7 +405,7 @@ impl Scene for TestScene {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
             if btn.clicked
-                && let Some(battle_data) = self.map.as_mut()
+                && let Some(_battle_data) = self.map.as_mut()
             {
                 eprintln!("retry...");
             }
@@ -423,7 +414,7 @@ impl Scene for TestScene {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
             if btn.clicked
-                && let Some(battle_data) = self.map.as_mut()
+                && let Some(_battle_data) = self.map.as_mut()
             {
                 eprintln!("quit!");
             }

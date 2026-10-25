@@ -36,7 +36,7 @@ pub fn units_of(map_state: &MapState, faction: Faction) -> HashSet<UnitId> {
 pub fn loser(map_state: &MapState) -> Option<Faction> {
     let mut player_health = 0;
     let mut computer_health = 0;
-    for (unit_id, unit_data) in &map_state.units {
+    for (_, unit_data) in &map_state.units {
         match (unit_data.health, unit_data.faction) {
             (h, Faction::Player) => player_health += h,
             (h, Faction::Computer) => computer_health += h,
