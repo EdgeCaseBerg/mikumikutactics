@@ -89,6 +89,7 @@ pub struct UnitData {
     pub health: usize,
     pub weapon: Option<WeaponId>,
     pub faction: Faction, // should we really put this here or would Faction { player: [usize], computer: [usize]} be better in maps state or something
+    pub dialogue: Vec<UnitDialogue>,
 }
 
 #[derive(PartialEq, Copy, Debug, Clone, Hash, Eq)]
@@ -315,6 +316,7 @@ mod tactics_units {
             move_range: 2,
             weapon: None,
             faction,
+            dialogue: vec![],
         }
     }
 

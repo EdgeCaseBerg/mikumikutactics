@@ -292,6 +292,9 @@ impl Scene for TestScene {
                         } else {
                             Faction::Computer
                         },
+                        dialogue: vec![UnitDialogue::battle_cry(
+                            "I'll get you, huzzah!".to_owned(),
+                        )],
                     };
                     let tile = the_map
                         .get_mut((3, 3 + uid as isize))
