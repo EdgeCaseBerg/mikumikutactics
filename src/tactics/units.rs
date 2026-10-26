@@ -39,6 +39,47 @@ impl Faction {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum DialogueType {
+    BattleCry,
+    VictoryLine,
+    DefeatLine,
+    Generic,
+}
+
+#[derive(Debug)]
+pub struct UnitDialogue {
+    pub dialogue_type: DialogueType,
+    pub text: String,
+}
+
+impl UnitDialogue {
+    pub fn battle_cry(text: String) -> Self {
+        UnitDialogue {
+            dialogue_type: DialogueType::BattleCry,
+            text,
+        }
+    }
+    pub fn victory_line(text: String) -> Self {
+        UnitDialogue {
+            dialogue_type: DialogueType::VictoryLine,
+            text,
+        }
+    }
+    pub fn defeat_line(text: String) -> Self {
+        UnitDialogue {
+            dialogue_type: DialogueType::DefeatLine,
+            text,
+        }
+    }
+    pub fn generic(text: String) -> Self {
+        UnitDialogue {
+            dialogue_type: DialogueType::Generic,
+            text,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct UnitData {
     pub name: String,
