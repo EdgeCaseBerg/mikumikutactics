@@ -374,6 +374,14 @@ impl Scene for TestScene {
         if let Some((sprite_info, _)) = self.current_portrait.as_mut() {
             sprite_info.advance(ticks);
         }
+        if let Some((text_box, ready_state)) = self.text_box.as_mut() {
+            *ready_state = ready_state.advance(ticks);
+            text_box.text.update(ticks);
+            if matches!(ready_state, ReadyState::Ready) && text_box.text.is_visible() {
+                self.text_box = None;
+                self.current_portrait = None;
+            }
+        }
         if let Some(btn) = self.btn_prototype.as_mut() {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
@@ -441,6 +449,17 @@ impl Scene for TestScene {
                         )
                     {
                         self.current_portrait = selected_portrait_from(unit_data);
+                        self.text_box =
+                            select_battle_cry(unit_data).and_then(|(text, ready_state)| {
+                                let layout = TestScene::layout(game_context);
+                                let bounds = portrait_text_box_bounds(8, &layout);
+                                let font_id = FontId::BoldPixelScaled { pixel_size: 24 };
+                                let font_library = game_context.font_library.as_ref()?;
+                                let loaded_font = font_library.get(font_id)?;
+                                let tb = TextBox::new(bounds, text, loaded_font, LineSpeed::Normal);
+                                Some((tb, ready_state))
+                            });
+
                         map_state.selectable_tiles = reachable_positions;
                         map_state.action = action;
                     };
@@ -457,6 +476,7 @@ impl Scene for TestScene {
                             map_state.action = None;
                             map_state.selectable_tiles = HashSet::new();
                             self.current_portrait = None;
+                            self.text_box = None;
                         }
                         Some(Some((r, c))) => {
                             map_state.action = Some(ActionState::CommandPending(unit_id, (r, c)));
@@ -555,6 +575,7 @@ impl Scene for TestScene {
                             commands.push(Box::new(command));
                             self.command_log.add_unit_actions(attacker_uid, commands);
                             map_state.action = Some(ActionState::DrainCommandQueue);
+                            self.text_box = damage_display(damage, defender.1, game_context);
                         }
                         Some((None, damage)) => {
                             let command = AttackCommand {
@@ -565,6 +586,7 @@ impl Scene for TestScene {
                             self.command_log
                                 .add_unit_actions(attacker_uid, vec![Box::new(command)]);
                             map_state.action = Some(ActionState::DrainCommandQueue);
+                            self.text_box = damage_display(damage, defender.1, game_context);
                         }
                     }
                 }
@@ -573,6 +595,7 @@ impl Scene for TestScene {
                     map_state.selectable_tiles = HashSet::new();
                     self.context_menu = None;
                     self.current_portrait = None;
+                    self.text_box = None;
                     let anchor = Rect::new(10, 2, 4, 1);
                     self.undo_buttons = self.compute_undo_buttons(anchor);
                 }
@@ -644,6 +667,9 @@ impl Scene for TestScene {
         };
         draw_map(self, &layout, renderer.as_mut());
         draw_portrait(self, &layout, renderer.as_mut());
+        if let Some((text_box, _)) = self.text_box.as_mut() {
+            text_box.draw(game_context);
+        }
         if let Some(menu) = self.context_menu.as_ref() {
             menu.draw(&layout, game_context);
         }
@@ -747,6 +773,52 @@ fn selected_portrait_from(unit_data: Option<&UnitData>) -> Option<(SpriteInfo, T
     Some(portrait.clone())
 }
 
+fn select_battle_cry(unit_data: Option<&UnitData>) -> Option<(String, ReadyState)> {
+    // TODO: make it use rng at some point.
+    let unit_data = unit_data?;
+    let line = unit_data
+        .dialogue
+        .iter()
+        .find(|line| line.dialogue_type == DialogueType::BattleCry)
+        .or_else(|| {
+            unit_data
+                .dialogue
+                .iter()
+                .find(|line| line.dialogue_type == DialogueType::Generic)
+        })?;
+    Some((
+        line.text.clone(),
+        ReadyState::Cooldown {
+            wait_for: 180,
+            ticks_waited: 0,
+        },
+    ))
+}
+
+fn damage_display(
+    damage: usize,
+    defender_position: Coordinate,
+    game_context: &GameContext,
+) -> Option<(TextBox, ReadyState)> {
+    let text = format!("{damage} damage!");
+
+    let ready_state = ReadyState::Cooldown {
+        wait_for: 60,
+        ticks_waited: 0,
+    };
+
+    let (row, column) = defender_position;
+    let layout = TestScene::layout(game_context);
+    let tl = layout.cell_rect(row as usize, 1 + column as usize);
+    let (cw, ch) = layout.cell_size();
+    let bounds = Rect::new(tl.x, tl.y, cw * 4, ch * 1);
+    let font_id = FontId::BoldPixelScaled { pixel_size: 24 };
+    let font_library = game_context.font_library.as_ref()?;
+    let loaded_font = font_library.get(font_id)?;
+    let tb = TextBox::new(bounds, text, loaded_font, LineSpeed::Instant);
+    Some((tb, ready_state))
+}
+
 fn valid_selected_tile_clicked(
     game_context: &GameContext,
     map_instance: &MapInstance,
@@ -791,6 +863,11 @@ fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Rend
                 source: src,
                 destination: dst,
             });
+            let bg_for_text = portrait_text_box_bounds(row, layout);
+            renderer.send_command(RenderCommand::FillRect {
+                color: crate::renderer::Color::white(),
+                destination: bg_for_text,
+            });
         }
         let src = sprite_info.get_rect();
         let tl = layout.cell_rect(row, 0);
@@ -802,6 +879,20 @@ fn draw_portrait(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Rend
             destination: dst,
         });
     }
+}
+
+fn portrait_text_box_bounds(row: usize, layout: &GridLayout) -> Rect {
+    let tl = layout.cell_rect(row, 0);
+    let (cw, ch) = layout.cell_size();
+    let portrait_box_height = ch * 4;
+    let portrait_box_width = cw * 4;
+    let dst = Rect::new(
+        tl.x,
+        tl.y + portrait_box_height,
+        portrait_box_width * 2,
+        ch * 3,
+    );
+    dst
 }
 
 fn draw_map(scene: &TestScene, layout: &GridLayout, renderer: &mut dyn Renderer) {
