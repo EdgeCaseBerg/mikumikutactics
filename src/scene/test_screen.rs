@@ -39,6 +39,7 @@ pub struct TestScene {
     continue_btn: Option<Button>,
     retry_btn: Option<Button>,
     text_box: Option<(TextBox, ReadyState)>,
+    damage_box: Option<(TextBox, ReadyState)>,
 }
 
 // TODO: Refactor to use list of buttons and tuple of (button, command) instead since Err for cancel can be nixed for clear
@@ -382,6 +383,13 @@ impl Scene for TestScene {
                 self.current_portrait = None;
             }
         }
+        if let Some((text_box, ready_state)) = self.damage_box.as_mut() {
+            *ready_state = ready_state.advance(ticks);
+            text_box.text.update(ticks);
+            if matches!(ready_state, ReadyState::Ready) && text_box.text.is_visible() {
+                self.damage_box = None;
+            }
+        }
         if let Some(btn) = self.btn_prototype.as_mut() {
             let layout = TestScene::layout(game_context);
             btn.update(ticks, game_context, &layout);
@@ -575,7 +583,7 @@ impl Scene for TestScene {
                             commands.push(Box::new(command));
                             self.command_log.add_unit_actions(attacker_uid, commands);
                             map_state.action = Some(ActionState::DrainCommandQueue);
-                            self.text_box = damage_display(damage, defender.1, game_context);
+                            self.damage_box = damage_display(damage, defender.1, game_context);
                         }
                         Some((None, damage)) => {
                             let command = AttackCommand {
@@ -586,7 +594,7 @@ impl Scene for TestScene {
                             self.command_log
                                 .add_unit_actions(attacker_uid, vec![Box::new(command)]);
                             map_state.action = Some(ActionState::DrainCommandQueue);
-                            self.text_box = damage_display(damage, defender.1, game_context);
+                            self.damage_box = damage_display(damage, defender.1, game_context);
                         }
                     }
                 }
@@ -596,6 +604,7 @@ impl Scene for TestScene {
                     self.context_menu = None;
                     self.current_portrait = None;
                     self.text_box = None;
+                    self.damage_box = None;
                     let anchor = Rect::new(10, 2, 4, 1);
                     self.undo_buttons = self.compute_undo_buttons(anchor);
                 }
@@ -668,6 +677,9 @@ impl Scene for TestScene {
         draw_map(self, &layout, renderer.as_mut());
         draw_portrait(self, &layout, renderer.as_mut());
         if let Some((text_box, _)) = self.text_box.as_mut() {
+            text_box.draw(game_context);
+        }
+        if let Some((text_box, _)) = self.damage_box.as_mut() {
             text_box.draw(game_context);
         }
         if let Some(menu) = self.context_menu.as_ref() {
