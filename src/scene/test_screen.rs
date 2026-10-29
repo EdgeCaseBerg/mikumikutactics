@@ -254,6 +254,32 @@ fn make_terrain(
     Ok((map, hashmap))
 }
 
+// TODO: load these from a file or whatever makes sense
+fn test_unit(
+    uid: usize,
+    name: &str,
+    faction: Faction,
+    asset_loader: &mut dyn AssetLoader,
+    lines: Vec<UnitDialogue>,
+) -> UnitData {
+    let id = UnitId(uid);
+    let p = sprite_tuple("portrait", Some(&[name, "talking-idle"]), asset_loader)
+        .expect("cannot load portrait");
+    let s = sprite_tuple("onmap", Some(&[name]), asset_loader).expect("cannot load sprite");
+    UnitData {
+        name: name.to_owned(),
+        health: 3,
+        sprite_data: UnitSpriteData {
+            sprite: s,
+            portrait: p,
+        },
+        move_range: 3,
+        weapon: Some(WeaponId(uid % 2)),
+        faction,
+        dialogue: lines,
+    }
+}
+
 impl Scene for TestScene {
     fn init(&mut self, game_context: &mut GameContext) -> GameResult<()> {
         let Some(asset_loader) = game_context.asset_loader.as_mut() else {
@@ -267,43 +293,40 @@ impl Scene for TestScene {
         let map_state = MapState {
             action: None,
             selectable_tiles: HashSet::new(),
-            units: (0..2)
-                .map(|uid| {
-                    let id = UnitId(uid);
-                    let name = if uid % 2 == 0 { "miku" } else { "meiko" };
-                    let p = sprite_tuple(
-                        "portrait",
-                        Some(&[name, "talking-idle"]),
+            units: vec![
+                {
+                    let id = UnitId(0);
+                    let unit_data = test_unit(
+                        0,
+                        "miku",
+                        Faction::Player,
                         asset_loader.as_mut(),
-                    )
-                    .expect("cannot load miku portrait");
-                    let s = sprite_tuple("onmap", Some(&[name]), asset_loader.as_mut())
-                        .expect("cannot load miku sprite");
-                    let unit_data = UnitData {
-                        name: name.to_owned(),
-                        health: 3,
-                        sprite_data: UnitSpriteData {
-                            sprite: s,
-                            portrait: p,
-                        },
-                        move_range: 3,
-                        weapon: Some(WeaponId(uid % 2)),
-                        faction: if uid % 2 == 0 {
-                            Faction::Player
-                        } else {
-                            Faction::Computer
-                        },
-                        dialogue: vec![UnitDialogue::battle_cry(
-                            "I'll get you, huzzah!".to_owned(),
-                        )],
-                    };
+                        vec![UnitDialogue::battle_cry("Miku, miku, oo ee uu".to_owned())],
+                    );
                     let tile = the_map
-                        .get_mut((3, 3 + uid as isize))
+                        .get_mut((3, 3))
                         .expect("couldnt get tile to place unit in");
                     tile.occupant = Some(id);
                     (id, unit_data)
-                })
-                .collect(),
+                },
+                {
+                    let id = UnitId(1);
+                    let unit_data = test_unit(
+                        1,
+                        "meiko",
+                        Faction::Computer,
+                        asset_loader.as_mut(),
+                        vec![UnitDialogue::battle_cry("Big sis is here!".to_owned())],
+                    );
+                    let tile = the_map
+                        .get_mut((3, 4))
+                        .expect("couldnt get tile to place unit in");
+                    tile.occupant = Some(id);
+                    (id, unit_data)
+                },
+            ]
+            .into_iter()
+            .collect(),
         };
         self.map = Some(BattleData {
             untapped_units: units_of(&map_state, Faction::Player),
