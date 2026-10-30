@@ -33,13 +33,13 @@ wasm-bindgen target/wasm32-unknown-unknown/debug/mikumikutactics.wasm --out-dir 
 If you want to build both then just run `make` and it will do the trick and copy all the files you need into the right place.
 Then just serve the web folder out via a python or php server as you please.
 
-## Side notes about the game
+## Side notes about the "game"
 
 This is an expansion on a previous project whose full dev blog can be [found here](https://peetseater.space/blag/2026-05-25-miku-miku-tower-defense)
 and the wasm specific work is covered [here](https://peetseater.space/blag/2026-06-19-wasm). The work to create a tactics game from the shared core
-created for the turret defense game is covered in a new blog post [TK](#tocome!)
+created for the turret defense game is something being slowly worked towards by the prototyping in this repo shown in [this blog post]](https://peetseater.space/blag/2026-10-29-prototyping-for-mmt.html) if you're interested. 
 
-There is no audio controls in the game, so turn it down and then up as needed. 
+There is no audio controls in the game, so turn it down and then up as needed if you swap things around to trigger the VN scenes that have some audio.
 
 ## Credits
 
@@ -49,4 +49,5 @@ There is no audio controls in the game, so turn it down and then up as needed.
 
 ## Enhancments / exercise for the bored
 
-- TK
+The entire test_screen is one giant exercise in prototyping to see what sort of works and what doesn't, so there's plenty to be played with by the bored.
+Check out the prototyping blogpost's final section for some of the thoughts and feelings there. 
