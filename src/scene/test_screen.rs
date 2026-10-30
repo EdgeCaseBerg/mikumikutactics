@@ -627,7 +627,6 @@ impl Scene for TestScene {
                     self.context_menu = None;
                     self.current_portrait = None;
                     self.text_box = None;
-                    self.damage_box = None;
                     let anchor = Rect::new(10, 2, 4, 1);
                     self.undo_buttons = self.compute_undo_buttons(anchor);
                 }
